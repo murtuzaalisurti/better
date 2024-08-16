@@ -30936,9 +30936,12 @@ async function run() {
     try {
         const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('repo-token');
         const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token);
-        // const stargazers = await octokit.rest.activity.listStargazersForRepo();
+        const stargazers = await octokit.rest.activity.listStargazersForRepo({
+            owner: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner,
+            repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo
+        });
         const time = (new Date()).toTimeString();
-        console.log(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo);
+        console.log(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo, stargazers);
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput("time", time);
     } catch (error) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(error);
