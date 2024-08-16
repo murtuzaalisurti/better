@@ -1,0 +1,12 @@
+name: 'better'
+description: 'An AI powered code review tool'
+inputs:
+  repo-token:  # id of input
+    description: 'The repo token: ${{ secrets.GITHUB_TOKEN }}'
+    required: true
+outputs:
+  time: # id of output
+    description: 'workflow ran'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
