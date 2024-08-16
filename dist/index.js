@@ -30932,7 +30932,7 @@ var __webpack_exports__ = {};
 
 
 async function run() {
-    console.log('running...');
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('running action...');
     try {
         const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('repo-token');
         const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token);
@@ -30941,10 +30941,8 @@ async function run() {
             repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo
         });
         const time = (new Date()).toTimeString();
-        console.log(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo, stargazers);
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput("time", time);
+        console.log(time, _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo, stargazers.data);
     } catch (error) {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(error);
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(error);
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(error.message);
     }
