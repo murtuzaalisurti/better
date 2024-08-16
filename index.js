@@ -5,12 +5,12 @@ async function run() {
     try {
         const token = core.getInput('repo-token');
         const octokit = github.getOctokit(token);
-        const stargazers = await octokit.rest.activity.listStargazersForRepo();
+        // const stargazers = await octokit.rest.activity.listStargazersForRepo();
         const time = (new Date()).toTimeString();
-        console.log(github.context.repo, stargazers);
+        console.log(github.context.repo);
         core.setOutput("time", time);
     } catch (error) {
-        console.log(error);
+        core.error(error);
         core.setFailed(error.message);
     }
 }
