@@ -2,7 +2,7 @@ name: 'better'
 description: 'An AI powered code review tool'
 inputs:
   repo-token:  # id of input
-    description: 'The repo token: ${{ secrets.GITHUB_TOKEN }}'
+    description: 'The repo token: "secrets.GITHUB_TOKEN"'
     required: true
 outputs:
   time: # id of output
