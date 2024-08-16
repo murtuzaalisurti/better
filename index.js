@@ -10,6 +10,7 @@ async function run() {
         console.log(github.context.repo, stargazers);
         core.setOutput("time", time);
     } catch (error) {
+        console.log(error);
         core.setFailed(error.message);
     }
 }
