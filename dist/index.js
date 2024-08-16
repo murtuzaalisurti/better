@@ -30932,8 +30932,8 @@ var __webpack_exports__ = {};
 
 
 async function run() {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('running action...');
     try {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('running action...');
         const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('repo-token');
         const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token);
         const stargazers = await octokit.rest.activity.listStargazersForRepo({
@@ -30941,7 +30941,7 @@ async function run() {
             repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo
         });
         const time = (new Date()).toTimeString();
-        console.log(time, _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo, stargazers.data);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(time, _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo, stargazers.data);
     } catch (error) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(error);
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(error.message);

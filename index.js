@@ -2,8 +2,8 @@ import core from '@actions/core';
 import github from '@actions/github';
 
 async function run() {
-    core.info('running action...');
     try {
+        core.info('running action...');
         const token = core.getInput('repo-token');
         const octokit = github.getOctokit(token);
         const stargazers = await octokit.rest.activity.listStargazersForRepo({
@@ -11,7 +11,7 @@ async function run() {
             repo: github.context.repo.repo
         });
         const time = (new Date()).toTimeString();
-        console.log(time, github.context.repo, stargazers.data);
+        core.info(time, github.context.repo, stargazers.data);
     } catch (error) {
         core.error(error);
         core.setFailed(error.message);
