@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "ncc build index.js --license licenses.txt",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "is-ci || husky"
   },
   "keywords": [],
   "author": "Murtuzaali Surti",
@@ -14,6 +15,10 @@
   "dependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
-    "@vercel/ncc": "^0.38.1"
+    "@vercel/ncc": "^0.38.1",
+    "is-ci": "^3.0.1"
+  },
+  "devDependencies": {
+    "husky": "^9.1.4"
   }
 }
