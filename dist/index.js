@@ -30941,7 +30941,7 @@ async function run() {
             repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo
         });
         const time = (new Date()).toTimeString();
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(time, _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo, stargazers.data);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`${time}, ${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo}, ${stargazers.data}`);
     } catch (error) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(error);
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(error.message);

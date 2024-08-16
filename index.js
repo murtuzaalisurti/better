@@ -11,7 +11,7 @@ async function run() {
             repo: github.context.repo.repo
         });
         const time = (new Date()).toTimeString();
-        core.info(time, github.context.repo, stargazers.data);
+        core.info(`${time}, ${github.context.repo}, ${stargazers.data}`);
     } catch (error) {
         core.error(error);
         core.setFailed(error.message);
