@@ -2,7 +2,7 @@ import core from '@actions/core';
 import github from '@actions/github';
 
 async function run() {
-    console.log('running...');
+    core.info('running action...');
     try {
         const token = core.getInput('repo-token');
         const octokit = github.getOctokit(token);
@@ -11,10 +11,8 @@ async function run() {
             repo: github.context.repo.repo
         });
         const time = (new Date()).toTimeString();
-        console.log(github.context.repo, stargazers);
-        core.setOutput("time", time);
+        console.log(time, github.context.repo, stargazers.data);
     } catch (error) {
-        core.info(error);
         core.error(error);
         core.setFailed(error.message);
     }
