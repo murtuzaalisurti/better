@@ -30946,10 +30946,10 @@ async function run() {
                 repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo,
                 pull_number: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request.number
             })
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(pullRequest);
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(pullRequest, null, 2));
         }
         const time = (new Date()).toTimeString();
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`${time}, ${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo}, ${stargazers.data}`);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`${time}, ${JSON.stringify(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo, null, 2)}, ${stargazers.data}`);
     } catch (error) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(error);
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(error.message);

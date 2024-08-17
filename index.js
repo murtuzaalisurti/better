@@ -16,10 +16,10 @@ async function run() {
                 repo: github.context.repo.repo,
                 pull_number: github.context.payload.pull_request.number
             })
-            core.info(pullRequest);
+            core.info(JSON.stringify(pullRequest, null, 2));
         }
         const time = (new Date()).toTimeString();
-        core.info(`${time}, ${github.context.repo}, ${stargazers.data}`);
+        core.info(`${time}, ${JSON.stringify(github.context.repo, null, 2)}, ${stargazers.data}`);
     } catch (error) {
         core.error(error);
         core.setFailed(error.message);
