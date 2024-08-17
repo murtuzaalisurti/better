@@ -30940,6 +30940,14 @@ async function run() {
             owner: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner,
             repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo
         });
+        if (_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request) {
+            const pullRequest = await octokit.rest.pulls.get({
+                owner: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner,
+                repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo,
+                pull_number: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request.number
+            })
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(pullRequest);
+        }
         const time = (new Date()).toTimeString();
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`${time}, ${_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo}, ${stargazers.data}`);
     } catch (error) {

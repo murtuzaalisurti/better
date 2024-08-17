@@ -10,6 +10,14 @@ async function run() {
             owner: github.context.repo.owner,
             repo: github.context.repo.repo
         });
+        if (github.context.payload.pull_request) {
+            const pullRequest = await octokit.rest.pulls.get({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                pull_number: github.context.payload.pull_request.number
+            })
+            core.info(pullRequest);
+        }
         const time = (new Date()).toTimeString();
         core.info(`${time}, ${github.context.repo}, ${stargazers.data}`);
     } catch (error) {
