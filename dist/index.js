@@ -30966,8 +30966,24 @@ async function run() {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(
                 parsedDiff.reduce((acc, file) => {
                     return acc.concat(file.chunks.reduce((accc, chunk) => {
-                        return accc.concat(chunk.changes.filter(change => (change.type !== 'normal' && !change.content.includes("No newline at end of file"))).map(change => {
-                            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`${change.content.includes("No newline at end of file")}`);
+                        return accc.concat(chunk.changes.filter(change => (change.type !== 'normal' && !change.content.includes("No newline at end of file"))).map((change, i, arr) => {
+                            if (change.type === 'add') {
+                                if (i > 0 && arr[i - 1].type === 'del' && change.ln === arr[i - 1].ln) {
+                                    return {
+                                        path: file.from,
+                                        position: change.ln,
+                                        body: `**${file.from}** added. This is a review comment.`,
+                                        change,
+                                        previously: arr[i - 1].content
+                                    }
+                                }
+                                return {
+                                    path: file.from,
+                                    position: change.ln,
+                                    body: `**${file.from}** added. This is a review comment.`,
+                                    change
+                                }
+                            }
                             return {
                                 path: file.from,
                                 position: change.ln,
