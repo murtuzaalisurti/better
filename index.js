@@ -28,6 +28,7 @@ async function run() {
                 parsedDiff.reduce((acc, file) => {
                     return acc.concat(file.chunks.reduce((accc, chunk) => {
                         return accc.concat(chunk.changes.filter(change => (change.type !== 'normal' || !change.content.includes("No newline at end of file"))).map(change => {
+                            core.info(`${change.content.includes("No newline at end of file")}`);
                             return {
                                 path: file.from,
                                 position: change.ln,
