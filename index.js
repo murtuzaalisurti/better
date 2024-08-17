@@ -71,20 +71,20 @@ async function run() {
                 null, 2
             ))
 
-            await octokit.rest.pulls.createReview({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                pull_number: github.context.payload.pull_request.number,
-                body: `Code Review by better`,
-                event: 'COMMENT',
-                comments: [
-                    {
-                        path: 'index.js',
-                        position: 5,
-                        body: `Code Review by better`,
-                    }
-                ]
-            })
+            // await octokit.rest.pulls.createReview({
+            //     owner: github.context.repo.owner,
+            //     repo: github.context.repo.repo,
+            //     pull_number: github.context.payload.pull_request.number,
+            //     body: `Code Review by better`,
+            //     event: 'COMMENT',
+            //     comments: [
+            //         {
+            //             path: 'index.js',
+            //             position: 5,
+            //             body: `Code Review by better`,
+            //         }
+            //     ]
+            // })
 
             // await octokit.rest.pulls.createReview({
             //     owner: github.context.repo.owner,
