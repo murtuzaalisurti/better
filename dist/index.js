@@ -30941,15 +30941,99 @@ var __webpack_exports__ = {};
 
 
 
+/**
+ * 
+ * @param {parseDiff.File[]} parsedDiff 
+ */
+function getCommentsToAdd(parsedDiff) {
+    const comments = parsedDiff.reduce((acc, file) => {
+        let diffRelativePosition = 0;
+        return acc.concat(file.chunks.reduce((accc, chunk, i) => {
+            if (i !== 0) {
+                diffRelativePosition++;
+            }
+            return accc.concat(chunk.changes.map(change => {
+                return {
+                    ...change,
+                    relativePosition: ++diffRelativePosition
+                }
+            }).filter(change => (change.type !== 'normal' && !change.content.includes("No newline at end of file"))).map((change, i, arr) => {
+                if (change.type === 'add') {
+                    if (arr[i - 1].type === 'add' && change.ln === arr[i - 1].ln + 1 && arr[i - 1].content !== "+") {
+                        return null
+                    }
+                    if (i > 0 && arr[i - 1].type === 'del' && change.ln === arr[i - 1].ln) {
+                        return {
+                            path: file.from,
+                            position: change.relativePosition,
+                            line: change.ln,
+                            body: `**${file.from}** added. This is a review comment.`,
+                            change,
+                            previously: arr[i - 1].content
+                        }
+                    }
+                    return {
+                        path: file.from,
+                        position: change.relativePosition,
+                        line: change.ln,
+                        body: `**${file.from}** added. This is a review comment.`,
+                        change
+                    }
+                }
+
+                if (change.type === 'del' && change.ln === arr[i + 1].ln && arr[i + 1].type === 'add') {
+                    return null
+                }
+
+                return {
+                    path: file.from,
+                    position: change.relativePosition,
+                    line: change.ln,
+                    body: `**${file.from}** changed to **${file.to}**. This is a review comment.`,
+                    change
+                }
+            }).filter(i => i).map(i => {
+                return {
+                    path: i.path,
+                    // position: i.position,
+                    line: i.line,
+                    body: i.body
+                }
+            }))
+        }, []))
+    }, [])
+
+    function printJSON() {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(comments, null, 2))
+    }
+
+    return {
+        comments,
+        printJSON
+    }
+}
+
+/**
+ * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
+ * @param {parseDiff.File[]} parsedDiff 
+ * @param {InstanceType<GitHub>} octokit
+ */
+async function addReviewComments(parsedDiff, octokit) {
+    await octokit.rest.pulls.createReview({
+        owner: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner,
+        repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo,
+        pull_number: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request.number,
+        body: `Code Review by better`,
+        event: 'COMMENT',
+        comments: getCommentsToAdd(parsedDiff).comments
+    })
+}
 async function run() {
     try {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('running action...');
         const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('repo-token');
         const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token);
-        const stargazers = await octokit.rest.activity.listStargazersForRepo({
-            owner: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner,
-            repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo
-        });
+
         if (_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request) {
             const pullRequest = await octokit.rest.pulls.get({
                 owner: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner,
@@ -30960,55 +31044,7 @@ async function run() {
                 }
             })
             const parsedDiff = parse_diff__WEBPACK_IMPORTED_MODULE_2__(pullRequest.data);
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(pullRequest.data, null, 2));
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(parsedDiff, null, 2));
-
-            // core.info(JSON.stringify(
-            //     parsedDiff.reduce((acc, file) => {
-            //         let diffRelativePosition = 0;
-            //         return acc.concat(file.chunks.reduce((accc, chunk, i) => {
-            //             if (i !== 0) {
-            //                 diffRelativePosition++;
-            //             }
-            //             return accc.concat(chunk.changes.map(change => {
-            //                 return {
-            //                     ...change,
-            //                     relativePosition: ++diffRelativePosition
-            //                 }
-            //             }).filter(change => (change.type !== 'normal' && !change.content.includes("No newline at end of file"))).map((change, i, arr) => {
-            //                 if (change.type === 'add') {
-            //                     if (i > 0 && arr[i - 1].type === 'del' && change.ln === arr[i - 1].ln) {
-            //                         return {
-            //                             path: file.from,
-            //                             position: change.relativePosition,
-            //                             body: `**${file.from}** added. This is a review comment.`,
-            //                             change,
-            //                             previously: arr[i - 1].content
-            //                         }
-            //                     }
-            //                     return {
-            //                         path: file.from,
-            //                         position: change.relativePosition,
-            //                         body: `**${file.from}** added. This is a review comment.`,
-            //                         change
-            //                     }
-            //                 }
-
-            //                 if (change.type === 'del' && change.ln === arr[i + 1].ln && arr[i + 1].type === 'add') {
-            //                     return null
-            //                 }
-
-            //                 return {
-            //                     path: file.from,
-            //                     position: change.relativePosition,
-            //                     body: `**${file.from}** changed to **${file.to}**. This is a review comment.`,
-            //                     change
-            //                 }
-            //             }).filter(i => i))
-            //         }, []))
-            //     }, []),
-            //     null, 2
-            // ))
 
             // await octokit.rest.pulls.createReview({
             //     owner: github.context.repo.owner,
@@ -31025,68 +31061,9 @@ async function run() {
             //     ]
             // })
 
-            await octokit.rest.pulls.createReview({
-                owner: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner,
-                repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo,
-                pull_number: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request.number,
-                body: `Code Review by better`,
-                event: 'COMMENT',
-                comments: parsedDiff.reduce((acc, file) => {
-                    let diffRelativePosition = 0;
-                    return acc.concat(file.chunks.reduce((accc, chunk, i) => {
-                        if (i !== 0) {
-                            diffRelativePosition++;
-                        }
-                        return accc.concat(chunk.changes.map(change => {
-                            return {
-                                ...change,
-                                relativePosition: ++diffRelativePosition
-                            }
-                        }).filter(change => (change.type !== 'normal' && !change.content.includes("No newline at end of file"))).map((change, i, arr) => {
-                            if (change.type === 'add') {
-                                if (arr[i - 1].type === 'add' && change.ln === arr[i - 1].ln + 1 && arr[i - 1].content !== "+") {
-                                    return null
-                                }
-                                if (i > 0 && arr[i - 1].type === 'del' && change.ln === arr[i - 1].ln) {
-                                    return {
-                                        path: file.from,
-                                        position: change.relativePosition,
-                                        body: `**${file.from}** added. This is a review comment.`,
-                                        change,
-                                        previously: arr[i - 1].content
-                                    }
-                                }
-                                return {
-                                    path: file.from,
-                                    position: change.relativePosition,
-                                    body: `**${file.from}** added. This is a review comment.`,
-                                    change
-                                }
-                            }
-
-                            if (change.type === 'del' && change.ln === arr[i + 1].ln && arr[i + 1].type === 'add') {
-                                return null
-                            }
-
-                            return {
-                                path: file.from,
-                                position: change.relativePosition,
-                                body: `**${file.from}** changed to **${file.to}**. This is a review comment.`,
-                                change
-                            }
-                        }).filter(i => i).map(i => {
-                            return {
-                                path: i.path,
-                                position: i.position,
-                                body: i.body
-                            }
-                        }))
-                    }, []))
-                }, [])
-            })
+            getCommentsToAdd(parsedDiff).printJSON();
+            await addReviewComments(parsedDiff, octokit);
         }
-        const time = (new Date()).toTimeString();
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`${time}, ${JSON.stringify(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo, null, 2)}, ${stargazers.data}`);
     } catch (error) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(error);
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(error.message);
