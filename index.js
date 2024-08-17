@@ -53,14 +53,7 @@ function getCommentsToAdd(parsedDiff) {
                     body: `**${file.from}** changed to **${file.to}**. This is a review comment.`,
                     change
                 }
-            }).filter(i => i).map(i => {
-                return {
-                    path: i.path,
-                    // position: i.position,
-                    line: i.line,
-                    body: i.body
-                }
-            }))
+            }).filter(i => i))
         }, []))
     }, [])
 
@@ -69,7 +62,15 @@ function getCommentsToAdd(parsedDiff) {
     }
 
     return {
-        comments,
+        raw: comments,
+        comments: comments.map(i => {
+            return {
+                path: i.path,
+                // position: i.position,
+                line: i.line,
+                body: i.body
+            }
+        }),
         printJSON
     }
 }
