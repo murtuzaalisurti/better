@@ -30944,7 +30944,10 @@ async function run() {
             const pullRequest = await octokit.rest.pulls.get({
                 owner: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner,
                 repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo,
-                pull_number: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request.number
+                pull_number: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request.number,
+                headers: {
+                    accept: 'application/vnd.github.v3.diff'
+                }
             })
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(pullRequest, null, 2));
         }

@@ -14,7 +14,10 @@ async function run() {
             const pullRequest = await octokit.rest.pulls.get({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
-                pull_number: github.context.payload.pull_request.number
+                pull_number: github.context.payload.pull_request.number,
+                headers: {
+                    accept: 'application/vnd.github.v3.diff'
+                }
             })
             core.info(JSON.stringify(pullRequest, null, 2));
         }
