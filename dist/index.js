@@ -30960,6 +30960,7 @@ async function run() {
                 }
             })
             const parsedDiff = parse_diff__WEBPACK_IMPORTED_MODULE_2__(pullRequest.data);
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(pullRequest.data, null, 2));
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(parsedDiff, null, 2));
         }
         const time = (new Date()).toTimeString();

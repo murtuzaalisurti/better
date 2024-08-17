@@ -21,6 +21,7 @@ async function run() {
                 }
             })
             const parsedDiff = parseDiff(pullRequest.data);
+            core.info(JSON.stringify(pullRequest.data, null, 2));
             core.info(JSON.stringify(parsedDiff, null, 2));
         }
         const time = (new Date()).toTimeString();
