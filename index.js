@@ -16,7 +16,8 @@ async function run() {
                 repo: github.context.repo.repo,
                 pull_number: github.context.payload.pull_request.number,
                 headers: {
-                    accept: 'application/vnd.github.v3.diff'
+                    // accept: 'application/vnd.github.diff',
+                    accept: 'application/vnd.github.patch'
                 }
             })
             core.info(JSON.stringify(pullRequest, null, 2));
