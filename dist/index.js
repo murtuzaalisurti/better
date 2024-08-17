@@ -30963,31 +30963,40 @@ async function run() {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(pullRequest.data, null, 2));
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(parsedDiff, null, 2));
 
-            await octokit.rest.pulls.createReview({
-                owner: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.owner,
-                repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo,
-                pull_number: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request.number,
-                body: `Code Review by better`,
-                event: 'COMMENT',
-                comments: parsedDiff.reduce((acc, file) => {
-                    // return acc.concat(file.chunks.changes.filter(chunk => chunk.type !== 'normal').map(chunk => {
-                    //     return {
-                    //         path: file.from,
-                    //         position: chunk.changes,
-                    //         body: `**${file.from}** changed to **${file.to}**. This is a review comment.`
-                    //     }
-                    // }))
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(
+                parsedDiff.reduce((acc, file) => {
                     return acc.concat(file.chunks.reduce((accc, chunk) => {
                         return accc.concat(chunk.changes.filter(change => change.type !== 'normal').map(change => {
                             return {
                                 path: file.from,
                                 position: change.ln,
-                                body: `**${file.from}** changed to **${file.to}**. This is a review comment.`
+                                body: `**${file.from}** changed to **${file.to}**. This is a review comment.`,
+                                change
                             }
                         }))
                     }, []))
-                }, [])
-            })
+                }, []),
+                null, 2
+            ))
+
+            // await octokit.rest.pulls.createReview({
+            //     owner: github.context.repo.owner,
+            //     repo: github.context.repo.repo,
+            //     pull_number: github.context.payload.pull_request.number,
+            //     body: `Code Review by better`,
+            //     event: 'COMMENT',
+            //     comments: parsedDiff.reduce((acc, file) => {
+            //         return acc.concat(file.chunks.reduce((accc, chunk) => {
+            //             return accc.concat(chunk.changes.filter(change => change.type !== 'normal').map(change => {
+            //                 return {
+            //                     path: file.from,
+            //                     position: change.ln,
+            //                     body: `**${file.from}** changed to **${file.to}**. This is a review comment.`
+            //                 }
+            //             }))
+            //         }, []))
+            //     }, [])
+            // })
         }
         const time = (new Date()).toTimeString();
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`${time}, ${JSON.stringify(_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo, null, 2)}, ${stargazers.data}`);
