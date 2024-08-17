@@ -30966,7 +30966,7 @@ async function run() {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(
                 parsedDiff.reduce((acc, file) => {
                     return acc.concat(file.chunks.reduce((accc, chunk) => {
-                        return accc.concat(chunk.changes.filter(change => (change.type !== 'normal' || !change.content.includes("No newline at end of file"))).map(change => {
+                        return accc.concat(chunk.changes.filter(change => (change.type !== 'normal' && !change.content.includes("No newline at end of file"))).map(change => {
                             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`${change.content.includes("No newline at end of file")}`);
                             return {
                                 path: file.from,
