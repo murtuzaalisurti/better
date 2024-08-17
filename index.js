@@ -1,5 +1,6 @@
 import core from '@actions/core';
 import github from '@actions/github';
+import parseDiff from 'parse-diff';
 
 async function run() {
     try {
@@ -19,7 +20,8 @@ async function run() {
                     accept: 'application/vnd.github.diff',
                 }
             })
-            core.info(JSON.stringify(pullRequest, null, 2));
+            const parsedDiff = parseDiff(pullRequest.data);
+            core.info(JSON.stringify(parsedDiff, null, 2));
         }
         const time = (new Date()).toTimeString();
         core.info(`${time}, ${JSON.stringify(github.context.repo, null, 2)}, ${stargazers.data}`);
