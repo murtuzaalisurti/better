@@ -30946,8 +30946,7 @@ async function run() {
                 repo: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.repo.repo,
                 pull_number: _actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request.number,
                 headers: {
-                    // accept: 'application/vnd.github.diff',
-                    accept: 'application/vnd.github.patch'
+                    accept: 'application/vnd.github.diff',
                 }
             })
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(JSON.stringify(pullRequest, null, 2));
