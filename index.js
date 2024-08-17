@@ -34,7 +34,7 @@ async function run() {
                     comments: file.chunks.filter(chunk => chunk.type !== 'normal').map(chunk => {
                         return {
                             path: file.from,
-                            position: chunk.ln,
+                            // position: chunk.ln,
                             body: `**${file.from}** changed to **${file.to}**. This is a review comment.`
                         }
                     })
