@@ -30984,13 +30984,18 @@ async function run() {
                                     change
                                 }
                             }
+
+                            if (change.type === 'del' && change.ln === arr[i + 1].ln && arr[i + 1].type === 'add') {
+                                return null
+                            }
+
                             return {
                                 path: file.from,
                                 position: change.ln,
                                 body: `**${file.from}** changed to **${file.to}**. This is a review comment.`,
                                 change
                             }
-                        }))
+                        }).filter(i => i))
                     }, []))
                 }, []),
                 null, 2
