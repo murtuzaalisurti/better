@@ -30970,13 +30970,22 @@ async function run() {
                 body: `Code Review by better`,
                 event: 'COMMENT',
                 comments: parsedDiff.reduce((acc, file) => {
-                    return acc.concat(file.chunks.filter(chunk => chunk.type !== 'normal').map(chunk => {
-                        return {
-                            path: file.from,
-                            // position: chunk.ln,
-                            body: `**${file.from}** changed to **${file.to}**. This is a review comment.`
-                        }
-                    }))
+                    // return acc.concat(file.chunks.changes.filter(chunk => chunk.type !== 'normal').map(chunk => {
+                    //     return {
+                    //         path: file.from,
+                    //         position: chunk.changes,
+                    //         body: `**${file.from}** changed to **${file.to}**. This is a review comment.`
+                    //     }
+                    // }))
+                    return acc.concat(file.chunks.reduce((accc, chunk) => {
+                        return accc.concat(chunk.changes.filter(change => change.type !== 'normal').map(change => {
+                            return {
+                                path: file.from,
+                                position: change.ln,
+                                body: `**${file.from}** changed to **${file.to}**. This is a review comment.`
+                            }
+                        }))
+                    }, []))
                 }, [])
             })
         }
