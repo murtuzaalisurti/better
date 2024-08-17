@@ -24,24 +24,22 @@ async function run() {
             core.info(JSON.stringify(pullRequest.data, null, 2));
             core.info(JSON.stringify(parsedDiff, null, 2));
 
-            for (const file of parsedDiff) {
-                await octokit.rest.pulls.createReview({
-                    owner: github.context.repo.owner,
-                    repo: github.context.repo.repo,
-                    pull_number: github.context.payload.pull_request.number,
-                    body: `**${file.from}** changed to **${file.to}**`,
-                    event: 'COMMENT',
-                    comments: file.chunks.filter(chunk => chunk.type !== 'normal').map(chunk => {
+            await octokit.rest.pulls.createReview({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                pull_number: github.context.payload.pull_request.number,
+                body: `Code Review by better`,
+                event: 'COMMENT',
+                comments: parsedDiff.reduce((acc, file) => {
+                    return acc.concat(file.chunks.filter(chunk => chunk.type !== 'normal').map(chunk => {
                         return {
                             path: file.from,
                             // position: chunk.ln,
                             body: `**${file.from}** changed to **${file.to}**. This is a review comment.`
                         }
-                    })
-                })
-
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
+                    }))
+                }, [])
+            })
         }
         const time = (new Date()).toTimeString();
         core.info(`${time}, ${JSON.stringify(github.context.repo, null, 2)}, ${stargazers.data}`);
