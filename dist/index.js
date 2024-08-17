@@ -31038,7 +31038,11 @@ async function run() {
                                 body: `**${file.from}** modified to **${file.to}** and the content changed to **${change.content}**. This is a review comment.`,
                                 change
                             }
-                        }).filter(i => i))
+                        }).filter(i => i).map(i => ({
+                            path: i.path,
+                            position: i.position,
+                            body: i.body
+                        })))
                     }, []))
                 }, [])
             })
