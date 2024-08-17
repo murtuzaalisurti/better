@@ -38,7 +38,7 @@ function getCommentsToAdd(parsedDiff) {
                                     path: file.from,
                                     position: change.relativePosition,
                                     line: change.ln,
-                                    body: `**${file.from}** added. This is a review comment.`,
+                                    body: `**${change.content}** added. This is a review comment.`,
                                     change,
                                     previously: arr[i - 1].content
                                 }
@@ -48,7 +48,7 @@ function getCommentsToAdd(parsedDiff) {
                                 path: file.from,
                                 position: change.relativePosition,
                                 line: change.ln,
-                                body: `**${file.from}** added. This is a review comment.`,
+                                body: `**${change.content}** added. This is a review comment.`,
                                 change
                             }
                         }
@@ -61,7 +61,7 @@ function getCommentsToAdd(parsedDiff) {
                             path: file.from,
                             position: change.relativePosition,
                             line: change.ln,
-                            body: `**${file.from}** changed to **${file.to}**. This is a review comment.`,
+                            body: `**${change.content}** modified. This is a review comment.`,
                             change
                         }
                     }).filter(i => i) /** filter out nulls */
