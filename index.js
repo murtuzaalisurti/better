@@ -105,6 +105,9 @@ async function run() {
                             }
                         }).filter(change => (change.type !== 'normal' && !change.content.includes("No newline at end of file"))).map((change, i, arr) => {
                             if (change.type === 'add') {
+                                if (arr[i - 1].type === 'add' && change.ln === arr[i - 1].ln + 1) {
+                                    return null
+                                }
                                 if (i > 0 && arr[i - 1].type === 'del' && change.ln === arr[i - 1].ln) {
                                     return {
                                         path: file.from,
