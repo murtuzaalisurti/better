@@ -30965,6 +30965,7 @@ function getCommentsToAdd(parsedDiff) {
                     }
                 }).filter(change => (change.type !== 'normal' && !change.content.includes("No newline at end of file")))
                     .map((change, i, arr) => {
+                        console.log(arr);
                         if (change.type === 'add') {
                             /**
                              * This code checks if the current change is an addition (change.type === 'add') that immediately follows another addition (arr[i - 1].type === 'add') on the next line (change.ln === arr[i - 1].ln + 1). If the previous addition is not a single "+" character (arr[i - 1].content !== "+"), it skips the current change by returning null.
