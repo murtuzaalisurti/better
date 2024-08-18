@@ -43038,7 +43038,7 @@ async function run() {
             ]
         })
 
-        console.log(aiResult)
+        console.log(JSON.stringify(aiResult, null, 2))
 
         if (lib_github.context.payload.pull_request) {
             lib_core.info('Reviewing pull request...');
