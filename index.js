@@ -147,7 +147,7 @@ async function run() {
                 },
                 {
                     role: 'user',
-                    content: `Now what I want you to do is, take this diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements. If you think there are no improvements to be made, don't return **that** object from the payload. Rest, **return everything as it is (in the same order)** along with your suggestions. [
+                    content: `Now what I want you to do is, take this diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements. If you think there are no improvements to be made, don't return **that** object from the payload. Rest, **return everything as it is (in the same order)** along with your suggestions. And, return the response in a json format. Here's the diff: [
   {
     "path": "index.js",
     "position": 3,
@@ -205,7 +205,7 @@ async function run() {
 ]`
                 }
             ],
-            response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
+            // response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
         })
 
         console.log(JSON.stringify(aiResult.choices[0].message, null, 2))
