@@ -3,6 +3,11 @@ import github from '@actions/github';
 import parseDiff from 'parse-diff';
 
 /**
+ * prompt
+ * now what I want you to do is, take this diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements. If you think there are no improvements to be made, don't return such object from the payload. Rest, return everything as it is (in the same order) along with your suggestions.
+ */
+
+/**
  * 
  * @param {parseDiff.File[]} parsedDiff 
  */
@@ -105,6 +110,7 @@ async function addReviewComments(parsedDiff, octokit) {
 async function run() {
     try {
         const token = core.getInput('repo-token');
+        const modelToken = core.getInput('ai-model-api-key');
         const octokit = github.getOctokit(token);
         
         if (github.context.payload.pull_request) {

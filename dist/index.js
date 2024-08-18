@@ -30942,6 +30942,11 @@ var __webpack_exports__ = {};
 
 
 /**
+ * prompt
+ * now what I want you to do is, take this diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements. If you think there are no improvements to be made, don't return such object from the payload. Rest, return everything as it is (in the same order) along with your suggestions.
+ */
+
+/**
  * 
  * @param {parseDiff.File[]} parsedDiff 
  */
@@ -31044,6 +31049,7 @@ async function addReviewComments(parsedDiff, octokit) {
 async function run() {
     try {
         const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('repo-token');
+        const modelToken = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('ai-model-api-key');
         const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token);
         
         if (_actions_github__WEBPACK_IMPORTED_MODULE_1__.context.payload.pull_request) {

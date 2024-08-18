@@ -4,6 +4,9 @@ inputs:
   repo-token:  # id of input
     description: 'The repo token: { secrets.GITHUB_TOKEN }'
     required: true
+  ai-model-api-key:
+    description: 'The models api key: { secrets.<YOUR_AI_MODEL_API_KEY> }'
+    required: true
 runs:
   using: 'node20'
   main: 'dist/index.js'
