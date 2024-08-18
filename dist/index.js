@@ -48539,24 +48539,22 @@ function zodFunction(options) {
  * now what I want you to do is, take this diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements. If you think there are no improvements to be made, don't return such object from the payload. Rest, return everything as it is (in the same order) along with your suggestions.
  */
 
-const diffPayloadSchema = z.array(
-    z.object(
-        {
-            path: z.string(),
-            position: z.number(),
-            line: z.number(),
-            body: z.string(),
-            change: z.object({
-                type: z.string(),
-                add: z.boolean(),
-                ln: z.number(),
-                content: z.string(),
-                relativePosition: z.number(),
-            }),
-            previously: z.string().isOptional(),
-            suggestions: z.string().isOptional(),
-        },
-    )
+const diffPayloadSchema = z.object(
+    {
+        path: z.string(),
+        position: z.number(),
+        line: z.number(),
+        body: z.string(),
+        change: z.object({
+            type: z.string(),
+            add: z.boolean(),
+            ln: z.number(),
+            content: z.string(),
+            relativePosition: z.number(),
+        }),
+        previously: z.string().isOptional(),
+        suggestions: z.string().isOptional(),
+    },
 );
 /**
  * 
