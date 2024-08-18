@@ -48666,6 +48666,7 @@ async function run() {
             apiKey: modelToken
         })
 
+        console.log('calling openAI chat.completions.create')
         const aiResult = await openAI.chat.completions.create({
             model: 'gpt-4o-mini-2024-07-18',
             messages: [
