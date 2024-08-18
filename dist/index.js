@@ -47297,7 +47297,7 @@ async function run() {
             // response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
         })
 
-        console.log(JSON.stringify(JSON.parse(aiResult.choices[0].message.content, null, 2)))
+        console.log(JSON.stringify(JSON.parse(aiResult.choices[0].message.content), null, 2))
 
         if (lib_github.context.payload.pull_request) {
             lib_core.info('Reviewing pull request...');
