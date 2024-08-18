@@ -1,6 +1,7 @@
 import core from '@actions/core';
 import github from '@actions/github';
 import parseDiff from 'parse-diff';
+import OpenAI from 'openai';
 
 /**
  * prompt
@@ -26,7 +27,6 @@ function getCommentsToAdd(parsedDiff) {
                     }
                 }).filter(change => (change.type !== 'normal' && !change.content.includes("No newline at end of file")))
                     .map((change, i, arr) => {
-                        console.log(arr);
                         if (change.type === 'add') {
                             /**
                              * This code checks if the current change is an addition (change.type === 'add') that immediately follows another addition (arr[i - 1].type === 'add') on the next line (change.ln === arr[i - 1].ln + 1). If the previous addition is not a single "+" character (arr[i - 1].content !== "+"), it skips the current change by returning null.
@@ -113,7 +113,82 @@ async function run() {
         const token = core.getInput('repo-token');
         const modelToken = core.getInput('ai-model-api-key');
         const octokit = github.getOctokit(token);
-        
+
+        const openAI = new OpenAI({
+            apiKey: modelToken
+        })
+
+        const aiResult = await openAI.chat.completions.create({
+            model: 'gpt-4o-mini-2024-07-18',
+            messages: [
+                {
+                    role: 'system',
+                    content: 'I want you to act as a code reviewer. I will provide you with a diff payload and I want you to make suggestions on what can be improved by looking at the diff changes. Keep the suggestions precise and to the point (in a constructive way).',
+                },
+                {
+                    role: 'user',
+                    content: `Now what I want you to do is, take this diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements. If you think there are no improvements to be made, don't return **that** object from the payload. Rest, **return everything as it is (in the same order)** along with your suggestions. [
+  {
+    "path": "index.js",
+    "position": 3,
+    "line": 1,
+    "body": "**index.js** added. This is a review comment.",
+    "change": {
+      "type": "add",
+      "add": true,
+      "ln": 1,
+      "content": "+console.log(\"Hey there, World! ----------\");",
+      "relativePosition": 3
+    },
+    "previously": "-console.log(\"Hello, World!\");"
+  },
+  {
+    "path": "index.js",
+    "position": 5,
+    "line": 3,
+    "body": "**index.js** added. This is a review comment.",
+    "change": {
+      "type": "add",
+      "add": true,
+      "ln": 3,
+      "content": "+(() => {",
+      "relativePosition": 5
+    }
+  },
+  {
+    "path": "package.json",
+    "position": 4,
+    "line": 3,
+    "body": "**package.json** added. This is a review comment.",
+    "change": {
+      "type": "add",
+      "add": true,
+      "ln": 3,
+      "content": "+  \"version\": \"1.1.2\",",
+      "relativePosition": 4
+    },
+    "previously": "-  \"version\": \"1.0.0\","
+  },
+  {
+    "path": "package.json",
+    "position": 7,
+    "line": 6,
+    "body": "**package.json** added. This is a review comment.",
+    "change": {
+      "type": "add",
+      "add": true,
+      "ln": 6,
+      "content": "+    \"start\": \"node index.js\",",
+      "relativePosition": 7
+    }
+  }
+]`
+                }
+            ]
+        })
+
+        console.log(aiResult)
+
         if (github.context.payload.pull_request) {
             core.info('Reviewing pull request...');
 
@@ -128,8 +203,8 @@ async function run() {
 
             const parsedDiff = parseDiff(pullRequest.data);
 
-            getCommentsToAdd(parsedDiff).printJSON();
-            await addReviewComments(parsedDiff, octokit);
+            // getCommentsToAdd(parsedDiff).printJSON();
+            // await addReviewComments(parsedDiff, octokit);
         }
     } catch (error) {
         core.error(error);

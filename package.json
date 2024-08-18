@@ -17,6 +17,7 @@
     "@actions/github": "^6.0.0",
     "@vercel/ncc": "^0.38.1",
     "is-ci": "^3.0.1",
+    "openai": "^4.56.0",
     "parse-diff": "^0.11.1"
   },
   "devDependencies": {
