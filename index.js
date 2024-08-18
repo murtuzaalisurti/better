@@ -2,12 +2,33 @@ import core from '@actions/core';
 import github from '@actions/github';
 import parseDiff from 'parse-diff';
 import OpenAI from 'openai';
+import { zodResponseFormat } from 'openai/helpers/zod.mjs';
+import { z } from 'zod';
 
 /**
  * prompt
  * now what I want you to do is, take this diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements. If you think there are no improvements to be made, don't return such object from the payload. Rest, return everything as it is (in the same order) along with your suggestions.
  */
 
+const diffPayloadSchema = z.array(
+    z.object(
+        {
+            path: z.string(),
+            position: z.number(),
+            line: z.number(),
+            body: z.string(),
+            change: z.object({
+                type: z.string(),
+                add: z.boolean(),
+                ln: z.number(),
+                content: z.string(),
+                relativePosition: z.number(),
+            }),
+            previously: z.string().isOptional(),
+            suggestions: z.string().isOptional(),
+        },
+    )
+);
 /**
  * 
  * @param {parseDiff.File[]} parsedDiff 
@@ -184,7 +205,8 @@ async function run() {
   }
 ]`
                 }
-            ]
+            ],
+            response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
         })
 
         console.log(JSON.stringify(aiResult.choices[0].message, null, 2))
