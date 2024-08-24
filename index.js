@@ -113,7 +113,7 @@ function getCommentsToAdd(parsedDiff) {
                 },
                 {
                     role: 'user',
-                    content: `Now what I want you to do is, take this diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements. If you think there are no improvements to be made, don't return **that** object from the payload. Rest, **return everything as it is (in the same order)** along with your suggestions. And, return the response as a json array of objects (not json markdown format). Here's the diff:
+                    content: `Now what I want you to do is, take this diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements. If you think there are no improvements to be made, don't return **that** object from the payload. Rest, **return everything as it is (in the same order)** along with your suggestions. And, return the response as a json array of objects (not json markdown format). NOTE: Only modify/ad the suggestions property (if required). DO NOT modify the value of any other property. Return them as they are in the input. Here's the diff:
                     ${rawComments}`
                 }
             ],
