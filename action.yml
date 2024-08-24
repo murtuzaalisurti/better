@@ -7,6 +7,12 @@ inputs:
   ai-model-api-key:
     description: 'The models api key: { secrets.<YOUR_AI_MODEL_API_KEY> }'
     required: true
+  rules: |- # Rules to consider for code review
+    -- No unused imports
+    -- No unused variables
+    -- The code should be idiomatic
+    -- The code should be readable
+    -- No unnecessary logs
 runs:
   using: 'node20'
   main: 'dist/index.js'
