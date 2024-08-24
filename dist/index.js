@@ -37055,6 +37055,10 @@ __nccwpck_require__.d(error_namespaceObject, {
   "UnprocessableEntityError": () => (UnprocessableEntityError)
 });
 
+;// CONCATENATED MODULE: external "node:zlib"
+const external_node_zlib_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:zlib");
+// EXTERNAL MODULE: external "node:util"
+var external_node_util_ = __nccwpck_require__(7261);
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(2186);
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
@@ -48534,6 +48538,8 @@ function zodFunction(options) {
 
 
 
+
+
 const aDiff = z.object({
     path: z.string(),
     position: z.number(),
@@ -48736,9 +48742,6 @@ async function run() {
             core.info('Generating suggestions...');
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules);
 
-            core.info('Adding review comments...');
-            const review = await addReviewComments(parsedDiff, suggestions, octokit);
-
             const artifacts = await octokit.rest.actions.listArtifactsForRepo({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
@@ -48746,10 +48749,31 @@ async function run() {
 
             console.log(JSON.stringify(artifacts, null, 2))
 
+            const artifactForThisPR = artifacts.data.artifacts.find(artf => artf.name === `code-review-details-${github.context.payload.pull_request.number}`);
+
+            let review = null;
+
+            if (artifactForThisPR) {
+                const artifact = await octokit.rest.actions.downloadArtifact({
+                    artifact_id: artifactForThisPR.id,
+                    owner: github.context.repo.owner,
+                    repo: github.context.repo.repo,
+                    archive_format: 'zip',
+                })
+                // fs.readFileSync()
+                const unzipSync = (0,external_node_util_.promisify)(external_node_zlib_namespaceObject.unzip);
+                const buffer = await unzipSync(Buffer.from(artifact.data));
+                const fileContent = buffer.toString('utf8');
+                console.log(fileContent);
+            } else {
+                core.info('Adding review comments...');
+                review = await addReviewComments(parsedDiff, suggestions, octokit);
+            }
+
             core.info('Setting outputs...');
             const output = {
                 ['code-review-details']: {
-                    review,
+                    review: review ?? null,
                     suggestions,
                     raw: rawComments,
                     pullRequest,

@@ -1,3 +1,5 @@
+import { unzip } from 'node:zlib';
+import { promisify } from 'node:util';
 import core from '@actions/core';
 import github, { context } from '@actions/github';
 import parseDiff from 'parse-diff';
@@ -207,9 +209,6 @@ async function run() {
             core.info('Generating suggestions...');
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules);
 
-            core.info('Adding review comments...');
-            const review = await addReviewComments(parsedDiff, suggestions, octokit);
-
             const artifacts = await octokit.rest.actions.listArtifactsForRepo({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
@@ -217,10 +216,31 @@ async function run() {
 
             console.log(JSON.stringify(artifacts, null, 2))
 
+            const artifactForThisPR = artifacts.data.artifacts.find(artf => artf.name === `code-review-details-${github.context.payload.pull_request.number}`);
+
+            let review = null;
+
+            if (artifactForThisPR) {
+                const artifact = await octokit.rest.actions.downloadArtifact({
+                    artifact_id: artifactForThisPR.id,
+                    owner: github.context.repo.owner,
+                    repo: github.context.repo.repo,
+                    archive_format: 'zip',
+                })
+                // fs.readFileSync()
+                const unzipSync = promisify(unzip);
+                const buffer = await unzipSync(Buffer.from(artifact.data));
+                const fileContent = buffer.toString('utf8');
+                console.log(fileContent);
+            } else {
+                core.info('Adding review comments...');
+                review = await addReviewComments(parsedDiff, suggestions, octokit);
+            }
+
             core.info('Setting outputs...');
             const output = {
                 ['code-review-details']: {
-                    review,
+                    review: review ?? null,
                     suggestions,
                     raw: rawComments,
                     pullRequest,
