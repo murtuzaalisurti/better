@@ -48739,6 +48739,14 @@ async function run() {
             core.info('Adding review comments...');
             const review = await addReviewComments(parsedDiff, suggestions, octokit);
 
+            const artifacts = await octokit.rest.actions.listArtifactsForRepo({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+            });
+
+            console.log(JSON.stringify(artifacts, null, 2))
+
+            core.info('Setting outputs...');
             const output = {
                 ['code-review-details']: {
                     review,
