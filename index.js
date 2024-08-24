@@ -23,8 +23,8 @@ const diffPayloadSchema = z.object(
             content: z.string(),
             relativePosition: z.number(),
         }),
-        previously: z.string().isOptional(),
-        suggestions: z.string().isOptional(),
+        previously: z.string().optional(),
+        suggestions: z.string().optional(),
     },
 );
 /**
