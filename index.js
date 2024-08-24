@@ -160,7 +160,7 @@ async function addReviewComments(parsedDiff, suggestions, octokit) {
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
-        body: `Code Reviewer: @${github.context.actor}`,
+        body: `Code Review`,
         event: 'COMMENT',
         comments: getCommentsToAdd(parsedDiff).comments(suggestions),
     })
@@ -190,7 +190,7 @@ async function run() {
                 }
             });
 
-            core.info(`Reviewing pull request ${pullRequest.data.url}...`);
+            core.info(`Reviewing pull request ${pullRequest.url}...`);
             const parsedDiff = parseDiff(pullRequest.data);
             const rawComments = getCommentsToAdd(parsedDiff).raw();
 
