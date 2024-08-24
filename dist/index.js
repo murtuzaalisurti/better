@@ -48583,11 +48583,11 @@ function getCommentsToAdd(parsedDiff) {
                             /**
                              * This code checks if the current change is an addition (change.type === 'add') that immediately follows another addition (arr[i - 1].type === 'add') on the next line (change.ln === arr[i - 1].ln + 1). If the previous addition is not a single "+" character (arr[i - 1].content !== "+"), it skips the current change by returning null.
                              */
-                            if (arr[i - 1].type === 'add' && change.ln === arr[i - 1].ln + 1 && arr[i - 1].content !== "+") {
-                                // might want to remove this check to be able to feed the data to AI
-                                arr[i - 1].content += change.content;
-                                return null
-                            }
+                            // if (arr[i - 1].type === 'add' && change.ln === arr[i - 1].ln + 1 && arr[i - 1].content !== "+") {
+                            //     // might want to remove this check to be able to feed the data to AI
+                            //     arr[i - 1].content += change.content;
+                            //     return null
+                            // }
 
                             /**
                              * It checks if the current change (change) is an addition that immediately follows a deletion (arr[i - 1].type === 'del') on the same line (change.ln === arr[i - 1].ln).
