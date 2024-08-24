@@ -119,7 +119,62 @@ function getCommentsToAdd(parsedDiff) {
                 {
                     role: 'user',
                     content: `Code review this PR diff payload:
-                    ${rawComments}`
+                    [
+  {
+    "path": "index.js",
+    "position": 3,
+    "line": 1,
+    "body": "**index.js** added. This is a review comment.",
+    "change": {
+      "type": "add",
+      "add": true,
+      "ln": 1,
+      "content": "+console.log(\"Hey there, World! ----------\");",
+      "relativePosition": 3
+    },
+    "previously": "-console.log(\"Hello, World!\");"
+  },
+  {
+    "path": "index.js",
+    "position": 5,
+    "line": 3,
+    "body": "**index.js** added. This is a review comment.",
+    "change": {
+      "type": "add",
+      "add": true,
+      "ln": 3,
+      "content": "+(() => {",
+      "relativePosition": 5
+    }
+  },
+  {
+    "path": "package.json",
+    "position": 4,
+    "line": 3,
+    "body": "**package.json** added. This is a review comment.",
+    "change": {
+      "type": "add",
+      "add": true,
+      "ln": 3,
+      "content": "+  \"version\": \"1.1.2\",",
+      "relativePosition": 4
+    },
+    "previously": "-  \"version\": \"1.0.0\","
+  },
+  {
+    "path": "package.json",
+    "position": 7,
+    "line": 6,
+    "body": "**package.json** added. This is a review comment.",
+    "change": {
+      "type": "add",
+      "add": true,
+      "ln": 6,
+      "content": "+    \"start\": \"node index.js\",",
+      "relativePosition": 7
+    }
+  }
+]`
                 }
             ],
             response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
