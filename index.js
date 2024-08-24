@@ -169,7 +169,11 @@ async function addReviewComments(parsedDiff, suggestions, octokit) {
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
     })
-    console.log(JSON.stringify(reviewComments.data, null, 2))
+    const artifacts = await octokit.rest.actions.listArtifactsForRepo({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+    })
+    console.log(JSON.stringify(artifacts, null, 2))
     await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
