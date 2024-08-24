@@ -121,11 +121,12 @@ function getCommentsToAdd(parsedDiff) {
                     - DO NOT modify the value of any other property. Return them as they are in the input.
                     - Keep the suggestions precise and to the point (in a constructive way).
                     - Suggestions should be inclusive of the rules (if any) provided by the user.
+                    - Rules are not exhaustive, so use you own judgement as well.
                     - Rules start with and are separated by --`,
                 },
                 {
                     role: 'user',
-                    content: `Code review the following PR diff payload${rules ? ` by considering the following rules: ${rules}` : ''}. Here's the diff payload:
+                    content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ''}. Here's the diff payload:
                     ${JSON.stringify(rawComments, null, 2)}`
                 }
             ],
