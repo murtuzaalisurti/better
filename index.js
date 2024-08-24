@@ -12,20 +12,24 @@ import { z } from 'zod';
 
 const diffPayloadSchema = z.object(
     {
-        path: z.string(),
-        position: z.number(),
-        line: z.number(),
-        body: z.string(),
-        change: z.object({
-            type: z.string(),
-            add: z.boolean(),
-            ln: z.number(),
-            content: z.string(),
-            relativePosition: z.number(),
-        }),
-        previously: z.string().optional(),
-        suggestions: z.string().optional(),
-    },
+        commentsToAdd: z.array(
+            z.object({
+                path: z.string(),
+                position: z.number(),
+                line: z.number(),
+                body: z.string(),
+                change: z.object({
+                    type: z.string(),
+                    add: z.boolean(),
+                    ln: z.number(),
+                    content: z.string(),
+                    relativePosition: z.number(),
+                }),
+                previously: z.string().optional(),
+                suggestions: z.string().optional(),
+            })
+        )
+    }
 );
 /**
  * 
