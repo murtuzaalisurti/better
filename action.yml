@@ -12,8 +12,8 @@ inputs:
 outputs:
   code-review-details:
     description: 'Code review details'
-  review-id:
-    description: 'Review id'
+  pr-id:
+    description: 'Pull request id'
 runs:
   using: 'node20'
   main: 'dist/index.js'

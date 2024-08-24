@@ -217,11 +217,12 @@ async function run() {
                     raw: rawComments,
                     pullRequest,
                     context: github.context
-                }
+                },
+                ['pr-id']: github.context.payload.pull_request.number
             }
 
             core.setOutput('code-review-details', output['code-review-details']);
-            core.setOutput('review-id', output['code-review-details'].review.data.id);
+            core.setOutput('pr-id', output['pr-id']);
 
             core.info('Code review complete!');
         } else {
