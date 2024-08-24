@@ -173,10 +173,11 @@ async function addReviewComments(parsedDiff, suggestions, octokit) {
         comments: getCommentsToAdd(parsedDiff).comments(suggestions),
     })
 }
+
 async function run() {
     try {
         core.info('Retrieving tokens and inputs...');
-        
+
         const rules = core.getInput('rules');
         const token = core.getInput('repo-token');
         const modelToken = core.getInput('ai-model-api-key');
