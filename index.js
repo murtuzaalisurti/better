@@ -160,26 +160,27 @@ async function addReviewComments(parsedDiff, suggestions, octokit) {
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
-        body: `Code Review by better`,
+        body: `Code Reviewer: @${github.context.actor}`,
         event: 'COMMENT',
         comments: getCommentsToAdd(parsedDiff).comments(suggestions),
     })
 }
 async function run() {
     try {
+        core.info('Retrieving tokens...');
+
         const token = core.getInput('repo-token');
         const modelToken = core.getInput('ai-model-api-key');
         const octokit = github.getOctokit(token);
+
+        core.info('Initializing AI model...');
 
         const openAI = new OpenAI({
             apiKey: modelToken
         })
 
-        console.log('calling openAI chat.completions.create')
-
         if (github.context.payload.pull_request) {
-            core.info('Reviewing pull request...');
-
+            core.info('Fetching pull request details...');
             const pullRequest = await octokit.rest.pulls.get({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
@@ -187,14 +188,21 @@ async function run() {
                 headers: {
                     accept: 'application/vnd.github.diff',
                 }
-            })
+            });
 
+            core.info(`Reviewing pull request ${pullRequest.data.url}...`);
             const parsedDiff = parseDiff(pullRequest.data);
-
             const rawComments = getCommentsToAdd(parsedDiff).raw();
+
+            core.info('Generating suggestions...');
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI);
-            console.log(JSON.stringify(suggestions, null, 2));
+
+            core.info('Adding review comments...');
             await addReviewComments(parsedDiff, suggestions, octokit);
+
+            core.info('Code review complete!');
+        } else {
+            core.warning('Not a pull request, skipping...');
         }
     } catch (error) {
         core.error(error);
