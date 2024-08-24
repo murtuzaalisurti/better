@@ -48638,11 +48638,16 @@ function getCommentsToAdd(parsedDiff) {
             messages: [
                 {
                     role: 'system',
-                    content: 'I want you to act as a code reviewer. I will provide you with a diff payload and I want you to make suggestions on what can be improved by looking at the diff changes. Keep the suggestions precise and to the point (in a constructive way).',
+                    content: `I want you to act as a code reviewer.
+                    I will provide you with a diff payload and I want you to make suggestions on what can be improved by looking at the diff changes.
+                    Take the user input diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements.
+                    If you think there are no improvements to be made, don't return **that** object from the payload.
+                    Rest, **return everything as it is (in the same order)** along with your suggestions.
+                    NOTE: Only modify/ad the suggestions property (if required). DO NOT modify the value of any other property. Return them as they are in the input. Keep the suggestions precise and to the point (in a constructive way).`,
                 },
                 {
                     role: 'user',
-                    content: `Now what I want you to do is, take this diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements. If you think there are no improvements to be made, don't return **that** object from the payload. Rest, **return everything as it is (in the same order)** along with your suggestions. And, return the response as a json array of objects (not json markdown format). NOTE: Only modify/ad the suggestions property (if required). DO NOT modify the value of any other property. Return them as they are in the input. Here's the diff:
+                    content: `Code review this PR diff payload:
                     ${rawComments}`
                 }
             ],
