@@ -48631,9 +48631,10 @@ function getCommentsToAdd(parsedDiff) {
     /**
      * @typedef
      * @param {rawCommentsPayload} rawComments
-     * @param {OpenAI} openAI 
+     * @param {OpenAI} openAI
+     * @param {string} rules
      */
-    const getSuggestions = async (rawComments, openAI) => {
+    const getSuggestions = async (rawComments, openAI, rules) => {
         const result = await openAI.beta.chat.completions.parse({
             model: 'gpt-4o-mini-2024-07-18',
             messages: [
@@ -48653,7 +48654,7 @@ function getCommentsToAdd(parsedDiff) {
                 },
                 {
                     role: 'user',
-                    content: `Code review this PR diff payload:
+                    content: `Code review the following PR diff payload${rules ? ` by considering the following rules: ${rules}` : ''}. Here's the diff payload:
                     ${JSON.stringify(rawComments, null, 2)}`
                 }
             ],
@@ -48701,10 +48702,9 @@ async function addReviewComments(parsedDiff, suggestions, octokit) {
 }
 async function run() {
     try {
+        core.info('Retrieving tokens and inputs...');
+        
         const rules = core.getInput('rules');
-        console.log(rules);
-        core.info('Retrieving tokens...');
-
         const token = core.getInput('repo-token');
         const modelToken = core.getInput('ai-model-api-key');
         const octokit = github.getOctokit(token);
@@ -48731,7 +48731,7 @@ async function run() {
             const rawComments = getCommentsToAdd(parsedDiff).raw();
 
             core.info('Generating suggestions...');
-            const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI);
+            const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules);
 
             core.info('Adding review comments...');
             await addReviewComments(parsedDiff, suggestions, octokit);
