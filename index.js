@@ -261,7 +261,7 @@ async function run() {
 
             const parsedDiff = parseDiff(pullRequest.data);
 
-            const rawComments = getCommentsToAdd(parsedDiff).raw;
+            const rawComments = getCommentsToAdd(parsedDiff).raw();
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI);
             console.log(JSON.stringify(suggestions, null, 2));
             await addReviewComments(parsedDiff, suggestions, octokit);
