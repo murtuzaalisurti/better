@@ -164,6 +164,12 @@ function getCommentsToAdd(parsedDiff) {
  * @param {InstanceType<GitHub>} octokit
  */
 async function addReviewComments(parsedDiff, suggestions, octokit) {
+    const reviewComments = await octokit.rest.pulls.listReviewComments({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        pull_number: github.context.payload.pull_request.number,
+    })
+    console.log(JSON.stringify(reviewComments.data, null, 2))
     await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
