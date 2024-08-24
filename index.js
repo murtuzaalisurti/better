@@ -109,8 +109,8 @@ function getCommentsToAdd(parsedDiff) {
             messages: [
                 {
                     role: 'system',
-                    content: `I want you to act as a code reviewer.
-                    I will provide you with a diff payload and I want you to make suggestions on what can be improved by looking at the diff changes.
+                    content: `You are a code reviewer.
+                    The user will provide you with a diff payload and you have to make suggestions on what can be improved by looking at the diff changes.
                     Take the user input diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements.
                     If you think there are no improvements to be made, don't return **that** object from the payload.
                     Rest, **return everything as it is (in the same order)** along with your suggestions.
