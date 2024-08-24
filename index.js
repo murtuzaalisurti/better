@@ -1,5 +1,5 @@
 import core from '@actions/core';
-import github from '@actions/github';
+import github, { context } from '@actions/github';
 import parseDiff from 'parse-diff';
 import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
@@ -164,7 +164,7 @@ function getCommentsToAdd(parsedDiff) {
  * @param {InstanceType<GitHub>} octokit
  */
 async function addReviewComments(parsedDiff, suggestions, octokit) {
-    await octokit.rest.pulls.createReview({
+    return await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
@@ -208,7 +208,19 @@ async function run() {
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules);
 
             core.info('Adding review comments...');
-            await addReviewComments(parsedDiff, suggestions, octokit);
+            const review = await addReviewComments(parsedDiff, suggestions, octokit);
+
+            const output = {
+                ['code-review-details']: {
+                    review,
+                    suggestions,
+                    raw: rawComments,
+                    pullRequest,
+                    context: github.context
+                }
+            }
+
+            core.setOutput('code-review-details', output['code-review-details']);
 
             core.info('Code review complete!');
         } else {

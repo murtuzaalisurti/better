@@ -9,6 +9,9 @@ inputs:
     required: true
   rules:
     description: 'The rules to consider for code review'
+outputs:
+  code-review-details:
+    description: 'Code review details'
 runs:
   using: 'node20'
   main: 'dist/index.js'
