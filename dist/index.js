@@ -48643,6 +48643,7 @@ function getCommentsToAdd(parsedDiff) {
                     content: `You are a code reviewer.
                     The user will provide you with a diff payload and some rules (they are separated by --), and you have to make suggestions on what can be improved by looking at the diff changes.
                     Take the user input diff payload and analyze the changes from the "content" property (ignore the first "+" or "-" character at the start of the string because that's just a diff character) of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
+                    If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added part.
                     If you think there are no improvements to be made, don't return **that** object from the payload.
                     Rest, **return everything as it is (in the same order)** along with your suggestions.
                     NOTE: 
