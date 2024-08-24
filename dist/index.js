@@ -48634,7 +48634,7 @@ function getCommentsToAdd(parsedDiff) {
      */
     const getSuggestions = async (rawComments, openAI) => {
         const result = await openAI.beta.chat.completions.parse({
-            model: 'gpt-4o-mini-2024-07-18',
+            model: 'gpt-4o-2024-08-06',
             messages: [
                 {
                     role: 'system',
