@@ -36,7 +36,7 @@ const diffPayloadSchema = z.object(
  * @param {parseDiff.File[]} parsedDiff 
  */
 function getCommentsToAdd(parsedDiff) {
-    const comments = parsedDiff.reduce((acc, file) => {
+    const comments = () => parsedDiff.reduce((acc, file) => {
         let diffRelativePosition = 0;
         return acc.concat(file.chunks.reduce((accc, chunk, i) => {
             if (i !== 0) {
@@ -107,7 +107,7 @@ function getCommentsToAdd(parsedDiff) {
                     role: 'system',
                     content: `You are a code reviewer.
                     The user will provide you with a diff payload and you have to make suggestions on what can be improved by looking at the diff changes.
-                    Take the user input diff payload and analyze the changes from the "content" property of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
+                    Take the user input diff payload and analyze the changes from the "content" property (ignore the first "+" or "-" character at the start of the string because that's just a diff character) of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
                     If you think there are no improvements to be made, don't return **that** object from the payload.
                     Rest, **return everything as it is (in the same order)** along with your suggestions.
                     NOTE: Only modify/add the suggestions property (if required). DO NOT modify the value of any other property. Return them as they are in the input. Keep the suggestions precise and to the point (in a constructive way).`,
@@ -125,37 +125,44 @@ function getCommentsToAdd(parsedDiff) {
     }
 
     function printJSON() {
-        core.info(JSON.stringify(comments, null, 2))
+        core.info(JSON.stringify(comments(), null, 2))
     }
 
     return {
         raw: comments,
         getSuggestions,
-        comments: comments.map(i => {
+        printJSON,
+        /**
+         * @param {diffPayloadSchema} suggestions
+         * @returns {{ path: string, line: number, body: string }[]}
+         */
+        comments: (suggestions) => suggestions.commentsToAdd.filter(i => {
+            return i["suggestions"]
+        }).map(i => {
             return {
                 path: i.path,
                 // position: i.position,
                 line: i.line,
-                body: i.body
+                body: i.suggestions
             }
         }),
-        printJSON
     }
 }
 
 /**
  * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
- * @param {parseDiff.File[]} parsedDiff 
+ * @param {parseDiff.File[]} parsedDiff
+ * @param {diffPayloadSchema} suggestions
  * @param {InstanceType<GitHub>} octokit
  */
-async function addReviewComments(parsedDiff, octokit) {
+async function addReviewComments(parsedDiff, suggestions, octokit) {
     await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
         body: `Code Review by better`,
         event: 'COMMENT',
-        comments: getCommentsToAdd(parsedDiff).comments
+        comments: getCommentsToAdd(parsedDiff).comments(suggestions),
     })
 }
 async function run() {
@@ -240,8 +247,6 @@ async function run() {
 //             response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
 //         })
 
-        // console.log(JSON.stringify(JSON.parse(aiResult.choices[0].message.content), null, 2))
-
         if (github.context.payload.pull_request) {
             core.info('Reviewing pull request...');
 
@@ -257,10 +262,9 @@ async function run() {
             const parsedDiff = parseDiff(pullRequest.data);
 
             const rawComments = getCommentsToAdd(parsedDiff).raw;
-            // console.log(JSON.stringify(rawComments, null, 2));
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI);
             console.log(JSON.stringify(suggestions, null, 2));
-            // await addReviewComments(parsedDiff, octokit);
+            await addReviewComments(parsedDiff, suggestions, octokit);
         }
     } catch (error) {
         core.error(error);
