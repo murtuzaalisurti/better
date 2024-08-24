@@ -112,10 +112,10 @@ function getCommentsToAdd(parsedDiff) {
                     role: 'system',
                     content: `You are a code reviewer.
                     The user will provide you with a diff payload and you have to make suggestions on what can be improved by looking at the diff changes.
-                    Take the user input diff payload and analyze the changes from the "content" and "previously" properties of the payload and suggest some improvements.
+                    Take the user input diff payload and analyze the changes from the "content" property of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
                     If you think there are no improvements to be made, don't return **that** object from the payload.
                     Rest, **return everything as it is (in the same order)** along with your suggestions.
-                    NOTE: Only modify/ad the suggestions property (if required). DO NOT modify the value of any other property. Return them as they are in the input. Keep the suggestions precise and to the point (in a constructive way).`,
+                    NOTE: Only modify/add the suggestions property (if required). DO NOT modify the value of any other property. Return them as they are in the input. Keep the suggestions precise and to the point (in a constructive way).`,
                 },
                 {
                     role: 'user',
