@@ -104,6 +104,7 @@ function getCommentsToAdd(parsedDiff) {
      * @param {OpenAI} openAI 
      */
     const getSuggestions = async (rawComments, openAI) => {
+        console.log(JSON.stringify(rawComments, null, 2))
         const result = await openAI.beta.chat.completions.parse({
             model: 'gpt-4o-2024-08-06',
             messages: [
@@ -316,7 +317,7 @@ async function run() {
             const parsedDiff = parseDiff(pullRequest.data);
 
             const rawComments = getCommentsToAdd(parsedDiff).raw;
-            console.log(JSON.stringify(rawComments, null, 2));
+            // console.log(JSON.stringify(rawComments, null, 2));
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI);
             console.log(JSON.stringify(suggestions, null, 2));
             // await addReviewComments(parsedDiff, octokit);
