@@ -233,11 +233,17 @@ async function run() {
                         redirect: 'manual'
                     }
                 })
-                console.log(artifact.headers, artifact.status, artifact.url, artifact.data);
-                const artifactBuffer = artifact.data;
+
+                const file = await fetch(artifact.url, {
+                    headers: {
+                        Authorization: `token ${token}`
+                    }
+                });
+                console.log(artifact.headers, artifact.status, artifact.url, file.headers, file.status);
+                const artifactBuffer = await file.arrayBuffer();
                 const unzipSync = promisify(unzip);
                 const buffer = await unzipSync(Buffer.from(artifactBuffer));
-                console.log(artifactBuffer);
+                // console.log(artifactBuffer);
                 const fileContent = buffer.toString('utf8');
                 console.log(fileContent);
             } else {
