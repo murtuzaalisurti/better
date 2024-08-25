@@ -7,6 +7,9 @@ inputs:
   ai-model-api-key:
     description: 'The models api key: { secrets.<YOUR_AI_MODEL_API_KEY> }'
     required: true
+  delete-existing-review-by-bot:
+    description: 'Delete existing review(s) by bot'
+    default: true
   rules:
     description: 'The rules to consider for code review'
 runs:

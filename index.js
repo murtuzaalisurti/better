@@ -174,10 +174,61 @@ async function addReviewComments(parsedDiff, suggestions, octokit) {
     })
 }
 
+/**
+ * @param {InstanceType<GitHub>} octokit 
+ */
+async function getPullRequestDetails(octokit) {
+    return await octokit.rest.pulls.get({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        pull_number: github.context.payload.pull_request.number,
+        headers: {
+            accept: 'application/vnd.github.diff',
+        }
+    });
+}
+
+/**
+ * @param {InstanceType<GitHub>} octokit 
+ */
+async function getAllReviewsForPullRequest(octokit) {
+    return await octokit.rest.pulls.listReviews({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        pull_number: github.context.payload.pull_request.number,
+    })
+}
+
+/**
+ * @param {InstanceType<GitHub>} octokit 
+ * @param {number} review_id
+ */
+async function getAllCommentsUnderAReview(octokit, review_id) {
+    return await octokit.rest.pulls.listCommentsForReview({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        pull_number: github.context.payload.pull_request.number,
+        review_id,
+    });
+}
+
+/**
+ * @param {InstanceType<GitHub>} octokit 
+ * @param {number} comment_id 
+ */
+async function deleteComment(octokit, comment_id) {
+    await octokit.rest.pulls.deleteReviewComment({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        comment_id,
+    })
+}
+
 async function run() {
     try {
         core.info('Retrieving tokens and inputs...');
 
+        const deleteExistingReviews = core.getInput('delete-existing-review-by-bot');
         const rules = core.getInput('rules');
         const token = core.getInput('repo-token');
         const modelToken = core.getInput('ai-model-api-key');
@@ -191,51 +242,34 @@ async function run() {
 
         if (github.context.payload.pull_request) {
             core.info('Fetching pull request details...');
-            const pullRequest = await octokit.rest.pulls.get({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                pull_number: github.context.payload.pull_request.number,
-                headers: {
-                    accept: 'application/vnd.github.diff',
-                }
-            });
+            const pullRequest = await getPullRequestDetails(octokit);
 
-            const reviews = await octokit.rest.pulls.listReviews({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                pull_number: github.context.payload.pull_request.number,
-            })
+            if (Boolean(deleteExistingReviews)) {
+                core.info('Preparing to delete existing comments...');
 
-            const reviewsByBot = reviews.data.filter(r => r.user.login === 'github-actions[bot]' || r.user.type === 'Bot')
-            console.log(JSON.stringify(reviewsByBot, null, 2))
+                if (reviewsByBot.length > 0) {
+                    core.info('Fetching pull request reviews...');
+                    const reviews = await getAllReviewsForPullRequest(octokit);
 
-            if (reviewsByBot.length > 0) {
-                core.warning('PR already reviewed, skipping...');
+                    core.info(`Fetching reviews by bot...`);
+                    const reviewsByBot = reviews.data.filter(r => r.user.login === 'github-actions[bot]' || r.user.type === 'Bot')
 
-                core.warning('Deleting existing comments...');
+                    core.info(`Found ${reviewsByBot.length} reviews by bot...`);
+                    core.warning('Deleting existing comments for all reviews by bot...');
 
-                for (const review of reviewsByBot) {
-                    const reviewComments = await octokit.rest.pulls.listCommentsForReview({
-                        owner: github.context.repo.owner,
-                        repo: github.context.repo.repo,
-                        pull_number: github.context.payload.pull_request.number,
-                        review_id: review.id, 
-                    })
-    
-                    console.log(JSON.stringify(reviewComments, null, 2))
-    
-                    for (const comment of reviewComments.data) {
-                        await octokit.rest.pulls.deleteReviewComment({
-                            owner: github.context.repo.owner,
-                            repo: github.context.repo.repo,
-                            comment_id: comment.id,
-                        })
-                        await new Promise(resolve => setTimeout(resolve, 1500)) // Wait 1.5 seconds
+                    for (const review of reviewsByBot) {
+                        const reviewComments = await getAllCommentsUnderAReview(octokit, review.id);
+
+                        for (const comment of reviewComments.data) {
+                            await deleteComment(octokit, comment.id);
+                            await new Promise(resolve => setTimeout(resolve, 1500)) // Wait 1.5 seconds before deleting next comment to avoid rate limiting
+                        }
                     }
+                } else {
+                    core.info('No reviews by bot found. Skipping deleting existing comments for all reviews by bot...');
                 }
-
-
-                // return;
+            } else {
+                core.info('Skipping deleting existing comments for all reviews by bot...');
             }
 
             core.info(`Reviewing pull request ${pullRequest.url}...`);
