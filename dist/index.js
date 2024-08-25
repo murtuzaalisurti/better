@@ -48771,7 +48771,7 @@ async function run() {
                     headers: {
                         Authorization: `token ${token}`
                     },
-                    redirect: 'manual'
+                    redirect: 'follow'
                 });
                 // console.log(artifact.headers, artifact.status, artifact.url, file.headers, file.status);
                 const artifactBuffer = await (await file.blob()).arrayBuffer();
