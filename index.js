@@ -247,13 +247,13 @@ async function run() {
             if (Boolean(deleteExistingReviews)) {
                 core.info('Preparing to delete existing comments...');
 
+                core.info('Fetching pull request reviews...');
+                const reviews = await getAllReviewsForPullRequest(octokit);
+
+                core.info(`Fetching reviews by bot...`);
+                const reviewsByBot = reviews.data.filter(r => r.user.login === 'github-actions[bot]' || r.user.type === 'Bot')
+
                 if (reviewsByBot.length > 0) {
-                    core.info('Fetching pull request reviews...');
-                    const reviews = await getAllReviewsForPullRequest(octokit);
-
-                    core.info(`Fetching reviews by bot...`);
-                    const reviewsByBot = reviews.data.filter(r => r.user.login === 'github-actions[bot]' || r.user.type === 'Bot')
-
                     core.info(`Found ${reviewsByBot.length} reviews by bot...`);
                     core.warning('Deleting existing comments for all reviews by bot...');
 
