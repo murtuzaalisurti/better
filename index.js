@@ -230,7 +230,7 @@ async function run() {
                         'X-GitHub-Api-Version': '2022-11-28'
                     }
                 })
-                // console.log(artifact.headers, artifact.status, artifact.url, artifact.data);
+                console.log(artifact.headers, artifact.status, artifact.url, artifact.data);
                 const artifactBuffer = artifact.data;
                 const unzipSync = promisify(unzip);
                 const buffer = await unzipSync(Buffer.from(artifactBuffer));

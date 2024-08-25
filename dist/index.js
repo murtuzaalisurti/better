@@ -48763,7 +48763,7 @@ async function run() {
                         'X-GitHub-Api-Version': '2022-11-28'
                     }
                 })
-                // console.log(artifact.headers, artifact.status, artifact.url, artifact.data);
+                console.log(artifact.headers, artifact.status, artifact.url, artifact.data);
                 const artifactBuffer = artifact.data;
                 const unzipSync = (0,external_node_util_.promisify)(external_node_zlib_namespaceObject.unzip);
                 const buffer = await unzipSync(Buffer.from(artifactBuffer));
