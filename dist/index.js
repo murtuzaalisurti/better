@@ -48761,6 +48761,9 @@ async function run() {
                     archive_format: 'zip',
                     headers: {
                         'X-GitHub-Api-Version': '2022-11-28'
+                    },
+                    request: {
+                        redirect: 'manual'
                     }
                 })
                 console.log(artifact.headers, artifact.status, artifact.url, artifact.data);
