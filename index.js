@@ -239,7 +239,7 @@ async function run() {
                         Authorization: `token ${token}`
                     }
                 });
-                console.log(artifact.headers, artifact.status, artifact.url, file.headers, file.status);
+                console.log(artifact.headers, artifact.status, artifact.url, file.headers, file.status, await file.blob());
                 const artifactBuffer = await file.arrayBuffer();
                 const unzipSync = promisify(unzip);
                 const buffer = await unzipSync(Buffer.from(artifactBuffer));

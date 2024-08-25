@@ -48772,7 +48772,7 @@ async function run() {
                         Authorization: `token ${token}`
                     }
                 });
-                console.log(artifact.headers, artifact.status, artifact.url, file.headers, file.status);
+                console.log(artifact.headers, artifact.status, artifact.url, file.headers, file.status, await file.blob());
                 const artifactBuffer = await file.arrayBuffer();
                 const unzipSync = (0,external_node_util_.promisify)(external_node_zlib_namespaceObject.unzip);
                 const buffer = await unzipSync(Buffer.from(artifactBuffer));
