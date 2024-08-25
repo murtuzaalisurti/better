@@ -227,9 +227,12 @@ async function run() {
                     repo: github.context.repo.repo,
                     archive_format: 'zip',
                 })
+
+                const artifactResponse = await fetch(artifact.headers.location);
+                const artifactBuffer = await artifactResponse.arrayBuffer();
                 // fs.readFileSync()
                 const unzipSync = promisify(unzip);
-                const buffer = await unzipSync(Buffer.from(artifact.data));
+                const buffer = await unzipSync(Buffer.from(artifactBuffer));
                 const fileContent = buffer.toString('utf8');
                 console.log(fileContent);
             } else {

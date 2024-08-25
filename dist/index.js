@@ -37071,7 +37071,7 @@ const VERSION = '4.56.0'; // x-release-please-version
 ;// CONCATENATED MODULE: ./node_modules/openai/_shims/registry.mjs
 let auto = false;
 let kind = undefined;
-let fetch = undefined;
+let registry_fetch = undefined;
 let Request = (/* unused pure expression or super */ null && (undefined));
 let Response = (/* unused pure expression or super */ null && (undefined));
 let Headers = (/* unused pure expression or super */ null && (undefined));
@@ -37092,7 +37092,7 @@ function setShims(shims, options = { auto: false }) {
     }
     auto = options.auto;
     kind = shims.kind;
-    fetch = shims.fetch;
+    registry_fetch = shims.fetch;
     Request = shims.Request;
     Response = shims.Response;
     Headers = shims.Headers;
@@ -38269,7 +38269,7 @@ class APIClient {
         this.maxRetries = validatePositiveInteger('maxRetries', maxRetries);
         this.timeout = validatePositiveInteger('timeout', timeout);
         this.httpAgent = httpAgent;
-        this.fetch = overridenFetch ?? fetch;
+        this.fetch = overridenFetch ?? registry_fetch;
     }
     authHeaders(opts) {
         return {};
@@ -48760,9 +48760,12 @@ async function run() {
                     repo: github.context.repo.repo,
                     archive_format: 'zip',
                 })
+
+                const artifactResponse = await fetch(artifact.headers.location);
+                const artifactBuffer = await artifactResponse.arrayBuffer();
                 // fs.readFileSync()
                 const unzipSync = (0,external_node_util_.promisify)(external_node_zlib_namespaceObject.unzip);
-                const buffer = await unzipSync(Buffer.from(artifact.data));
+                const buffer = await unzipSync(Buffer.from(artifactBuffer));
                 const fileContent = buffer.toString('utf8');
                 console.log(fileContent);
             } else {
