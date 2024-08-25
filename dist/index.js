@@ -48766,7 +48766,8 @@ async function run() {
                     headers: {
                         ...artifact.headers,
                         Authorization: `token ${token}`,
-                    }
+                    },
+                    redirect: 'follow'
                 });
                 console.log(artifactResponse.headers, artifactResponse.status);
                 const artifactBuffer = await artifactResponse.arrayBuffer();
