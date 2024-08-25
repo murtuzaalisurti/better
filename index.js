@@ -205,10 +205,21 @@ async function run() {
                 repo: github.context.repo.repo,
                 pull_number: github.context.payload.pull_request.number,
             })
-            console.log(JSON.stringify(reviews.data, null, 2))
 
-            if (reviews.data.length > 0) {
+            const reviewsByBot = reviews.data.filter(r => r.user.login === 'github-actions[bot]' || r.user.type === 'Bot')
+            console.log(JSON.stringify(reviewsByBot, null, 2))
+
+            if (reviewsByBot.length > 0) {
                 core.warning('PR already reviewed, skipping...');
+
+                const reviewComments = await octokit.rest.pulls.listCommentsForReview({
+                    owner: github.context.repo.owner,
+                    repo: github.context.repo.repo,
+                    pull_number: github.context.payload.pull_request.number,
+                    review_id: reviewsByBot[0].id, 
+                })
+
+                console.log(JSON.stringify(reviewComments, null, 2))
                 return;
             }
 
