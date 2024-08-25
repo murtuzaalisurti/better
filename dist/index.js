@@ -48749,7 +48749,7 @@ async function run() {
                 })
 
                 console.log(JSON.stringify(reviewComments, null, 2))
-                return;
+                // return;
             }
 
             core.info(`Reviewing pull request ${pullRequest.url}...`);
