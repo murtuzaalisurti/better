@@ -122,6 +122,7 @@ function getCommentsToAdd(parsedDiff) {
                     - DO NOT modify the value of any other property. Return them as they are in the input.
                     - Keep the suggestions precise and to the point (in a constructive way).
                     - Suggestions should be inclusive of the rules (if any) provided by the user.
+                    - If there are no suggestions, please don't spam with "No suggestions".
                     - Rules are not exhaustive, so use you own judgement as well.
                     - Rules start with and are separated by --`,
                 },
