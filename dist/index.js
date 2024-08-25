@@ -48748,16 +48748,17 @@ async function run() {
                     review_id: reviewsByBot[0].id, 
                 })
 
-                await octokit.rest.pulls.dismissReview({
-                    owner: github.context.repo.owner,
-                    repo: github.context.repo.repo,
-                    pull_number: github.context.payload.pull_request.number,
-                    review_id: reviewsByBot[0].id,
-                    message: "Outdated",
-                    event: "DISMISS"
-                })
-
                 console.log(JSON.stringify(reviewComments, null, 2))
+
+                for (const comment of reviewComments.data) {
+                    await octokit.rest.pulls.deleteReviewComment({
+                        owner: github.context.repo.owner,
+                        repo: github.context.repo.repo,
+                        comment_id: comment.id,
+                    })
+                    await new Promise(resolve => setTimeout(resolve, 1500)) // Wait 1.5 seconds
+                }
+
                 // return;
             }
 
