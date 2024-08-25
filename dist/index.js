@@ -48755,14 +48755,14 @@ async function run() {
 
             if (artifactForThisPR) {
                 const artifact = await octokit.request('GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}', {
-                    owner: 'OWNER',
-                    repo: 'REPO',
-                    artifact_id: 'ARTIFACT_ID',
-                    archive_format: 'ARCHIVE_FORMAT',
+                    owner: github.context.repo.owner,
+                    repo: github.context.repo.repo,
+                    artifact_id: artifactForThisPR.id,
+                    archive_format: 'zip',
                     headers: {
-                      'X-GitHub-Api-Version': '2022-11-28'
+                        'X-GitHub-Api-Version': '2022-11-28'
                     }
-                  })
+                })
 
                 // const requestToken = await octokit.auth();
                 // const artifactResponse = await fetch(artifact.url, {
