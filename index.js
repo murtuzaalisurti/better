@@ -230,17 +230,8 @@ async function run() {
                         'X-GitHub-Api-Version': '2022-11-28'
                     }
                 })
-
-                // const requestToken = await octokit.auth();
-                // const artifactResponse = await fetch(artifact.url, {
-                //     headers: {
-                //         ...artifact.headers,
-                //         Authorization: `token ${token}`,
-                //     },
-                //     redirect: 'follow'
-                // });
-                console.log(artifact.headers, artifact.status, artifact.url, artifact.data);
-                const artifactBuffer = await artifactResponse.arrayBuffer();
+                // console.log(artifact.headers, artifact.status, artifact.url, artifact.data);
+                const artifactBuffer = artifact.data;
                 // fs.readFileSync()
                 const unzipSync = promisify(unzip);
                 const buffer = await unzipSync(Buffer.from(artifactBuffer));
