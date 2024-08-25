@@ -221,26 +221,26 @@ async function run() {
             let review = null;
 
             if (artifactForThisPR) {
-                // const artifact = await octokit.rest.actions.downloadArtifact({
-                //     artifact_id: artifactForThisPR.id,
-                //     owner: github.context.repo.owner,
-                //     repo: github.context.repo.repo,
-                //     archive_format: 'zip',
-                // })
-
-                const artifact = await octokit.request('GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}', {
+                const artifact = await octokit.rest.actions.downloadArtifact({
+                    artifact_id: artifactForThisPR.id,
                     owner: github.context.repo.owner,
                     repo: github.context.repo.repo,
-                    artifact_id: artifactForThisPR.id,
                     archive_format: 'zip',
+                })
+
+                // const requestToken = await octokit.auth();
+                const artifactResponse = await fetch(artifact.url, {
+                    headers: {
+                        Authorization: `token ${token}`,
+                    }
                 });
-                console.log(JSON.stringify(artifact, null, 2));
-                // const artifactBuffer = await artifactResponse.arrayBuffer();
+                console.log(JSON.stringify(artifactResponse, null, 2));
+                const artifactBuffer = await artifactResponse.arrayBuffer();
                 // fs.readFileSync()
-                // const unzipSync = promisify(unzip);
-                // const buffer = await unzipSync(Buffer.from(artifactBuffer));
-                // const fileContent = buffer.toString('utf8');
-                // console.log(fileContent);
+                const unzipSync = promisify(unzip);
+                const buffer = await unzipSync(Buffer.from(artifactBuffer));
+                const fileContent = buffer.toString('utf8');
+                console.log(fileContent);
             } else {
                 core.info('Adding review comments...');
                 review = await addReviewComments(parsedDiff, suggestions, octokit);

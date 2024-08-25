@@ -37071,7 +37071,7 @@ const VERSION = '4.56.0'; // x-release-please-version
 ;// CONCATENATED MODULE: ./node_modules/openai/_shims/registry.mjs
 let auto = false;
 let kind = undefined;
-let fetch = undefined;
+let registry_fetch = undefined;
 let Request = (/* unused pure expression or super */ null && (undefined));
 let Response = (/* unused pure expression or super */ null && (undefined));
 let Headers = (/* unused pure expression or super */ null && (undefined));
@@ -37092,7 +37092,7 @@ function setShims(shims, options = { auto: false }) {
     }
     auto = options.auto;
     kind = shims.kind;
-    fetch = shims.fetch;
+    registry_fetch = shims.fetch;
     Request = shims.Request;
     Response = shims.Response;
     Headers = shims.Headers;
@@ -38269,7 +38269,7 @@ class APIClient {
         this.maxRetries = validatePositiveInteger('maxRetries', maxRetries);
         this.timeout = validatePositiveInteger('timeout', timeout);
         this.httpAgent = httpAgent;
-        this.fetch = overridenFetch ?? fetch;
+        this.fetch = overridenFetch ?? registry_fetch;
     }
     authHeaders(opts) {
         return {};
@@ -48754,26 +48754,26 @@ async function run() {
             let review = null;
 
             if (artifactForThisPR) {
-                // const artifact = await octokit.rest.actions.downloadArtifact({
-                //     artifact_id: artifactForThisPR.id,
-                //     owner: github.context.repo.owner,
-                //     repo: github.context.repo.repo,
-                //     archive_format: 'zip',
-                // })
-
-                const artifact = await octokit.request('GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}', {
+                const artifact = await octokit.rest.actions.downloadArtifact({
+                    artifact_id: artifactForThisPR.id,
                     owner: github.context.repo.owner,
                     repo: github.context.repo.repo,
-                    artifact_id: artifactForThisPR.id,
                     archive_format: 'zip',
+                })
+
+                // const requestToken = await octokit.auth();
+                const artifactResponse = await fetch(artifact.url, {
+                    headers: {
+                        Authorization: `token ${token}`,
+                    }
                 });
-                console.log(JSON.stringify(artifact, null, 2));
-                // const artifactBuffer = await artifactResponse.arrayBuffer();
+                console.log(JSON.stringify(artifactResponse, null, 2));
+                const artifactBuffer = await artifactResponse.arrayBuffer();
                 // fs.readFileSync()
-                // const unzipSync = promisify(unzip);
-                // const buffer = await unzipSync(Buffer.from(artifactBuffer));
-                // const fileContent = buffer.toString('utf8');
-                // console.log(fileContent);
+                const unzipSync = (0,external_node_util_.promisify)(external_node_zlib_namespaceObject.unzip);
+                const buffer = await unzipSync(Buffer.from(artifactBuffer));
+                const fileContent = buffer.toString('utf8');
+                console.log(fileContent);
             } else {
                 core.info('Adding review comments...');
                 review = await addReviewComments(parsedDiff, suggestions, octokit);
