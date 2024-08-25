@@ -48762,7 +48762,7 @@ async function run() {
                 })
 
                 console.log(JSON.stringify(artifact, null, 2));
-                const artifactResponse = await fetch(artifact.headers.location);
+                const artifactResponse = await fetch(artifact.url);
                 const artifactBuffer = await artifactResponse.arrayBuffer();
                 // fs.readFileSync()
                 const unzipSync = (0,external_node_util_.promisify)(external_node_zlib_namespaceObject.unzip);
