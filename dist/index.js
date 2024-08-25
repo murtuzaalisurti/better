@@ -48773,6 +48773,7 @@ async function run() {
             core.info('Fetching pull request details...');
             const pullRequest = await getPullRequestDetails(octokit);
 
+            console.log(deleteExistingReviews)
             if (Boolean(deleteExistingReviews)) {
                 core.info('Preparing to delete existing comments...');
 
