@@ -221,22 +221,25 @@ async function run() {
             let review = null;
 
             if (artifactForThisPR) {
-                const artifact = await octokit.rest.actions.downloadArtifact({
-                    artifact_id: artifactForThisPR.id,
-                    owner: github.context.repo.owner,
-                    repo: github.context.repo.repo,
-                    archive_format: 'zip',
-                })
+                const artifact = await octokit.request('GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}', {
+                    owner: 'OWNER',
+                    repo: 'REPO',
+                    artifact_id: 'ARTIFACT_ID',
+                    archive_format: 'ARCHIVE_FORMAT',
+                    headers: {
+                      'X-GitHub-Api-Version': '2022-11-28'
+                    }
+                  })
 
                 // const requestToken = await octokit.auth();
-                const artifactResponse = await fetch(artifact.url, {
-                    headers: {
-                        ...artifact.headers,
-                        Authorization: `token ${token}`,
-                    },
-                    redirect: 'follow'
-                });
-                console.log(artifactResponse.headers, artifactResponse.status);
+                // const artifactResponse = await fetch(artifact.url, {
+                //     headers: {
+                //         ...artifact.headers,
+                //         Authorization: `token ${token}`,
+                //     },
+                //     redirect: 'follow'
+                // });
+                console.log(artifact.headers, artifact.status);
                 const artifactBuffer = await artifactResponse.arrayBuffer();
                 // fs.readFileSync()
                 const unzipSync = promisify(unzip);

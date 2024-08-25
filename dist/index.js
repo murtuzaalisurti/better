@@ -37071,7 +37071,7 @@ const VERSION = '4.56.0'; // x-release-please-version
 ;// CONCATENATED MODULE: ./node_modules/openai/_shims/registry.mjs
 let auto = false;
 let kind = undefined;
-let registry_fetch = undefined;
+let fetch = undefined;
 let Request = (/* unused pure expression or super */ null && (undefined));
 let Response = (/* unused pure expression or super */ null && (undefined));
 let Headers = (/* unused pure expression or super */ null && (undefined));
@@ -37092,7 +37092,7 @@ function setShims(shims, options = { auto: false }) {
     }
     auto = options.auto;
     kind = shims.kind;
-    registry_fetch = shims.fetch;
+    fetch = shims.fetch;
     Request = shims.Request;
     Response = shims.Response;
     Headers = shims.Headers;
@@ -38269,7 +38269,7 @@ class APIClient {
         this.maxRetries = validatePositiveInteger('maxRetries', maxRetries);
         this.timeout = validatePositiveInteger('timeout', timeout);
         this.httpAgent = httpAgent;
-        this.fetch = overridenFetch ?? registry_fetch;
+        this.fetch = overridenFetch ?? fetch;
     }
     authHeaders(opts) {
         return {};
@@ -48754,22 +48754,25 @@ async function run() {
             let review = null;
 
             if (artifactForThisPR) {
-                const artifact = await octokit.rest.actions.downloadArtifact({
-                    artifact_id: artifactForThisPR.id,
-                    owner: github.context.repo.owner,
-                    repo: github.context.repo.repo,
-                    archive_format: 'zip',
-                })
+                const artifact = await octokit.request('GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}', {
+                    owner: 'OWNER',
+                    repo: 'REPO',
+                    artifact_id: 'ARTIFACT_ID',
+                    archive_format: 'ARCHIVE_FORMAT',
+                    headers: {
+                      'X-GitHub-Api-Version': '2022-11-28'
+                    }
+                  })
 
                 // const requestToken = await octokit.auth();
-                const artifactResponse = await fetch(artifact.url, {
-                    headers: {
-                        ...artifact.headers,
-                        Authorization: `token ${token}`,
-                    },
-                    redirect: 'follow'
-                });
-                console.log(artifactResponse.headers, artifactResponse.status);
+                // const artifactResponse = await fetch(artifact.url, {
+                //     headers: {
+                //         ...artifact.headers,
+                //         Authorization: `token ${token}`,
+                //     },
+                //     redirect: 'follow'
+                // });
+                console.log(artifact.headers, artifact.status);
                 const artifactBuffer = await artifactResponse.arrayBuffer();
                 // fs.readFileSync()
                 const unzipSync = (0,external_node_util_.promisify)(external_node_zlib_namespaceObject.unzip);
