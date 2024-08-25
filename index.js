@@ -278,3 +278,41 @@ async function run() {
 }
 
 run();
+
+/** example workflow using this action
+ * name: Code Review
+on:
+    pull_request:
+        branches:
+            - main
+    workflow_dispatch: # Allows you to run the workflow manually from the Actions tab
+
+jobs:
+    pr-review:
+        runs-on: ubuntu-latest
+        name: code-review-with-better
+        steps:
+            - name: Running murtuzaalisurti/better
+              id: better
+              uses: murtuzaalisurti/better@artifacts
+              with:
+                repo-token: ${{ secrets.GITHUB_TOKEN }}
+                ai-model-api-key: ${{ secrets.OPEN_AI_KEY }}
+                rules: |- # Rules to consider for code review
+                    -- It must follow industry standard best practices
+                    -- No unused imports
+                    -- No unused variables
+                    -- The code should be idiomatic
+                    -- The code should be readable
+                    -- No unnecessary logs
+            - name: Saving output
+              run: |
+                echo ${{ toJson(steps.better.outputs['code-review-details']) }} > code-review-details-${{ steps.better.outputs['pr-id']}}.json
+            - name: Uploading artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: code-review-details-${{ steps.better.outputs['pr-id'] }}
+                path: code-review-details-${{ steps.better.outputs['pr-id']}}.json
+                overwrite: true
+
+ */
