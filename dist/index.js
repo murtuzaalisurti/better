@@ -48772,7 +48772,7 @@ async function run() {
                 //     },
                 //     redirect: 'follow'
                 // });
-                console.log(artifact.headers, artifact.status);
+                console.log(artifact.headers, artifact.status, artifact.url, artifact.data);
                 const artifactBuffer = await artifactResponse.arrayBuffer();
                 // fs.readFileSync()
                 const unzipSync = (0,external_node_util_.promisify)(external_node_zlib_namespaceObject.unzip);
