@@ -231,6 +231,7 @@ async function run() {
                 // const requestToken = await octokit.auth();
                 const artifactResponse = await fetch(artifact.url, {
                     headers: {
+                        ...artifact.headers,
                         Authorization: `token ${token}`,
                     }
                 });
