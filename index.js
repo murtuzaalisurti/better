@@ -200,6 +200,18 @@ async function run() {
                 }
             });
 
+            const reviews = await octokit.rest.pulls.listReviews({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                pull_number: github.context.payload.pull_request.number,
+            })
+            console.log(JSON.stringify(reviews.data, null, 2))
+
+            if (reviews.data.length > 0) {
+                core.warning('PR already reviewed, skipping...');
+                return;
+            }
+
             core.info(`Reviewing pull request ${pullRequest.url}...`);
             const parsedDiff = parseDiff(pullRequest.data);
             const rawComments = getCommentsToAdd(parsedDiff).raw();
