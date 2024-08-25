@@ -48765,9 +48765,9 @@ async function run() {
                 })
                 // console.log(artifact.headers, artifact.status, artifact.url, artifact.data);
                 const artifactBuffer = artifact.data;
-                // fs.readFileSync()
                 const unzipSync = (0,external_node_util_.promisify)(external_node_zlib_namespaceObject.unzip);
                 const buffer = await unzipSync(Buffer.from(artifactBuffer));
+                console.log(artifactBuffer);
                 const fileContent = buffer.toString('utf8');
                 console.log(fileContent);
             } else {

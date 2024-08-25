@@ -232,9 +232,9 @@ async function run() {
                 })
                 // console.log(artifact.headers, artifact.status, artifact.url, artifact.data);
                 const artifactBuffer = artifact.data;
-                // fs.readFileSync()
                 const unzipSync = promisify(unzip);
                 const buffer = await unzipSync(Buffer.from(artifactBuffer));
+                console.log(artifactBuffer);
                 const fileContent = buffer.toString('utf8');
                 console.log(fileContent);
             } else {
