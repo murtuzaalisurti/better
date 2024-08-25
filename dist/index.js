@@ -48767,7 +48767,7 @@ async function run() {
                         Authorization: `token ${token}`,
                     }
                 });
-                console.log(JSON.stringify(artifactResponse, null, 2));
+                console.log(artifactResponse.headers, artifactResponse.status);
                 const artifactBuffer = await artifactResponse.arrayBuffer();
                 // fs.readFileSync()
                 const unzipSync = (0,external_node_util_.promisify)(external_node_zlib_namespaceObject.unzip);

@@ -234,7 +234,7 @@ async function run() {
                         Authorization: `token ${token}`,
                     }
                 });
-                console.log(JSON.stringify(artifactResponse, null, 2));
+                console.log(artifactResponse.headers, artifactResponse.status);
                 const artifactBuffer = await artifactResponse.arrayBuffer();
                 // fs.readFileSync()
                 const unzipSync = promisify(unzip);
