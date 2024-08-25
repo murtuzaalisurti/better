@@ -228,6 +228,7 @@ async function run() {
                     archive_format: 'zip',
                 })
 
+                console.log(JSON.stringify(artifact, null, 2));
                 const artifactResponse = await fetch(artifact.headers.location);
                 const artifactBuffer = await artifactResponse.arrayBuffer();
                 // fs.readFileSync()
