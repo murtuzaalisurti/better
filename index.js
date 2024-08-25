@@ -239,11 +239,11 @@ async function run() {
                         Authorization: `token ${token}`
                     }
                 });
-                console.log(artifact.headers, artifact.status, artifact.url, file.headers, file.status, await file.blob());
-                const artifactBuffer = await file.arrayBuffer();
+                // console.log(artifact.headers, artifact.status, artifact.url, file.headers, file.status);
+                const artifactBuffer = await (await file.blob()).arrayBuffer();
+                console.log(artifactBuffer);
                 const unzipSync = promisify(unzip);
                 const buffer = await unzipSync(Buffer.from(artifactBuffer));
-                // console.log(artifactBuffer);
                 const fileContent = buffer.toString('utf8');
                 console.log(fileContent);
             } else {
