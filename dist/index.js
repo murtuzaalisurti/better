@@ -48770,7 +48770,8 @@ async function run() {
                 const file = await fetch(artifact.url, {
                     headers: {
                         Authorization: `token ${token}`
-                    }
+                    },
+                    redirect: 'manual'
                 });
                 // console.log(artifact.headers, artifact.status, artifact.url, file.headers, file.status);
                 const artifactBuffer = await (await file.blob()).arrayBuffer();
