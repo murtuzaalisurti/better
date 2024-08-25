@@ -48753,6 +48753,16 @@ async function deleteComment(octokit, comment_id) {
     })
 }
 
+/**
+ * 
+ * @param {string} value
+ * @returns {boolean}
+ */
+function getBooleanValue(value) {
+    if (!value || value === '') return false
+    return value.toLowerCase() === 'true'
+}
+
 async function run() {
     try {
         core.info('Retrieving tokens and inputs...');
@@ -48773,8 +48783,7 @@ async function run() {
             core.info('Fetching pull request details...');
             const pullRequest = await getPullRequestDetails(octokit);
 
-            console.log(deleteExistingReviews)
-            if (Boolean(deleteExistingReviews)) {
+            if (getBooleanValue(deleteExistingReviews)) {
                 core.info('Preparing to delete existing comments...');
 
                 core.info('Fetching pull request reviews...');
