@@ -242,9 +242,28 @@ function getBooleanValue(value) {
     return value.toLowerCase() === 'true'
 }
 
+/**
+ * 
+ * @param {{ withTimestamp: boolean }} options
+ * @returns {{ info: (message: string) => void, warning: (message: string) => void, error: (error: string) => void }}
+ */
+function log({ withTimestamp = true }) {
+    /**
+     * @param {string} str 
+     * @returns {string}
+     */
+    const getLogText = (str) => (withTimestamp ? `[${new Date().toISOString()}]: ${str}` : str);
+    return {
+        info: (message) => core.info(getLogText(message)),
+        warning: (message) => core.warning(getLogText(message)),
+        error: (error) => core.error(getLogText(error)),
+    }
+}
+
 async function run() {
+    const { info, warning, error } = log({ withTimestamp: true });
     try {
-        core.info('Retrieving tokens and inputs...');
+        info('Retrieving tokens and inputs...');
 
         const deleteExistingReviews = core.getInput('delete-existing-review-by-bot');
         const rules = core.getInput('rules');
@@ -252,28 +271,28 @@ async function run() {
         const modelToken = core.getInput('ai-model-api-key');
         const octokit = github.getOctokit(token);
 
-        core.info('Initializing AI model...');
+        info('Initializing AI model...');
 
         const openAI = new OpenAI({
             apiKey: modelToken
         })
 
         if (github.context.payload.pull_request) {
-            core.info('Fetching pull request details...');
+            info('Fetching pull request details...');
             const pullRequest = await getPullRequestDetails(octokit);
 
             if (getBooleanValue(deleteExistingReviews)) {
-                core.info('Preparing to delete existing comments...');
+                info('Preparing to delete existing comments...');
 
-                core.info('Fetching pull request reviews...');
+                info('Fetching pull request reviews...');
                 const reviews = await getAllReviewsForPullRequest(octokit);
 
-                core.info(`Fetching reviews by bot...`);
+                info(`Fetching reviews by bot...`);
                 const reviewsByBot = reviews.data.filter(r => r.user.login === 'github-actions[bot]' || r.user.type === 'Bot')
 
                 if (reviewsByBot.length > 0) {
-                    core.info(`Found ${reviewsByBot.length} reviews by bot...`);
-                    core.warning('Deleting existing comments for all reviews by bot...');
+                    info(`Found ${reviewsByBot.length} reviews by bot...`);
+                    warning('Deleting existing comments for all reviews by bot...');
 
                     for (const review of reviewsByBot) {
                         const reviewComments = await getAllCommentsUnderAReview(octokit, review.id);
@@ -284,34 +303,34 @@ async function run() {
                         }
                     }
                 } else {
-                    core.info('No reviews by bot found. Skipping deleting existing comments for all reviews by bot...');
+                    info('No reviews by bot found. Skipping deleting existing comments for all reviews by bot...');
                 }
             } else {
-                core.info('Skipping deleting existing comments for all reviews by bot...');
+                info('Skipping deleting existing comments for all reviews by bot...');
             }
 
-            core.info(`Reviewing pull request ${pullRequest.url}...`);
+            info(`Reviewing pull request ${pullRequest.url}...`);
             const parsedDiff = parseDiff(pullRequest.data);
             const rawComments = getCommentsToAdd(parsedDiff).raw();
 
-            core.info('Generating suggestions...');
+            info('Generating suggestions...');
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules);
 
             if (suggestions.length === 0) {
-                core.info('No suggestions found. Code review complete. All good!');
+                info('No suggestions found. Code review complete. All good!');
                 return;
             }
 
-            core.info('Adding review comments...');
+            info('Adding review comments...');
             await addReviewComments(parsedDiff, suggestions, octokit);
 
-            core.info('Code review complete!');
+            info('Code review complete!');
         } else {
-            core.warning('Not a pull request, skipping...');
+            warning('Not a pull request, skipping...');
         }
-    } catch (error) {
-        core.error(error);
-        core.setFailed(error.message);
+    } catch (err) {
+        error(err);
+        core.setFailed(err.message);
     }
 }
 
