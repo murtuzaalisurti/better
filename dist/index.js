@@ -48823,6 +48823,11 @@ async function run() {
             core.info('Generating suggestions...');
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules);
 
+            if (suggestions.length === 0) {
+                core.info('No suggestions found. Code review complete. All good!');
+                return;
+            }
+
             core.info('Adding review comments...');
             await addReviewComments(parsedDiff, suggestions, octokit);
 
