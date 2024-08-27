@@ -125,6 +125,7 @@ function getCommentsToAdd(parsedDiff) {
                     - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes.
                     - If there is a suggestion which is similar across multiple lines, only suggest that change at any one of the lines.
                     - Keep the suggestions precise and to the point (in a constructive way).
+                    - If possible, add references to some really good resources like stackoverflow for suggested code changes.
                     - Suggestions should be inclusive of the rules (if any) provided by the user.
                     - You can also give suggested code changes in markdown format.
                     - If there are no suggestions, please don't spam with "No suggestions".
