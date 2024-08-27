@@ -48647,11 +48647,12 @@ function getCommentsToAdd(parsedDiff) {
                     Take the user input diff payload and analyze the changes from the "content" property (ignore the first "+" or "-" character at the start of the string because that's just a diff character) of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
                     If you think there are no improvements to be made, don't return **that** object from the payload.
                     Rest, **return everything as it is (in the same order)** along with your suggestions.
-                    NOTE: 
+                    IMPORTANT: 
                     - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
                     - Only modify/add the "suggestions" property (if required).
                     - DO NOT modify the value of any other property. Return them as they are in the input.
                     - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes.
+                    - If there is a suggestion which is similar across multiple lines, only suggest that change at any one of the lines.
                     - Keep the suggestions precise and to the point (in a constructive way).
                     - Suggestions should be inclusive of the rules (if any) provided by the user.
                     - You can also give suggested code changes in markdown format.
