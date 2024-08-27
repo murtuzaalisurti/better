@@ -9,7 +9,6 @@ const aDiff = z.object({
     path: z.string(),
     position: z.number(),
     line: z.number(),
-    body: z.string(),
     change: z.object({
         type: z.string(),
         add: z.boolean(),
@@ -68,7 +67,6 @@ function getCommentsToAdd(parsedDiff) {
                                     path: file.from,
                                     position: change.relativePosition,
                                     line: change.ln,
-                                    body: `**${change.content}** added. This is a review comment.`,
                                     change,
                                     previously: arr[i - 1].content
                                 }
@@ -78,7 +76,6 @@ function getCommentsToAdd(parsedDiff) {
                                 path: file.from,
                                 position: change.relativePosition,
                                 line: change.ln,
-                                body: `**${change.content}** added. This is a review comment.`,
                                 change
                             }
                         }
@@ -91,7 +88,6 @@ function getCommentsToAdd(parsedDiff) {
                             path: file.from,
                             position: change.relativePosition,
                             line: change.ln,
-                            body: `**${change.content}** modified. This is a review comment.`,
                             change
                         }
                     }).filter(i => i) /** filter out nulls */
@@ -123,7 +119,7 @@ function getCommentsToAdd(parsedDiff) {
                     - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
                     - Only modify/add the "suggestions" property (if required).
                     - DO NOT modify the value of any other property. Return them as they are in the input.
-                    - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes on those positions.
+                    - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes on those positions (see "content" or "previously" (if it exists) property).
                     - If there is a suggestion which is similar across multiple positions, only suggest that change at any one of those positions.
                     - Keep the suggestions precise and to the point (in a constructive way).
                     - If possible, add references to some really good resources like stackoverflow or from programming articles, blogs, etc. for suggested code changes. Keep the references in context of the programming language you are reviewing.
@@ -319,7 +315,7 @@ async function run() {
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules);
 
             info(JSON.stringify(suggestions, null, 2));
-            
+
             if (suggestions.length === 0) {
                 info('No suggestions found. Code review complete. All good!');
                 return;
