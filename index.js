@@ -168,13 +168,15 @@ function getCommentsToAdd(parsedDiff) {
  * @param {InstanceType<GitHub>} octokit
  */
 async function addReviewComments(parsedDiff, suggestions, octokit) {
+    const comments = getCommentsToAdd(parsedDiff).comments(suggestions);
+    core.info(JSON.stringify(comments, null, 2));
     await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
         body: `Code Review`,
         event: 'COMMENT',
-        comments: getCommentsToAdd(parsedDiff).comments(suggestions),
+        comments,
     })
 }
 
@@ -313,8 +315,6 @@ async function run() {
 
             info('Generating suggestions...');
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules);
-
-            info(JSON.stringify(suggestions, null, 2));
 
             if (suggestions.length === 0) {
                 info('No suggestions found. Code review complete. All good!');
