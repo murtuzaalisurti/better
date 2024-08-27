@@ -122,7 +122,7 @@ function getCommentsToAdd(parsedDiff) {
                     - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
                     - Only modify/add the "suggestions" property (if required).
                     - DO NOT modify the value of any other property. Return them as they are in the input.
-                    - Make sure the comment positions are accurate as they are in the input.
+                    - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes.
                     - Keep the suggestions precise and to the point (in a constructive way).
                     - Suggestions should be inclusive of the rules (if any) provided by the user.
                     - You can also give suggested code changes in markdown format.
