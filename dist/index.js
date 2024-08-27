@@ -48842,9 +48842,13 @@ async function run() {
             const parsedDiff = parse_diff(pullRequest.data);
             const rawComments = getCommentsToAdd(parsedDiff).raw();
 
+            info(JSON.stringify(rawComments, null, 2));
+
             info('Generating suggestions...');
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules);
 
+            info(JSON.stringify(suggestions, null, 2));
+            
             if (suggestions.length === 0) {
                 info('No suggestions found. Code review complete. All good!');
                 return;
