@@ -57,7 +57,7 @@ jobs:
 
 Go to ***your*** repository settings, `Settings > Secrets and Variables > Actions > Secrets Tab` and add `OPEN_AI_KEY` as a secret with your OpenAI API key as a value.
 
-![repo-settings-page](./assets/repo-settings-page.png)
+![repo-settings-page](../assets/repo-settings-page.png)
 
 ---
 
@@ -65,11 +65,11 @@ Go to ***your*** repository settings, `Settings > Secrets and Variables > Action
 
 - Go to ***your*** repository settings, `Settings > Actions > General > Actions Permissions Tab` and select `Allow all actions and reusable workflows`.
 
-![repo-settings-permissions-actions](./assets/repo-settings-permissions-actions.png)
+![repo-settings-permissions-actions](../assets/repo-settings-permissions-actions.png)
 
 - Go to ***your*** repository settings, `Settings > Actions > General > Workflow Permissions Tab` and select `Read and write permissions`.
 
-![repo-settings-workflow](./assets/repo-settings-workflow.png)
+![repo-settings-workflow](../assets/repo-settings-workflow.png)
 
 ---
 
