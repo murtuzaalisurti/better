@@ -16,7 +16,7 @@ A code reviewer github action powered by AI, ready to be used in your workflow.
 
 ### 1. Create a workflow
 
-Create a workflow file inside `.github/workflows` folder of your repository (create it if it doesn't exist) with the following content:
+Create a workflow file inside `.github/workflows` folder (create if it doesn't exist) of your repository with the following content:
 
 ```yaml
 name: Code Review
