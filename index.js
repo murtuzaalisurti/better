@@ -100,11 +100,12 @@ function getCommentsToAdd(parsedDiff) {
      * @param {rawCommentsPayload} rawComments
      * @param {OpenAI} openAI
      * @param {string} rules
+     * @param {string} modelName
      */
-    const getSuggestions = async (rawComments, openAI, rules) => {
+    const getSuggestions = async (rawComments, openAI, rules, modelName) => {
         const result = await openAI.beta.chat.completions.parse({
             // model: 'gpt-4o-mini-2024-07-18',
-            model: 'gpt-4o-2024-08-06',
+            model: modelName !== '' ? modelName : 'gpt-4o-2024-08-06',
             messages: [
                 {
                     role: 'system',
@@ -267,6 +268,7 @@ async function run() {
         const deleteExistingReviews = core.getInput('delete-existing-review-by-bot');
         const rules = core.getInput('rules');
         const token = core.getInput('repo-token');
+        const modelName = core.getInput('ai-model-name');
         const modelToken = core.getInput('ai-model-api-key');
         const octokit = github.getOctokit(token);
 
@@ -315,7 +317,7 @@ async function run() {
             info(JSON.stringify(rawComments, null, 2));
 
             info('Generating suggestions...');
-            const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules);
+            const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules, modelName);
 
             if (suggestions.length === 0) {
                 info('No suggestions found. Code review complete. All good!');

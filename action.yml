@@ -1,12 +1,14 @@
 name: 'better'
 description: 'An AI powered code review tool'
 inputs:
-  repo-token:  # id of input
+  repo-token:
     description: 'The repo token: { secrets.GITHUB_TOKEN }'
     required: true
   ai-model-api-key:
     description: 'The models api key: { secrets.<YOUR_AI_MODEL_API_KEY> }'
     required: true
+  ai-model-name:
+    description: 'The name of the AI model to be used'
   delete-existing-review-by-bot:
     description: 'Delete existing review(s) by bot'
     default: true
