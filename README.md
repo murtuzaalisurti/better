@@ -48,7 +48,8 @@ jobs:
 
 ```
 
-The `uses` field refers to which github action to use and what's its reference. For example: `murtuzaalisurti/better@main` means it refers to the `main` branch of the `murtuzaalisurti/better` action. If you want to refer to a specific release or tag, you can specify `murtuzaalisurti/better@v1.0.0` which means it refers to the `v1.0.0` of the `murtuzaalisurti/better` action.
+> [!NOTE]
+> The `uses` field refers to which github action to use and what's its reference. For example: `murtuzaalisurti/better@main` means it refers to the `main` branch of the `murtuzaalisurti/better` action. If you want to refer to a specific release or tag, you can specify `murtuzaalisurti/better@v1.0.0` which means it refers to the `v1.0.0` of the `murtuzaalisurti/better` action.
 
 ### 2. Add OpenAI API key to your repository secrets
 
