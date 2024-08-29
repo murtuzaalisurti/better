@@ -48570,7 +48570,7 @@ const DEFAULT_MODEL = {
  * @returns {string} 
  */
 function getModelName(name) {
-    name !== '' ? name : DEFAULT_MODEL.name
+    return name !== '' ? name : DEFAULT_MODEL.name
 };
 
 /**
