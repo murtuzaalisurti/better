@@ -48714,7 +48714,7 @@ function getCommentsToAdd(parsedDiff) {
  */
 async function addReviewComments(parsedDiff, suggestions, octokit) {
     const comments = getCommentsToAdd(parsedDiff).comments(suggestions);
-    core.info(JSON.stringify(comments, null, 2));
+
     await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
@@ -48836,7 +48836,6 @@ async function run() {
             info('Fetching pull request details...');
             const pullRequestDiff = await getPullRequestDetails(octokit, { mode: 'diff' });
             const pullRequestData = await getPullRequestDetails(octokit, { mode: 'json' });
-            console.log(JSON.stringify(pullRequestData.data.body, null, 2))
 
             if (getBooleanValue(deleteExistingReviews)) {
                 info('Preparing to delete existing comments...');
