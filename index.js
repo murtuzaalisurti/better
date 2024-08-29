@@ -53,6 +53,7 @@ function getCommentsToAdd(parsedDiff) {
      */
     const comments = () => parsedDiff.reduce((acc, file) => {
         console.log(file);
+        const filePath = file.deleted ? file.from : file.to;
         let diffRelativePosition = 0;
         return acc.concat(file.chunks.reduce((accc, chunk, i) => {
             if (i !== 0) {
@@ -76,7 +77,7 @@ function getCommentsToAdd(parsedDiff) {
                              */
                             if (i > 0 && arr[i - 1].type === 'del' && change.ln === arr[i - 1].ln) {
                                 return {
-                                    path: file.to,
+                                    path: filePath,
                                     position: change.relativePosition,
                                     line: change.ln,
                                     change,
@@ -85,7 +86,7 @@ function getCommentsToAdd(parsedDiff) {
                             }
 
                             return {
-                                path: file.to,
+                                path: filePath,
                                 position: change.relativePosition,
                                 line: change.ln,
                                 change
@@ -97,7 +98,7 @@ function getCommentsToAdd(parsedDiff) {
                         }
 
                         return {
-                            path: change.type === 'del' ? file.from : file.to,
+                            path: filePath,
                             position: change.relativePosition,
                             line: change.ln,
                             change
