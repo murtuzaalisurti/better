@@ -48642,8 +48642,9 @@ function getCommentsToAdd(parsedDiff) {
      * @param {OpenAI} openAI
      * @param {string} rules
      * @param {string} modelName
+     * @param {{ body: string | null }} pullRequestContext
      */
-    const getSuggestions = async (rawComments, openAI, rules, modelName) => {
+    const getSuggestions = async (rawComments, openAI, rules, modelName, pullRequestContext) => {
         const result = await openAI.beta.chat.completions.parse({
             // model: 'gpt-4o-mini-2024-07-18',
             model: getModelName(modelName),
@@ -48653,7 +48654,7 @@ function getCommentsToAdd(parsedDiff) {
                     content: `You are a highly experienced software engineer and code reviewer with a focus on code quality, maintainability, and adherence to best practices.
                     Your goal is to provide thorough, constructive, and actionable feedback to help developers improve their code.
                     You consider various aspects, including readability, efficiency, and security.
-                    The user will provide you with a diff payload and some rules on how the code should be (they are separated by --), and you have to make suggestions on what can be improved by looking at the diff changes.
+                    The user will provide you with a diff payload and some rules on how the code should be (they are separated by --), and you have to make suggestions on what can be improved by looking at the diff changes. You might be provided with a PR description for more context.
                     Take the user input diff payload and analyze the changes from the "content" property (ignore the first "+" or "-" character at the start of the string because that's just a diff character) of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
                     If you think there are no improvements to be made, don't return **that** object from the payload.
                     Rest, **return everything as it is (in the same order)** along with your suggestions. Ignore formatting issues.
@@ -48675,7 +48676,8 @@ function getCommentsToAdd(parsedDiff) {
                 {
                     role: 'user',
                     content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ''}. Here's the diff payload:
-                    ${JSON.stringify(rawComments, null, 2)}`
+                    ${JSON.stringify(rawComments, null, 2)}
+                    ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})`: ''}`
                 }
             ],
             response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
@@ -48834,7 +48836,7 @@ async function run() {
             info('Fetching pull request details...');
             const pullRequestDiff = await getPullRequestDetails(octokit, { mode: 'diff' });
             const pullRequestData = await getPullRequestDetails(octokit, { mode: 'json' });
-            console.log(JSON.stringify(pullRequestData, null, 2))
+            console.log(JSON.stringify(pullRequestData.data.body, null, 2))
 
             if (getBooleanValue(deleteExistingReviews)) {
                 info('Preparing to delete existing comments...');
@@ -48869,7 +48871,7 @@ async function run() {
             const rawComments = getCommentsToAdd(parsedDiff).raw();
 
             info(`Generating suggestions using model ${getModelName(modelName)}...`);
-            const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules, modelName);
+            const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules, modelName, { body: pullRequestData.data.body });
 
             if (suggestions.length === 0) {
                 info('No suggestions found. Code review complete. All good!');
