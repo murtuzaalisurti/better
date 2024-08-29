@@ -26,6 +26,10 @@ const diffPayloadSchema = z.object(
     }
 );
 
+const DEFAULT_MODEL = {
+    name: 'gpt-4o-2024-08-06'
+};
+
 /**
  * @typedef {z.infer<typeof aDiff>[]} rawCommentsPayload
  * @typedef {z.infer<typeof diffPayloadSchema>} suggestionsPayload
@@ -33,7 +37,14 @@ const diffPayloadSchema = z.object(
  */
 
 /**
- * 
+ * @param {string} name
+ * @returns {string} 
+ */
+function getModelName(name) {
+    name !== '' ? name : DEFAULT_MODEL.name
+};
+
+/**
  * @param {parseDiff.File[]} parsedDiff 
  */
 function getCommentsToAdd(parsedDiff) {
@@ -105,7 +116,7 @@ function getCommentsToAdd(parsedDiff) {
     const getSuggestions = async (rawComments, openAI, rules, modelName) => {
         const result = await openAI.beta.chat.completions.parse({
             // model: 'gpt-4o-mini-2024-07-18',
-            model: modelName !== '' ? modelName : 'gpt-4o-2024-08-06',
+            model: getModelName(modelName),
             messages: [
                 {
                     role: 'system',
@@ -316,7 +327,7 @@ async function run() {
 
             info(JSON.stringify(rawComments, null, 2));
 
-            info('Generating suggestions...');
+            info(`Generating suggestions using model ${getModelName(modelName)}...`);
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules, modelName);
 
             if (suggestions.length === 0) {
