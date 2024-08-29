@@ -48725,14 +48725,25 @@ async function addReviewComments(parsedDiff, suggestions, octokit) {
 
 /**
  * @param {InstanceType<GitHub>} octokit 
+ * @param {{ mode: 'diff' | 'json' }} options
  */
-async function getPullRequestDetails(octokit) {
+async function getPullRequestDetails(octokit, { mode }) {
+    let AcceptFormat = 'application/vnd.github.raw+json';
+
+    if(mode === 'diff') {
+        AcceptFormat = 'application/vnd.github.diff'
+    }
+
+    if (mode === 'json') {
+        AcceptFormat = 'application/vnd.github.raw+json'
+    }
+
     return await octokit.rest.pulls.get({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
         headers: {
-            accept: 'application/vnd.github.diff',
+            accept: AcceptFormat,
         }
     });
 }
@@ -48821,8 +48832,9 @@ async function run() {
 
         if (github.context.payload.pull_request) {
             info('Fetching pull request details...');
-            const pullRequest = await getPullRequestDetails(octokit);
-            console.log(JSON.stringify(pullRequest.data, null, 2))
+            const pullRequestDiff = await getPullRequestDetails(octokit, { mode: 'diff' });
+            const pullRequestData = await getPullRequestDetails(octokit, { mode: 'json' });
+            console.log(JSON.stringify(pullRequestData, null, 2))
 
             if (getBooleanValue(deleteExistingReviews)) {
                 info('Preparing to delete existing comments...');
@@ -48852,8 +48864,8 @@ async function run() {
                 info('Skipping deleting existing comments for all reviews by bot...');
             }
 
-            info(`Reviewing pull request ${pullRequest.url}...`);
-            const parsedDiff = parse_diff(pullRequest.data);
+            info(`Reviewing pull request ${pullRequestDiff.url}...`);
+            const parsedDiff = parse_diff(pullRequestDiff.data);
             const rawComments = getCommentsToAdd(parsedDiff).raw();
 
             info(`Generating suggestions using model ${getModelName(modelName)}...`);
