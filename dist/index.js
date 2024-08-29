@@ -48581,6 +48581,7 @@ function getCommentsToAdd(parsedDiff) {
      * @returns {rawCommentsPayload}
      */
     const comments = () => parsedDiff.reduce((acc, file) => {
+        console.log(file);
         let diffRelativePosition = 0;
         return acc.concat(file.chunks.reduce((accc, chunk, i) => {
             if (i !== 0) {
@@ -48854,7 +48855,7 @@ async function run() {
             const parsedDiff = parse_diff(pullRequest.data);
             const rawComments = getCommentsToAdd(parsedDiff).raw();
 
-            info(JSON.stringify(rawComments, null, 2));
+            // info(JSON.stringify(rawComments, null, 2));
 
             info(`Generating suggestions using model ${getModelName(modelName)}...`);
             const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules, modelName);
