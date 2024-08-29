@@ -48581,7 +48581,7 @@ function getCommentsToAdd(parsedDiff) {
      * @returns {rawCommentsPayload}
      */
     const comments = () => parsedDiff.reduce((acc, file) => {
-        console.log(file);
+        console.log(JSON.stringify(file, null, 2));
         const filePath = file.deleted ? file.from : file.to;
         let diffRelativePosition = 0;
         return acc.concat(file.chunks.reduce((accc, chunk, i) => {
