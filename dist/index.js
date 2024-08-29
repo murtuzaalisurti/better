@@ -48622,7 +48622,7 @@ function getCommentsToAdd(parsedDiff) {
                             }
                         }
 
-                        if (change.type === 'del' && change.ln === arr[i + 1].ln && arr[i + 1].type === 'add') {
+                        if (i < arr.length - 1 && change.type === 'del' && change.ln === arr[i + 1].ln && arr[i + 1].type === 'add') {
                             return null
                         }
 
