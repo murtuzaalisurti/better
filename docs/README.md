@@ -22,9 +22,14 @@ Create a workflow file inside `.github/workflows` folder (create if it doesn't e
 name: Code Review
 on:
     pull_request:
+        types: [opened, reopened, synchronize, ready_for_review]
         branches:
             - main # change this to your target branch
     workflow_dispatch: # Allows you to run the workflow manually from the Actions tab
+
+permissions: # necessary permissions
+    pull-requests: write
+    contents: read
 
 jobs:
     your-job-name:
@@ -55,7 +60,7 @@ jobs:
 
 ### 2. Add OpenAI API key to your repository secrets
 
-Go to ***your*** repository settings, `Settings > Secrets and Variables > Actions > Secrets Tab` and add `OPEN_AI_KEY` as a secret with your OpenAI API key as a value.
+Go to ***your*** repository settings, `Settings > Secrets and Variables > Actions > Secrets Tab` and add `OPEN_AI_KEY` as a secret with your OpenAI API key as a value. You can refer to it in the workflow file using `${{ secrets.OPEN_AI_KEY }}` against the `ai-model-api-key` field.
 
 ![repo-settings-page](./assets/repo-settings-page.png)
 
@@ -66,10 +71,6 @@ Go to ***your*** repository settings, `Settings > Secrets and Variables > Action
 - Go to ***your*** repository settings, `Settings > Actions > General > Actions Permissions Tab` and select `Allow all actions and reusable workflows`.
 
 ![repo-settings-permissions-actions](./assets/repo-settings-permissions-actions.png)
-
-- Go to ***your*** repository settings, `Settings > Actions > General > Workflow Permissions Tab` and select `Read and write permissions`.
-
-![repo-settings-workflow](./assets/repo-settings-workflow.png)
 
 ---
 
