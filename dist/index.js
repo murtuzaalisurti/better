@@ -48822,7 +48822,7 @@ async function run() {
         if (github.context.payload.pull_request) {
             info('Fetching pull request details...');
             const pullRequest = await getPullRequestDetails(octokit);
-            console.log(pullRequest.data._links)
+            console.log(JSON.stringify(pullRequest.data, null, 2))
 
             if (getBooleanValue(deleteExistingReviews)) {
                 info('Preparing to delete existing comments...');
