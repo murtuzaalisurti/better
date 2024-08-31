@@ -17,11 +17,11 @@
     "@actions/github": "^6.0.0",
     "@vercel/ncc": "^0.38.1",
     "is-ci": "^3.0.1",
-    "openai": "^4.56.0",
+    "openai": "^4.57.0",
     "parse-diff": "^0.11.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "husky": "^9.1.4"
+    "husky": "^9.1.5"
   }
 }
