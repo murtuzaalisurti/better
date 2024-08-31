@@ -178,13 +178,31 @@ function getCommentsToAdd(parsedDiff) {
 }
 
 /**
+ * @param {rawCommentsPayload} rawComments
+ * @param {CommentsPayload} comments
+ * @returns {CommentsPayload}
+ */
+function filterPositionsNotPresentInRawPayload(rawComments, comments) {
+    return comments.filter(comment => 
+        rawComments.some(rawComment => 
+            rawComment.path === comment.path && rawComment.line === comment.line
+        )
+    );
+}
+
+
+/**
  * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
  * @param {parseDiff.File[]} parsedDiff
  * @param {diffPayloadSchema} suggestions
  * @param {InstanceType<GitHub>} octokit
+ * @param {rawCommentsPayload} rawComments 
  */
-async function addReviewComments(parsedDiff, suggestions, octokit) {
-    const comments = getCommentsToAdd(parsedDiff).comments(suggestions);
+async function addReviewComments(parsedDiff, suggestions, octokit, rawComments) {
+    const comments = filterPositionsNotPresentInRawPayload(
+        rawComments,
+        getCommentsToAdd(parsedDiff).comments(suggestions)
+    );
 
     await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
@@ -349,7 +367,7 @@ async function run() {
             }
 
             info('Adding review comments...');
-            await addReviewComments(parsedDiff, suggestions, octokit);
+            await addReviewComments(parsedDiff, suggestions, octokit, rawComments);
 
             info('Code review complete!');
         } else {
