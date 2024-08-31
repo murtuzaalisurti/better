@@ -51214,7 +51214,6 @@ function getCommentsToAdd(parsedDiff) {
     }, [])
 
     /**
-     * @typedef
      * @param {rawCommentsPayload} rawComments
      * @param {OpenAI} openAI
      * @param {string} rules
@@ -51223,7 +51222,6 @@ function getCommentsToAdd(parsedDiff) {
      */
     const getSuggestions = async (rawComments, openAI, rules, modelName, pullRequestContext) => {
         const result = await openAI.beta.chat.completions.parse({
-            // model: 'gpt-4o-mini-2024-07-18',
             model: getModelName(modelName),
             messages: [
                 {
@@ -51382,7 +51380,6 @@ async function deleteComment(octokit, comment_id) {
 }
 
 /**
- * 
  * @param {string} value
  * @returns {boolean}
  */
@@ -51392,7 +51389,6 @@ function getBooleanValue(value) {
 }
 
 /**
- * 
  * @param {{ withTimestamp: boolean }} options
  * @returns {{ info: (message: string) => void, warning: (message: string) => void, error: (error: string) => void }}
  */
