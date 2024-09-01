@@ -51253,6 +51253,7 @@ async function getSuggestions(rawComments, openAI, rules, modelName, pullRequest
                 If you think there are no improvements to be made, don't return **that** object from the payload.
                 Rest, **return everything as it is (in the same order)** along with your suggestions. Ignore formatting issues.
                 IMPORTANT: 
+                - Don't be lazy.
                 - Only make suggestions when they are significant, relevant and add value to the code changes.
                 - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
                 - Only modify/add the "suggestions" property (if required).
