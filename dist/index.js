@@ -51240,47 +51240,63 @@ function extractComments() {
  * @param {{ body: string | null }} pullRequestContext
  */
 async function getSuggestions(rawComments, openAI, rules, modelName, pullRequestContext) {
-    const result = await openAI.beta.chat.completions.parse({
-        model: getModelName(modelName),
-        messages: [
-            {
-                role: 'system',
-                content: `You are a highly experienced software engineer and code reviewer with a focus on code quality, maintainability, and adherence to best practices.
-                Your goal is to provide thorough, constructive, and actionable feedback to help developers improve their code.
-                You consider various aspects, including readability, efficiency, and security.
-                The user will provide you with a diff payload and some rules on how the code should be (they are separated by --), and you have to make suggestions on what can be improved by looking at the diff changes. You might be provided with a PR description for more context (most probably in markdown format).
-                Take the user input diff payload and analyze the changes from the "content" property (ignore the first "+" or "-" character at the start of the string because that's just a diff character) of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
-                If you think there are no improvements to be made, don't return **that** object from the payload.
-                Rest, **return everything as it is (in the same order)** along with your suggestions. Ignore formatting issues.
-                IMPORTANT: 
-                - Don't be lazy.
-                - Only make suggestions when they are significant, relevant and add value to the code changes.
-                - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
-                - Only modify/add the "suggestions" property (if required).
-                - DO NOT modify the value of any other property. Return them as they are in the input.
-                - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes on those positions (see "content" or "previously" (if it exists) property).
-                - If there is a suggestion which is similar across multiple positions, only suggest that change at any one of those positions.
-                - Keep the suggestions precise and to the point (in a constructive way).
-                - If possible, add references to some really good resources like stackoverflow or from programming articles, blogs, etc. for suggested code changes. Keep the references in context of the programming language you are reviewing.
-                - Suggestions should be inclusive of the rules (if any) provided by the user.
-                - You can also give suggested code changes in markdown format.
-                - If there are no suggestions, please don't spam with "No suggestions".
-                - Rules are not exhaustive, so use you own judgement as well.
-                - Rules start with and are separated by --`,
-            },
-            {
-                role: 'user',
-                content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ''}. Here's the diff payload:
-                ${JSON.stringify(rawComments, null, 2)}
-                ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})` : ''}`
-            }
-        ],
-        response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
-    })
+    const { error } = log({ withTimestamp: true });
 
-    console.log(JSON.stringify(result.choices, null, 2));
+    try {
+        const result = await openAI.beta.chat.completions.parse({
+            model: getModelName(modelName),
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are a highly experienced software engineer and code reviewer with a focus on code quality, maintainability, and adherence to best practices.
+                    Your goal is to provide thorough, constructive, and actionable feedback to help developers improve their code.
+                    You consider various aspects, including readability, efficiency, and security.
+                    The user will provide you with a diff payload and some rules on how the code should be (they are separated by --), and you have to make suggestions on what can be improved by looking at the diff changes. You might be provided with a PR description for more context (most probably in markdown format).
+                    Take the user input diff payload and analyze the changes from the "content" property (ignore the first "+" or "-" character at the start of the string because that's just a diff character) of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
+                    If you think there are no improvements to be made, don't return **that** object from the payload.
+                    Rest, **return everything as it is (in the same order)** along with your suggestions. Ignore formatting issues.
+                    IMPORTANT: 
+                    - Don't be lazy.
+                    - Only make suggestions when they are significant, relevant and add value to the code changes.
+                    - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
+                    - Only modify/add the "suggestions" property (if required).
+                    - DO NOT modify the value of any other property. Return them as they are in the input.
+                    - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes on those positions (see "content" or "previously" (if it exists) property).
+                    - If there is a suggestion which is similar across multiple positions, only suggest that change at any one of those positions.
+                    - Keep the suggestions precise and to the point (in a constructive way).
+                    - If possible, add references to some really good resources like stackoverflow or from programming articles, blogs, etc. for suggested code changes. Keep the references in context of the programming language you are reviewing.
+                    - Suggestions should be inclusive of the rules (if any) provided by the user.
+                    - You can also give suggested code changes in markdown format.
+                    - If there are no suggestions, please don't spam with "No suggestions".
+                    - Rules are not exhaustive, so use you own judgement as well.
+                    - Rules start with and are separated by --`,
+                },
+                {
+                    role: 'user',
+                    content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ''}. Here's the diff payload:
+                    ${JSON.stringify(rawComments, null, 2)}
+                    ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})` : ''}`
+                }
+            ],
+            response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
+        })
 
-    return result.choices[0].message.parsed
+        const message = result.choices[0].message;
+
+        if (message.refusal) {
+            throw new Error(`the model refused to generate suggestions - ${message.refusal}`);
+        }
+
+        return message.parsed
+    } catch (err) {
+        if (err.constructor.name == "LengthFinishReasonError") {
+            error(`Too many tokens: ${err.message}`);
+            core.setFailed(`Too many tokens: ${err.message}`);
+        } else {
+            error(`Could not generate suggestions: ${err.message}`);
+            core.setFailed(`Could not generate suggestions: ${err.message}`);
+        }
+    }
 }
 
 /**
