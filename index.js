@@ -44,14 +44,12 @@ function getModelName(name) {
     return name !== '' ? name : DEFAULT_MODEL.name
 };
 
-/**
- * @param {parseDiff.File[]} parsedDiff 
- */
-function getCommentsToAdd(parsedDiff) {
+function extractComments() {
     /**
+     * @param {parseDiff.File[]} parsedDiff
      * @returns {rawCommentsPayload}
      */
-    const comments = () => parsedDiff.reduce((acc, file) => {
+    const rawComments = (parsedDiff) => parsedDiff.reduce((acc, file) => {
         const filePath = file.deleted ? file.from : file.to;
         let diffRelativePosition = 0;
         return acc.concat(file.chunks.reduce((accc, chunk, i) => {
@@ -108,71 +106,72 @@ function getCommentsToAdd(parsedDiff) {
     }, [])
 
     /**
-     * @param {rawCommentsPayload} rawComments
-     * @param {OpenAI} openAI
-     * @param {string} rules
-     * @param {string} modelName
-     * @param {{ body: string | null }} pullRequestContext
+     * @param {suggestionsPayload} suggestions
+     * @returns {CommentsPayload}
      */
-    const getSuggestions = async (rawComments, openAI, rules, modelName, pullRequestContext) => {
-        const result = await openAI.beta.chat.completions.parse({
-            model: getModelName(modelName),
-            messages: [
-                {
-                    role: 'system',
-                    content: `You are a highly experienced software engineer and code reviewer with a focus on code quality, maintainability, and adherence to best practices.
-                    Your goal is to provide thorough, constructive, and actionable feedback to help developers improve their code.
-                    You consider various aspects, including readability, efficiency, and security.
-                    The user will provide you with a diff payload and some rules on how the code should be (they are separated by --), and you have to make suggestions on what can be improved by looking at the diff changes. You might be provided with a PR description for more context (most probably in markdown format).
-                    Take the user input diff payload and analyze the changes from the "content" property (ignore the first "+" or "-" character at the start of the string because that's just a diff character) of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
-                    If you think there are no improvements to be made, don't return **that** object from the payload.
-                    Rest, **return everything as it is (in the same order)** along with your suggestions. Ignore formatting issues.
-                    IMPORTANT: 
-                    - Only make suggestions when they are significant, relevant and add value to the code changes.
-                    - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
-                    - Only modify/add the "suggestions" property (if required).
-                    - DO NOT modify the value of any other property. Return them as they are in the input.
-                    - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes on those positions (see "content" or "previously" (if it exists) property).
-                    - If there is a suggestion which is similar across multiple positions, only suggest that change at any one of those positions.
-                    - Keep the suggestions precise and to the point (in a constructive way).
-                    - If possible, add references to some really good resources like stackoverflow or from programming articles, blogs, etc. for suggested code changes. Keep the references in context of the programming language you are reviewing.
-                    - Suggestions should be inclusive of the rules (if any) provided by the user.
-                    - You can also give suggested code changes in markdown format.
-                    - If there are no suggestions, please don't spam with "No suggestions".
-                    - Rules are not exhaustive, so use you own judgement as well.
-                    - Rules start with and are separated by --`,
-                },
-                {
-                    role: 'user',
-                    content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ''}. Here's the diff payload:
-                    ${JSON.stringify(rawComments, null, 2)}
-                    ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})`: ''}`
-                }
-            ],
-            response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
-        })
-
-        return result.choices[0].message.parsed
-    }
+    const commentsWithSuggestions = (suggestions) => suggestions.commentsToAdd.filter(i => {
+        return i["suggestions"]
+    }).map(i => {
+        return {
+            path: i.path,
+            // position: i.position,
+            line: i.line,
+            body: i.suggestions
+        }
+    })
 
     return {
-        raw: comments,
-        getSuggestions,
-        /**
-         * @param {suggestionsPayload} suggestions
-         * @returns {CommentsPayload}
-         */
-        comments: (suggestions) => suggestions.commentsToAdd.filter(i => {
-            return i["suggestions"]
-        }).map(i => {
-            return {
-                path: i.path,
-                // position: i.position,
-                line: i.line,
-                body: i.suggestions
-            }
-        }),
+        raw: rawComments,
+        comments: commentsWithSuggestions,
     }
+}
+
+/**
+ * @param {rawCommentsPayload} rawComments
+ * @param {OpenAI} openAI
+ * @param {string} rules
+ * @param {string} modelName
+ * @param {{ body: string | null }} pullRequestContext
+ */
+async function getSuggestions(rawComments, openAI, rules, modelName, pullRequestContext) {
+    const result = await openAI.beta.chat.completions.parse({
+        model: getModelName(modelName),
+        messages: [
+            {
+                role: 'system',
+                content: `You are a highly experienced software engineer and code reviewer with a focus on code quality, maintainability, and adherence to best practices.
+                Your goal is to provide thorough, constructive, and actionable feedback to help developers improve their code.
+                You consider various aspects, including readability, efficiency, and security.
+                The user will provide you with a diff payload and some rules on how the code should be (they are separated by --), and you have to make suggestions on what can be improved by looking at the diff changes. You might be provided with a PR description for more context (most probably in markdown format).
+                Take the user input diff payload and analyze the changes from the "content" property (ignore the first "+" or "-" character at the start of the string because that's just a diff character) of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
+                If you think there are no improvements to be made, don't return **that** object from the payload.
+                Rest, **return everything as it is (in the same order)** along with your suggestions. Ignore formatting issues.
+                IMPORTANT: 
+                - Only make suggestions when they are significant, relevant and add value to the code changes.
+                - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
+                - Only modify/add the "suggestions" property (if required).
+                - DO NOT modify the value of any other property. Return them as they are in the input.
+                - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes on those positions (see "content" or "previously" (if it exists) property).
+                - If there is a suggestion which is similar across multiple positions, only suggest that change at any one of those positions.
+                - Keep the suggestions precise and to the point (in a constructive way).
+                - If possible, add references to some really good resources like stackoverflow or from programming articles, blogs, etc. for suggested code changes. Keep the references in context of the programming language you are reviewing.
+                - Suggestions should be inclusive of the rules (if any) provided by the user.
+                - You can also give suggested code changes in markdown format.
+                - If there are no suggestions, please don't spam with "No suggestions".
+                - Rules are not exhaustive, so use you own judgement as well.
+                - Rules start with and are separated by --`,
+            },
+            {
+                role: 'user',
+                content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ''}. Here's the diff payload:
+                ${JSON.stringify(rawComments, null, 2)}
+                ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})` : ''}`
+            }
+        ],
+        response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
+    })
+
+    return result.choices[0].message.parsed
 }
 
 /**
@@ -181,8 +180,8 @@ function getCommentsToAdd(parsedDiff) {
  * @returns {CommentsPayload}
  */
 function filterPositionsNotPresentInRawPayload(rawComments, comments) {
-    return comments.filter(comment => 
-        rawComments.some(rawComment => 
+    return comments.filter(comment =>
+        rawComments.some(rawComment =>
             rawComment.path === comment.path && rawComment.line === comment.line
         )
     );
@@ -191,15 +190,14 @@ function filterPositionsNotPresentInRawPayload(rawComments, comments) {
 
 /**
  * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
- * @param {parseDiff.File[]} parsedDiff
  * @param {diffPayloadSchema} suggestions
  * @param {InstanceType<GitHub>} octokit
  * @param {rawCommentsPayload} rawComments 
  */
-async function addReviewComments(parsedDiff, suggestions, octokit, rawComments) {
+async function addReviewComments(suggestions, octokit, rawComments) {
     const comments = filterPositionsNotPresentInRawPayload(
         rawComments,
-        getCommentsToAdd(parsedDiff).comments(suggestions)
+        extractComments().comments(suggestions)
     );
 
     await octokit.rest.pulls.createReview({
@@ -219,13 +217,8 @@ async function addReviewComments(parsedDiff, suggestions, octokit, rawComments) 
 async function getPullRequestDetails(octokit, { mode }) {
     let AcceptFormat = 'application/vnd.github.raw+json';
 
-    if(mode === 'diff') {
-        AcceptFormat = 'application/vnd.github.diff'
-    }
-
-    if (mode === 'json') {
-        AcceptFormat = 'application/vnd.github.raw+json'
-    }
+    if (mode === 'diff') AcceptFormat = 'application/vnd.github.diff';
+    if (mode === 'json') AcceptFormat = 'application/vnd.github.raw+json';
 
     return await octokit.rest.pulls.get({
         owner: github.context.repo.owner,
@@ -300,6 +293,8 @@ function log({ withTimestamp = true }) {
 }
 
 async function run() {
+    "use strict";
+
     const { info, warning, error } = log({ withTimestamp: true });
     try {
         info('Retrieving tokens and inputs...');
@@ -329,7 +324,7 @@ async function run() {
                 const reviews = await getAllReviewsForPullRequest(octokit);
 
                 info(`Fetching reviews by bot...`);
-                const reviewsByBot = reviews.data.filter(r => r.user.login === 'github-actions[bot]' || r.user.type === 'Bot')
+                const reviewsByBot = reviews.data.filter(r => r.user.login === 'github-actions[bot]' || r.user.type === 'Bot') // not possible to change the bot name - https://github.com/orgs/community/discussions/25853
 
                 if (reviewsByBot.length > 0) {
                     info(`Found ${reviewsByBot.length} reviews by bot...`);
@@ -352,10 +347,10 @@ async function run() {
 
             info(`Reviewing pull request ${pullRequestDiff.url}...`);
             const parsedDiff = parseDiff(pullRequestDiff.data);
-            const rawComments = getCommentsToAdd(parsedDiff).raw();
+            const rawComments = extractComments().raw(parsedDiff);
 
             info(`Generating suggestions using model ${getModelName(modelName)}...`);
-            const suggestions = await getCommentsToAdd(parsedDiff).getSuggestions(rawComments, openAI, rules, modelName, { body: pullRequestData.data.body });
+            const suggestions = await getSuggestions(rawComments, openAI, rules, modelName, { body: pullRequestData.data.body });
 
             if (suggestions.length === 0) {
                 info('No suggestions found. Code review complete. All good!');
@@ -363,7 +358,7 @@ async function run() {
             }
 
             info('Adding review comments...');
-            await addReviewComments(parsedDiff, suggestions, octokit, rawComments);
+            await addReviewComments(suggestions, octokit, rawComments);
 
             info('Code review complete!');
         } else {
