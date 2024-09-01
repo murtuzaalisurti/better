@@ -1,5 +1,8 @@
 name: '@murtuzaalisurti/better'
 description: 'An AI powered code review tool'
+branding:
+  icon: 'check-square'
+  color: 'green'
 inputs:
   repo-token:
     description: 'The repo token: { secrets.GITHUB_TOKEN }'
