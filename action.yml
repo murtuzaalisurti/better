@@ -1,4 +1,4 @@
-name: 'better-code'
+name: '@murtuzaalisurti/better'
 description: 'An AI powered code review tool'
 inputs:
   repo-token:
