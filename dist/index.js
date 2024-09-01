@@ -51293,7 +51293,6 @@ function filterPositionsNotPresentInRawPayload(rawComments, comments) {
     );
 }
 
-
 /**
  * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
  * @param {diffPayloadSchema} suggestions
@@ -51399,9 +51398,8 @@ function log({ withTimestamp = true }) {
 }
 
 async function run() {
-    "use strict";
-
     const { info, warning, error } = log({ withTimestamp: true });
+
     try {
         info('Retrieving tokens and inputs...');
 
@@ -51477,5 +51475,6 @@ async function run() {
 }
 
 run();
+
 })();
 
