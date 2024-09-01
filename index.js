@@ -369,7 +369,7 @@ async function run() {
             info(`Generating suggestions using model ${getModelName(modelName)}...`);
             const suggestions = await getSuggestions(rawComments, openAI, rules, modelName, { body: pullRequestData.data.body });
 
-            if (suggestions.length === 0) {
+            if (suggestions.commentsToAdd.length === 0) {
                 info('No suggestions found. Code review complete. All good!');
                 return;
             }
