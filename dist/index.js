@@ -51277,6 +51277,8 @@ async function getSuggestions(rawComments, openAI, rules, modelName, pullRequest
         response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
     })
 
+    console.log(JSON.stringify(result.choices, null, 2));
+
     return result.choices[0].message.parsed
 }
 
