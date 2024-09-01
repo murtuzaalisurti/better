@@ -1,4 +1,4 @@
-name: 'better'
+name: 'better-code'
 description: 'An AI powered code review tool'
 inputs:
   repo-token:
