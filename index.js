@@ -95,16 +95,16 @@ function extractComments() {
      * @param {suggestionsPayload} suggestions
      * @returns {CommentsPayload}
      */
-    const commentsWithSuggestions = (suggestions) => suggestions.commentsToAdd.filter(i => {
-        return i["suggestions"]
-    }).map(i => {
-        return {
-            path: i.path,
-            // position: i.position,
-            line: i.line,
-            body: i.suggestions
-        }
-    })
+    const commentsWithSuggestions = (suggestions) =>
+        suggestions.commentsToAdd.filter(i => i["suggestions"])
+            .map(i => {
+                return {
+                    path: i.path,
+                    // position: i.position,
+                    line: i.line,
+                    body: i.suggestions
+                }
+            });
 
     return {
         raw: rawComments,
@@ -334,7 +334,7 @@ async function run() {
 
                     for (const review of reviewsByBot) {
                         const reviewComments = await getAllCommentsUnderAReview(octokit, review.id);
-                        
+
                         for (const comment of reviewComments.data) {
                             await deleteComment(octokit, comment.id);
                             await new Promise(resolve => setTimeout(resolve, 1500)) // Wait 1.5 seconds before deleting next comment to avoid rate limiting
