@@ -51475,7 +51475,6 @@ async function run() {
                         const reviewComments = await getAllCommentsUnderAReview(octokit, review.id);
                         
                         for (const comment of reviewComments.data) {
-                            console.log(JSON.stringify(reviewComments, null, 2));
                             await deleteComment(octokit, comment.id);
                             await new Promise(resolve => setTimeout(resolve, 1500)) // Wait 1.5 seconds before deleting next comment to avoid rate limiting
                         }
