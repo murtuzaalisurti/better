@@ -12,7 +12,7 @@
     "prepare": "is-ci || husky"
   },
   "lint-staged": {
-    "*.{js}": "eslint --fix"
+    "*.js": "eslint --fix"
   },
   "keywords": [],
   "author": "Murtuzaali Surti",
