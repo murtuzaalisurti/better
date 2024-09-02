@@ -349,6 +349,7 @@ async function run() {
 
                     for (const review of reviewsByBot) {
                         const reviewComments = await getAllCommentsUnderAReview(octokit, review.id);
+                        console.log(JSON.stringify(reviewComments, null, 2));
 
                         for (const comment of reviewComments.data) {
                             await deleteComment(octokit, comment.id);
