@@ -32,7 +32,6 @@ export default [
       "no-var": "warn",
       "no-empty": "error",
       "prefer-const": "warn",
-      "prefer-destructuring": "warn",
       camelcase: "off",
       "new-cap": "off",
       "no-invalid-this": "warn",

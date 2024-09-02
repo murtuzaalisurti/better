@@ -161,7 +161,7 @@ async function getSuggestions(rawComments, openAI, rules, modelName, pullRequest
             response_format: zodResponseFormat(diffPayloadSchema, 'json_diff_response')
         })
 
-        const {message} = result.choices[0];
+        const { message } = result.choices[0];
 
         if (message.refusal) {
             throw new Error(`the model refused to generate suggestions - ${message.refusal}`);
