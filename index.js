@@ -4,36 +4,22 @@ import parseDiff from 'parse-diff';
 import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
-
-const aDiff = z.object({
-    path: z.string(),
-    position: z.number(),
-    line: z.number(),
-    change: z.object({
-        type: z.string(),
-        add: z.boolean(),
-        ln: z.number(),
-        content: z.string(),
-        relativePosition: z.number(),
-    }),
-    previously: z.string().optional(),
-    suggestions: z.string().optional(),
-});
-
-const diffPayloadSchema = z.object(
-    {
-        commentsToAdd: z.array(aDiff)
-    }
-);
-
-const DEFAULT_MODEL = {
-    name: 'gpt-4o-2024-08-06'
-};
+import { aDiff, diffPayloadSchema } from './utils/types.js';
+import { DEFAULT_MODEL } from './utils/constants.js';
 
 /**
+ * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
  * @typedef {z.infer<typeof aDiff>[]} rawCommentsPayload
  * @typedef {z.infer<typeof diffPayloadSchema>} suggestionsPayload
  * @typedef {{ path: string, line: number, body: string }[]} CommentsPayload
+ * @typedef {InstanceType<GitHub>} OctokitApi
+ * @typedef {parseDiff.File[]} ParsedDiff
+ * @typedef {{ body: string | null }} PullRequestContext
+ * @typedef {{
+ *  info: (message: string) => void,
+ *  warning: (message: string) => void,
+ *  error: (error: string) => void
+ * }} Logger
  */
 
 /**
@@ -46,7 +32,7 @@ function getModelName(name) {
 
 function extractComments() {
     /**
-     * @param {parseDiff.File[]} parsedDiff
+     * @param {ParsedDiff} parsedDiff
      * @returns {rawCommentsPayload}
      */
     const rawComments = (parsedDiff) => parsedDiff.reduce((acc, file) => {
@@ -131,7 +117,7 @@ function extractComments() {
  * @param {OpenAI} openAI
  * @param {string} rules
  * @param {string} modelName
- * @param {{ body: string | null }} pullRequestContext
+ * @param {PullRequestContext} pullRequestContext
  */
 async function getSuggestions(rawComments, openAI, rules, modelName, pullRequestContext) {
     const { error } = log({ withTimestamp: true });
@@ -207,9 +193,8 @@ function filterPositionsNotPresentInRawPayload(rawComments, comments) {
 }
 
 /**
- * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
- * @param {diffPayloadSchema} suggestions
- * @param {InstanceType<GitHub>} octokit
+ * @param {suggestionsPayload} suggestions
+ * @param {OctokitApi} octokit
  * @param {rawCommentsPayload} rawComments 
  */
 async function addReviewComments(suggestions, octokit, rawComments) {
@@ -229,7 +214,7 @@ async function addReviewComments(suggestions, octokit, rawComments) {
 }
 
 /**
- * @param {InstanceType<GitHub>} octokit 
+ * @param {OctokitApi} octokit 
  * @param {{ mode: 'diff' | 'json' }} options
  */
 async function getPullRequestDetails(octokit, { mode }) {
@@ -249,7 +234,7 @@ async function getPullRequestDetails(octokit, { mode }) {
 }
 
 /**
- * @param {InstanceType<GitHub>} octokit 
+ * @param {OctokitApi} octokit 
  */
 async function getAllReviewsForPullRequest(octokit) {
     return await octokit.rest.pulls.listReviews({
@@ -260,7 +245,7 @@ async function getAllReviewsForPullRequest(octokit) {
 }
 
 /**
- * @param {InstanceType<GitHub>} octokit 
+ * @param {OctokitApi} octokit 
  * @param {number} review_id
  */
 async function getAllCommentsUnderAReview(octokit, review_id) {
@@ -273,7 +258,7 @@ async function getAllCommentsUnderAReview(octokit, review_id) {
 }
 
 /**
- * @param {InstanceType<GitHub>} octokit 
+ * @param {OctokitApi} octokit 
  * @param {number} comment_id 
  */
 async function deleteComment(octokit, comment_id) {
@@ -295,7 +280,7 @@ function getBooleanValue(value) {
 
 /**
  * @param {{ withTimestamp: boolean }} options
- * @returns {{ info: (message: string) => void, warning: (message: string) => void, error: (error: string) => void }}
+ * @returns {Logger}
  */
 function log({ withTimestamp = true }) {
     /**
