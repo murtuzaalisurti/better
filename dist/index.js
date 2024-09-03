@@ -51448,7 +51448,6 @@ async function run() {
         const octokit = github.getOctokit(token);
 
         info('Initializing AI model...');
-
         const openAI = new openai({
             apiKey: modelToken
         })
