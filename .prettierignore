@@ -1,0 +1,16 @@
+# ignore content files
+*.md
+
+# minified files
+dist/
+
+# misc
+package.json
+package-lock.json
+.github/
+.gitignore
+.nvmrc
+.cache/
+.husky/
+*.env
+.env.example
