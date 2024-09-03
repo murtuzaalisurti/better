@@ -35,7 +35,7 @@ function extractComments() {
      * @param {ParsedDiff} parsedDiff
      * @returns {rawCommentsPayload}
      */
-    const rawComments = (parsedDiff) =>
+    const rawComments = parsedDiff =>
         parsedDiff.reduce((acc, file) => {
             const filePath = file.deleted ? file.from : file.to;
             let diffRelativePosition = 0;
@@ -46,14 +46,14 @@ function extractComments() {
                     }
                     return accc.concat(
                         chunk.changes
-                            .map((change) => {
+                            .map(change => {
                                 return {
                                     ...change,
                                     relativePosition: ++diffRelativePosition,
                                 };
                             })
                             .filter(
-                                (change) =>
+                                change =>
                                     change.type !== "normal" && !change.content.includes("No newline at end of file")
                             )
                             .map((change, i, arr) => {
@@ -99,7 +99,7 @@ function extractComments() {
                                     change,
                                 };
                             })
-                            .filter((i) => i) /** filter out nulls */
+                            .filter(i => i) /** filter out nulls */
                     );
                 }, [])
             );
@@ -109,10 +109,10 @@ function extractComments() {
      * @param {suggestionsPayload} suggestions
      * @returns {CommentsPayload}
      */
-    const commentsWithSuggestions = (suggestions) =>
+    const commentsWithSuggestions = suggestions =>
         suggestions.commentsToAdd
-            .filter((i) => i["suggestions"])
-            .map((i) => {
+            .filter(i => i["suggestions"])
+            .map(i => {
                 return {
                     path: i.path,
                     // position: i.position,
@@ -200,8 +200,8 @@ async function getSuggestions(rawComments, openAI, rules, modelName, pullRequest
  * @returns {CommentsPayload}
  */
 function filterPositionsNotPresentInRawPayload(rawComments, comments) {
-    return comments.filter((comment) =>
-        rawComments.some((rawComment) => rawComment.path === comment.path && rawComment.line === comment.line)
+    return comments.filter(comment =>
+        rawComments.some(rawComment => rawComment.path === comment.path && rawComment.line === comment.line)
     );
 }
 
@@ -297,11 +297,11 @@ function log({ withTimestamp = true }) {
      * @param {string} str
      * @returns {string}
      */
-    const getLogText = (str) => (withTimestamp ? `[${new Date().toISOString()}]: ${str}` : str);
+    const getLogText = str => (withTimestamp ? `[${new Date().toISOString()}]: ${str}` : str);
     return {
-        info: (message) => core.info(getLogText(message)),
-        warning: (message) => core.warning(getLogText(message)),
-        error: (error) => core.error(getLogText(error)),
+        info: message => core.info(getLogText(message)),
+        warning: message => core.warning(getLogText(message)),
+        error: error => core.error(getLogText(error)),
     };
 }
 
@@ -340,7 +340,7 @@ async function run() {
 
                 info(`Fetching reviews by bot...`);
                 const reviewsByBot = reviews.data.filter(
-                    (r) => r.user.login === "github-actions[bot]" || r.user.type === "Bot"
+                    r => r.user.login === "github-actions[bot]" || r.user.type === "Bot"
                 ); // not possible to change the bot name - https://github.com/orgs/community/discussions/25853
 
                 if (reviewsByBot.length > 0) {
@@ -352,7 +352,7 @@ async function run() {
 
                         for (const comment of reviewComments.data) {
                             await deleteComment(octokit, comment.id);
-                            await new Promise((resolve) => setTimeout(resolve, 1500)); // Wait 1.5 seconds before deleting next comment to avoid rate limiting
+                            await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5 seconds before deleting next comment to avoid rate limiting
                         }
                     }
                 } else {
