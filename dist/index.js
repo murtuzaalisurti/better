@@ -51197,6 +51197,7 @@ function extractComments() {
                   !change.content.includes("No newline at end of file"),
               )
               .map((change, i, arr) => {
+
                 if (change.content === "+" || change.content === "-") {
                   return null;
                 }
