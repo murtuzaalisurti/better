@@ -39624,7 +39624,7 @@ var github = __nccwpck_require__(5438);
 // EXTERNAL MODULE: ./node_modules/parse-diff/index.js
 var parse_diff = __nccwpck_require__(4833);
 ;// CONCATENATED MODULE: ./node_modules/openai/version.mjs
-const VERSION = '4.57.0'; // x-release-please-version
+const VERSION = '4.57.3'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_shims/registry.mjs
 let auto = false;
@@ -40594,7 +40594,11 @@ async function toFile(value, name, options) {
     if (isResponseLike(value)) {
         const blob = await value.blob();
         name || (name = new URL(value.url).pathname.split(/[\\/]/).pop() ?? 'unknown_file');
-        return new File([blob], name, options);
+        // we need to convert the `Blob` into an array buffer because the `Blob` class
+        // that `node-fetch` defines is incompatible with the web standard which results
+        // in `new File` interpreting it as a string instead of binary data.
+        const data = isBlobLike(blob) ? [(await blob.arrayBuffer())] : [blob];
+        return new File(data, name, options);
     }
     const bits = await getBytes(value);
     name || (name = getName(value) ?? 'unknown_file');
@@ -42987,8 +42991,8 @@ class ChatCompletionRunner extends AbstractChatCompletionRunner {
         runner._run(() => runner._runTools(client, params, opts));
         return runner;
     }
-    _addMessage(message) {
-        super._addMessage(message);
+    _addMessage(message, emit = true) {
+        super._addMessage(message, emit);
         if (isAssistantMessage(message) && message.content) {
             this._emit('content', message.content);
         }
@@ -44061,6 +44065,27 @@ class AssistantStream extends EventStream {
                     accValue.push(...deltaValue); // Use spread syntax for efficient addition
                     continue;
                 }
+                for (const deltaEntry of deltaValue) {
+                    if (!isObj(deltaEntry)) {
+                        throw new Error(`Expected array delta entry to be an object but got: ${deltaEntry}`);
+                    }
+                    const index = deltaEntry['index'];
+                    if (index == null) {
+                        console.error(deltaEntry);
+                        throw new Error('Expected array delta entry to have an `index` property');
+                    }
+                    if (typeof index !== 'number') {
+                        throw new Error(`Expected array delta entry \`index\` property to be a number but got ${index}`);
+                    }
+                    const accEntry = accValue[index];
+                    if (accEntry == null) {
+                        accValue.push(deltaEntry);
+                    }
+                    else {
+                        accValue[index] = this.accumulateDelta(accEntry, deltaEntry);
+                    }
+                }
+                continue;
             }
             else {
                 throw Error(`Unhandled record type: ${key}, deltaValue: ${deltaValue}, accValue: ${accValue}`);
@@ -51238,7 +51263,7 @@ function extractComments() {
                                     change,
                                 };
                             })
-                            .filter((i) => i) /** filter out nulls */
+                            .filter(i => i) /** filter out nulls */
                     );
                 }, [])
             );
@@ -51250,8 +51275,8 @@ function extractComments() {
      */
     const commentsWithSuggestions = suggestions =>
         suggestions.commentsToAdd
-            .filter((i) => i["suggestions"])
-            .map((i) => {
+            .filter(i => i["suggestions"])
+            .map(i => {
                 return {
                     path: i.path,
                     // position: i.position,
@@ -51339,8 +51364,8 @@ async function getSuggestions(rawComments, openAI, rules, modelName, pullRequest
  * @returns {CommentsPayload}
  */
 function filterPositionsNotPresentInRawPayload(rawComments, comments) {
-    return comments.filter((comment) =>
-        rawComments.some((rawComment) => rawComment.path === comment.path && rawComment.line === comment.line)
+    return comments.filter(comment =>
+        rawComments.some(rawComment => rawComment.path === comment.path && rawComment.line === comment.line)
     );
 }
 
@@ -51438,9 +51463,9 @@ function log({ withTimestamp = true }) {
      */
     const getLogText = str => (withTimestamp ? `[${new Date().toISOString()}]: ${str}` : str);
     return {
-        info: (message) => core.info(getLogText(message)),
-        warning: (message) => core.warning(getLogText(message)),
-        error: (error) => core.error(getLogText(error)),
+        info: message => core.info(getLogText(message)),
+        warning: message => core.warning(getLogText(message)),
+        error: error => core.error(getLogText(error)),
     };
 }
 
@@ -51491,7 +51516,7 @@ async function run() {
 
                         for (const comment of reviewComments.data) {
                             await deleteComment(octokit, comment.id);
-                            await new Promise((resolve) => setTimeout(resolve, 1500)); // Wait 1.5 seconds before deleting next comment to avoid rate limiting
+                            await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5 seconds before deleting next comment to avoid rate limiting
                         }
                     }
                 } else {
