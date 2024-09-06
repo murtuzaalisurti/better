@@ -266,15 +266,16 @@ function filterPositionsNotPresentInRawPayload(rawComments, comments) {
  * @param {suggestionsPayload} suggestions
  * @param {OctokitApi} octokit
  * @param {rawCommentsPayload} rawComments
+ * @param {string} modelName
  */
-async function addReviewComments(suggestions, octokit, rawComments) {
+async function addReviewComments(suggestions, octokit, rawComments, modelName) {
     const comments = filterPositionsNotPresentInRawPayload(rawComments, extractComments().comments(suggestions));
 
     await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
-        body: `Code Review`,
+        body: `Code Review by ${modelName}`,
         event: "COMMENT",
         comments,
     });
@@ -445,7 +446,7 @@ async function run() {
             }
 
             info("Adding review comments...");
-            await addReviewComments(suggestions, octokit, rawComments);
+            await addReviewComments(suggestions, octokit, rawComments, getModelName(modelName, platform));
 
             info("Code review complete!");
         } else {
