@@ -249,7 +249,16 @@ async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequ
     });
 
     console.log(JSON.stringify(result, null, 2));
-    return result.content[0];
+
+    let parsed = null;
+    for (const block of result.content) {
+        if (block.type === "tool_use") {
+            parsed = block.input;
+            break;
+        }
+    }
+
+    return parsed;
 }
 
 /**
@@ -480,7 +489,7 @@ async function run() {
             }
 
             info("Adding review comments...");
-            // await addReviewComments(suggestions, octokit, rawComments);
+            await addReviewComments(suggestions, octokit, rawComments);
 
             info("Code review complete!");
         } else {

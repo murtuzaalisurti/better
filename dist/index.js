@@ -39639,7 +39639,7 @@ __nccwpck_require__.d(sdk_error_namespaceObject, {
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(2186);
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
-var lib_github = __nccwpck_require__(5438);
+var github = __nccwpck_require__(5438);
 // EXTERNAL MODULE: ./node_modules/parse-diff/index.js
 var parse_diff = __nccwpck_require__(4833);
 ;// CONCATENATED MODULE: ./node_modules/openai/version.mjs
@@ -55925,7 +55925,16 @@ async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequ
     });
 
     console.log(JSON.stringify(result, null, 2));
-    return result.content[0];
+
+    let parsed = null;
+    for (const block of result.content) {
+        if (block.type === "tool_use") {
+            parsed = block.input;
+            break;
+        }
+    }
+
+    return parsed;
 }
 
 /**
@@ -56002,9 +56011,9 @@ async function getPullRequestDetails(octokit, { mode }) {
     if (mode === "json") AcceptFormat = "application/vnd.github.raw+json";
 
     return await octokit.rest.pulls.get({
-        owner: lib_github.context.repo.owner,
-        repo: lib_github.context.repo.repo,
-        pull_number: lib_github.context.payload.pull_request.number,
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        pull_number: github.context.payload.pull_request.number,
         headers: {
             accept: AcceptFormat,
         },
@@ -56016,9 +56025,9 @@ async function getPullRequestDetails(octokit, { mode }) {
  */
 async function getAllReviewsForPullRequest(octokit) {
     return await octokit.rest.pulls.listReviews({
-        owner: lib_github.context.repo.owner,
-        repo: lib_github.context.repo.repo,
-        pull_number: lib_github.context.payload.pull_request.number,
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        pull_number: github.context.payload.pull_request.number,
     });
 }
 
@@ -56028,9 +56037,9 @@ async function getAllReviewsForPullRequest(octokit) {
  */
 async function getAllCommentsUnderAReview(octokit, review_id) {
     return await octokit.rest.pulls.listCommentsForReview({
-        owner: lib_github.context.repo.owner,
-        repo: lib_github.context.repo.repo,
-        pull_number: lib_github.context.payload.pull_request.number,
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        pull_number: github.context.payload.pull_request.number,
         review_id,
     });
 }
@@ -56041,8 +56050,8 @@ async function getAllCommentsUnderAReview(octokit, review_id) {
  */
 async function deleteComment(octokit, comment_id) {
     await octokit.rest.pulls.deleteReviewComment({
-        owner: lib_github.context.repo.owner,
-        repo: lib_github.context.repo.repo,
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
         comment_id,
     });
 }
@@ -56085,7 +56094,7 @@ async function run() {
         const modelName = core.getInput("ai-model-name");
         const modelToken = core.getInput("ai-model-api-key");
         const platform = core.getInput("platform");
-        const octokit = lib_github.getOctokit(token);
+        const octokit = github.getOctokit(token);
 
         info("Initializing AI model...");
         const platformSDK =
@@ -56095,7 +56104,7 @@ async function run() {
                       apiKey: modelToken,
                   });
 
-        if (lib_github.context.payload.pull_request) {
+        if (github.context.payload.pull_request) {
             info("Fetching pull request details...");
             const pullRequestDiff = await getPullRequestDetails(octokit, {
                 mode: "diff",
@@ -56156,7 +56165,7 @@ async function run() {
             }
 
             info("Adding review comments...");
-            // await addReviewComments(suggestions, octokit, rawComments);
+            await addReviewComments(suggestions, octokit, rawComments);
 
             info("Code review complete!");
         } else {
