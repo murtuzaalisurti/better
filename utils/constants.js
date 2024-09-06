@@ -1,5 +1,10 @@
 const DEFAULT_MODEL = {
-    name: "gpt-4o-2024-08-06",
+    OPENAI: {
+        name: "gpt-4o-2024-08-06",
+    },
+    ANTHROPIC: {
+        name: "claude-3-5-sonnet-20240620",
+    },
 };
 
 const COMMON_SYSTEM_PROMPT = `

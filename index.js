@@ -27,10 +27,11 @@ import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT } from "./utils/constants.js";
 
 /**
  * @param {string} name
+ * @param {'openai' | 'anthropic'} platform
  * @returns {string}
  */
-function getModelName(name) {
-    return name !== "" ? name : DEFAULT_MODEL.name;
+function getModelName(name, platform) {
+    return name !== "" ? name : DEFAULT_MODEL[`${platform.toUpperCase()}`].name;
 }
 
 function extractComments() {
@@ -142,7 +143,7 @@ function extractComments() {
  */
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext }) {
     const result = await openAI.beta.chat.completions.parse({
-        model: getModelName(modelName),
+        model: getModelName(modelName, "openai"),
         messages: [
             {
                 role: "system",
@@ -181,7 +182,7 @@ async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequ
     const { definitions } = zodToJsonSchema(diffPayloadSchema, "diffPayloadSchema");
     const result = await anthropic.messages.create({
         max_tokens: 8192,
-        model: getModelName(modelName),
+        model: getModelName(modelName, "anthropic"),
         system: COMMON_SYSTEM_PROMPT,
         tools: [
             {
@@ -426,7 +427,7 @@ async function run() {
             const parsedDiff = parseDiff(pullRequestDiff.data);
             const rawComments = extractComments().raw(parsedDiff);
 
-            info(`Generating suggestions using model ${getModelName(modelName)}...`);
+            info(`Generating suggestions using model ${getModelName(modelName, platform)}...`);
             const suggestions = await getSuggestions({
                 platform,
                 rawComments,
