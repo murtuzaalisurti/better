@@ -39643,7 +39643,7 @@ var github = __nccwpck_require__(5438);
 // EXTERNAL MODULE: ./node_modules/parse-diff/index.js
 var parse_diff = __nccwpck_require__(4833);
 ;// CONCATENATED MODULE: ./node_modules/openai/version.mjs
-const VERSION = '4.57.3'; // x-release-please-version
+const VERSION = '4.58.0'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_shims/registry.mjs
 let auto = false;
@@ -40608,8 +40608,10 @@ const isUploadable = (value) => {
 async function toFile(value, name, options) {
     // If it's a promise, resolve it.
     value = await value;
-    // Use the file's options if there isn't one provided
-    options ?? (options = uploads_isFileLike(value) ? { lastModified: value.lastModified, type: value.type } : {});
+    // If we've been given a `File` we don't need to do anything
+    if (uploads_isFileLike(value)) {
+        return value;
+    }
     if (isResponseLike(value)) {
         const blob = await value.blob();
         name || (name = new URL(value.url).pathname.split(/[\\/]/).pop() ?? 'unknown_file');
@@ -40621,7 +40623,7 @@ async function toFile(value, name, options) {
     }
     const bits = await getBytes(value);
     name || (name = getName(value) ?? 'unknown_file');
-    if (!options.type) {
+    if (!options?.type) {
         const type = bits[0]?.type;
         if (typeof type === 'string') {
             options = { ...options, type };
