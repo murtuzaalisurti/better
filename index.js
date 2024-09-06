@@ -2,10 +2,13 @@ import core from "@actions/core";
 import github from "@actions/github";
 import parseDiff from "parse-diff";
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
 import { aDiff, diffPayloadSchema } from "./utils/types.js";
-import { DEFAULT_MODEL } from "./utils/constants.js";
+import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT } from "./utils/constants.js";
 
 /**
  * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
@@ -24,10 +27,11 @@ import { DEFAULT_MODEL } from "./utils/constants.js";
 
 /**
  * @param {string} name
+ * @param {'openai' | 'anthropic'} platform
  * @returns {string}
  */
-function getModelName(name) {
-    return name !== "" ? name : DEFAULT_MODEL.name;
+function getModelName(name, platform) {
+    return name !== "" ? name : DEFAULT_MODEL[`${platform.toUpperCase()}`].name;
 }
 
 function extractComments() {
@@ -128,61 +132,114 @@ function extractComments() {
 }
 
 /**
- * @param {rawCommentsPayload} rawComments
- * @param {OpenAI} openAI
- * @param {string} rules
- * @param {string} modelName
- * @param {PullRequestContext} pullRequestContext
+ * @param {{
+ *  rawComments: rawCommentsPayload,
+ *  openAI: OpenAI,
+ *  rules: string,
+ *  modelName: string,
+ *  pullRequestContext: PullRequestContext
+ * }} params
+ * @returns {Promise<suggestionsPayload | null>}
  */
-async function getSuggestions(rawComments, openAI, rules, modelName, pullRequestContext) {
+async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext }) {
+    const result = await openAI.beta.chat.completions.parse({
+        model: getModelName(modelName, "openai"),
+        messages: [
+            {
+                role: "system",
+                content: COMMON_SYSTEM_PROMPT,
+            },
+            {
+                role: "user",
+                content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ""}. Here's the diff payload:
+                ${JSON.stringify(rawComments, null, 2)}
+                ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})` : ""}`,
+            },
+        ],
+        response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
+    });
+
+    const { message } = result.choices[0];
+
+    if (message.refusal) {
+        throw new Error(`the model refused to generate suggestions - ${message.refusal}`);
+    }
+
+    return message.parsed;
+}
+
+/**
+ * @param {{
+ *  rawComments: rawCommentsPayload,
+ *  anthropic: Anthropic,
+ *  rules: string,
+ *  modelName: string,
+ *  pullRequestContext: PullRequestContext
+ * }} params
+ * @returns {Promise<suggestionsPayload | null>}
+ */
+async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequestContext }) {
+    const { definitions } = zodToJsonSchema(diffPayloadSchema, "diffPayloadSchema");
+    const result = await anthropic.messages.create({
+        max_tokens: 8192,
+        model: getModelName(modelName, "anthropic"),
+        system: COMMON_SYSTEM_PROMPT,
+        tools: [
+            {
+                name: "structuredOutput",
+                description: "Structured Output",
+                input_schema: definitions["diffPayloadSchema"],
+            },
+        ],
+        tool_choice: {
+            type: "tool",
+            name: "structuredOutput",
+        },
+        messages: [
+            {
+                role: "user",
+                content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ""}. Here's the diff payload:
+                ${JSON.stringify(rawComments, null, 2)}
+                ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})` : ""}`,
+            },
+        ],
+    });
+
+    let parsed = null;
+    for (const block of result.content) {
+        if (block.type === "tool_use") {
+            parsed = block.input;
+            break;
+        }
+    }
+
+    return parsed;
+}
+
+/**
+ * @param {{
+ *  platform: 'openai' | 'anthropic',
+ *  rawComments: rawCommentsPayload,
+ *  platformSDK: OpenAI | Anthropic,
+ *  rules: string,
+ *  modelName: string,
+ *  pullRequestContext: PullRequestContext
+ * }} params
+ * @returns {Promise<suggestionsPayload | null>}
+ */
+async function getSuggestions({ platform, rawComments, platformSDK, rules, modelName, pullRequestContext }) {
     const { error } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
 
     try {
-        const result = await openAI.beta.chat.completions.parse({
-            model: getModelName(modelName),
-            messages: [
-                {
-                    role: "system",
-                    content: `You are a highly experienced software engineer and code reviewer with a focus on code quality, maintainability, and adherence to best practices.
-                    Your goal is to provide thorough, constructive, and actionable feedback to help developers improve their code.
-                    You consider various aspects, including readability, efficiency, and security.
-                    The user will provide you with a diff payload and some rules on how the code should be (they are separated by --), and you have to make suggestions on what can be improved by looking at the diff changes. You might be provided with a PR description for more context (most probably in markdown format).
-                    Take the user input diff payload and analyze the changes from the "content" property (ignore the first "+" or "-" character at the start of the string because that's just a diff character) of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
-                    If you think there are no improvements to be made, don't return **that** object from the payload.
-                    Rest, **return everything as it is (in the same order)** along with your suggestions. Ignore formatting issues.
-                    IMPORTANT: 
-                    - Don't be lazy.
-                    - Only make suggestions when they are significant, relevant and add value to the code changes.
-                    - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
-                    - Only modify/add the "suggestions" property (if required).
-                    - DO NOT modify the value of any other property. Return them as they are in the input.
-                    - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes on those positions (see "content" or "previously" (if it exists) property).
-                    - If there is a suggestion which is similar across multiple positions, only suggest that change at any one of those positions.
-                    - Keep the suggestions precise and to the point (in a constructive way).
-                    - If possible, add references to some really good resources like stackoverflow or from programming articles, blogs, etc. for suggested code changes. Keep the references in context of the programming language you are reviewing.
-                    - Suggestions should be inclusive of the rules (if any) provided by the user.
-                    - You can also give suggested code changes in markdown format.
-                    - If there are no suggestions, please don't spam with "No suggestions".
-                    - Rules are not exhaustive, so use you own judgement as well.
-                    - Rules start with and are separated by --`,
-                },
-                {
-                    role: "user",
-                    content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ""}. Here's the diff payload:
-                    ${JSON.stringify(rawComments, null, 2)}
-                    ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})` : ""}`,
-                },
-            ],
-            response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
-        });
-
-        const { message } = result.choices[0];
-
-        if (message.refusal) {
-            throw new Error(`the model refused to generate suggestions - ${message.refusal}`);
+        if (platform === "openai") {
+            return await useOpenAI({ rawComments, openAI: platformSDK, rules, modelName, pullRequestContext });
         }
 
-        return message.parsed;
+        if (platform === "anthropic") {
+            return await useAnthropic({ rawComments, anthropic: platformSDK, rules, modelName, pullRequestContext });
+        }
+
+        throw new Error(`Unsupported AI platform: ${platform}`);
     } catch (err) {
         if (err.constructor.name == "LengthFinishReasonError") {
             error(`Too many tokens: ${err.message}`);
@@ -209,15 +266,16 @@ function filterPositionsNotPresentInRawPayload(rawComments, comments) {
  * @param {suggestionsPayload} suggestions
  * @param {OctokitApi} octokit
  * @param {rawCommentsPayload} rawComments
+ * @param {string} modelName
  */
-async function addReviewComments(suggestions, octokit, rawComments) {
+async function addReviewComments(suggestions, octokit, rawComments, modelName) {
     const comments = filterPositionsNotPresentInRawPayload(rawComments, extractComments().comments(suggestions));
 
     await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
-        body: `Code Review`,
+        body: `Code Review by ${modelName}`,
         event: "COMMENT",
         comments,
     });
@@ -316,12 +374,16 @@ async function run() {
         const token = core.getInput("repo-token");
         const modelName = core.getInput("ai-model-name");
         const modelToken = core.getInput("ai-model-api-key");
+        const platform = core.getInput("platform");
         const octokit = github.getOctokit(token);
 
         info("Initializing AI model...");
-        const openAI = new OpenAI({
-            apiKey: modelToken,
-        });
+        const platformSDK =
+            platform === "openai"
+                ? new OpenAI({ apiKey: modelToken })
+                : new Anthropic({
+                      apiKey: modelToken,
+                  });
 
         if (github.context.payload.pull_request) {
             info("Fetching pull request details...");
@@ -366,18 +428,25 @@ async function run() {
             const parsedDiff = parseDiff(pullRequestDiff.data);
             const rawComments = extractComments().raw(parsedDiff);
 
-            info(`Generating suggestions using model ${getModelName(modelName)}...`);
-            const suggestions = await getSuggestions(rawComments, openAI, rules, modelName, {
-                body: pullRequestData.data.body,
+            info(`Generating suggestions using model ${getModelName(modelName, platform)}...`);
+            const suggestions = await getSuggestions({
+                platform,
+                rawComments,
+                platformSDK,
+                rules,
+                modelName,
+                pullRequestContext: {
+                    body: pullRequestData.data.body,
+                },
             });
 
-            if (suggestions.commentsToAdd.length === 0) {
+            if (suggestions?.commentsToAdd.length === 0) {
                 info("No suggestions found. Code review complete. All good!");
                 return;
             }
 
             info("Adding review comments...");
-            await addReviewComments(suggestions, octokit, rawComments);
+            await addReviewComments(suggestions, octokit, rawComments, getModelName(modelName, platform));
 
             info("Code review complete!");
         } else {

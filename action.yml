@@ -1,22 +1,25 @@
-name: '@murtuzaalisurti/better'
-description: 'An AI powered code review tool'
+name: "@murtuzaalisurti/better"
+description: "An AI powered code review tool"
 branding:
-  icon: 'check-square'
-  color: 'green'
+    icon: "check-square"
+    color: "green"
 inputs:
-  repo-token:
-    description: 'The repo token: { secrets.GITHUB_TOKEN }'
-    required: true
-  ai-model-api-key:
-    description: 'The models api key: { secrets.<YOUR_AI_MODEL_API_KEY> }'
-    required: true
-  ai-model-name:
-    description: 'The name of the AI model to be used'
-  delete-existing-review-by-bot:
-    description: 'Delete existing review(s) by bot'
-    default: true
-  rules:
-    description: 'The rules to consider for code review'
+    repo-token:
+        description: "The repo token: { secrets.GITHUB_TOKEN }"
+        required: true
+    platform:
+        description: "The AI platform to use. Either `openai` or `anthropic`"
+        required: true
+    ai-model-api-key:
+        description: "The models api key: { secrets.<YOUR_AI_MODEL_API_KEY> }"
+        required: true
+    ai-model-name:
+        description: "The name of the AI model to be used"
+    delete-existing-review-by-bot:
+        description: "Delete existing review(s) by bot"
+        default: true
+    rules:
+        description: "The rules to consider for code review"
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
+    using: "node20"
+    main: "dist/index.js"

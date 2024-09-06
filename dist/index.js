@@ -39617,6 +39617,25 @@ __nccwpck_require__.d(error_namespaceObject, {
   "UnprocessableEntityError": () => (UnprocessableEntityError)
 });
 
+// NAMESPACE OBJECT: ./node_modules/@anthropic-ai/sdk/error.mjs
+var sdk_error_namespaceObject = {};
+__nccwpck_require__.r(sdk_error_namespaceObject);
+__nccwpck_require__.d(sdk_error_namespaceObject, {
+  "APIConnectionError": () => (error_APIConnectionError),
+  "APIConnectionTimeoutError": () => (error_APIConnectionTimeoutError),
+  "APIError": () => (error_APIError),
+  "APIUserAbortError": () => (error_APIUserAbortError),
+  "AnthropicError": () => (error_AnthropicError),
+  "AuthenticationError": () => (error_AuthenticationError),
+  "BadRequestError": () => (error_BadRequestError),
+  "ConflictError": () => (error_ConflictError),
+  "InternalServerError": () => (error_InternalServerError),
+  "NotFoundError": () => (error_NotFoundError),
+  "PermissionDeniedError": () => (error_PermissionDeniedError),
+  "RateLimitError": () => (error_RateLimitError),
+  "UnprocessableEntityError": () => (error_UnprocessableEntityError)
+});
+
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(2186);
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
@@ -39633,14 +39652,14 @@ let fetch = undefined;
 let Request = (/* unused pure expression or super */ null && (undefined));
 let Response = (/* unused pure expression or super */ null && (undefined));
 let Headers = (/* unused pure expression or super */ null && (undefined));
-let FormData = undefined;
+let registry_FormData = undefined;
 let Blob = (/* unused pure expression or super */ null && (undefined));
 let File = undefined;
 let ReadableStream = undefined;
 let registry_getMultipartRequestOptions = undefined;
 let getDefaultAgent = undefined;
 let fileFromPath = undefined;
-let isFsReadStream = undefined;
+let registry_isFsReadStream = undefined;
 function setShims(shims, options = { auto: false }) {
     if (auto) {
         throw new Error(`you must \`import 'openai/shims/${shims.kind}'\` before importing anything else from openai`);
@@ -39654,14 +39673,14 @@ function setShims(shims, options = { auto: false }) {
     Request = shims.Request;
     Response = shims.Response;
     Headers = shims.Headers;
-    FormData = shims.FormData;
+    registry_FormData = shims.FormData;
     Blob = shims.Blob;
     File = shims.File;
     ReadableStream = shims.ReadableStream;
     registry_getMultipartRequestOptions = shims.getMultipartRequestOptions;
     getDefaultAgent = shims.getDefaultAgent;
     fileFromPath = shims.fileFromPath;
-    isFsReadStream = shims.isFsReadStream;
+    registry_isFsReadStream = shims.isFsReadStream;
 }
 //# sourceMappingURL=registry.mjs.map
 // EXTERNAL MODULE: ./node_modules/node-fetch/lib/index.js
@@ -40575,7 +40594,7 @@ const isBlobLike = (value) => value != null &&
     typeof value.slice === 'function' &&
     typeof value.arrayBuffer === 'function';
 const isUploadable = (value) => {
-    return uploads_isFileLike(value) || isResponseLike(value) || isFsReadStream(value);
+    return uploads_isFileLike(value) || isResponseLike(value) || registry_isFsReadStream(value);
 };
 /**
  * Helper for creating a {@link File} to pass to an SDK upload method from a variety of different data formats
@@ -40666,7 +40685,7 @@ const multipartFormRequestOptions = async (opts) => {
     return registry_getMultipartRequestOptions(form, opts);
 };
 const createForm = async (body) => {
-    const form = new FormData();
+    const form = new registry_FormData();
     await Promise.all(Object.entries(body || {}).map(([key, value]) => addFormValue(form, key, value)));
     return form;
 };
@@ -45450,6 +45469,3077 @@ const API_KEY_SENTINEL = '<Missing Key>';
 // ---------------------- End Azure ----------------------
 /* harmony default export */ const openai = (OpenAI);
 //# sourceMappingURL=index.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/version.mjs
+const version_VERSION = '0.27.2'; // x-release-please-version
+//# sourceMappingURL=version.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/_shims/registry.mjs
+let registry_auto = false;
+let registry_kind = undefined;
+let registry_fetch = undefined;
+let registry_Request = (/* unused pure expression or super */ null && (undefined));
+let registry_Response = (/* unused pure expression or super */ null && (undefined));
+let registry_Headers = (/* unused pure expression or super */ null && (undefined));
+let _shims_registry_FormData = (/* unused pure expression or super */ null && (undefined));
+let registry_Blob = (/* unused pure expression or super */ null && (undefined));
+let registry_File = undefined;
+let registry_ReadableStream = undefined;
+let _shims_registry_getMultipartRequestOptions = (/* unused pure expression or super */ null && (undefined));
+let registry_getDefaultAgent = undefined;
+let registry_fileFromPath = undefined;
+let _shims_registry_isFsReadStream = (/* unused pure expression or super */ null && (undefined));
+function registry_setShims(shims, options = { auto: false }) {
+    if (registry_auto) {
+        throw new Error(`you must \`import '@anthropic-ai/sdk/shims/${shims.kind}'\` before importing anything else from @anthropic-ai/sdk`);
+    }
+    if (registry_kind) {
+        throw new Error(`can't \`import '@anthropic-ai/sdk/shims/${shims.kind}'\` after \`import '@anthropic-ai/sdk/shims/${registry_kind}'\``);
+    }
+    registry_auto = options.auto;
+    registry_kind = shims.kind;
+    registry_fetch = shims.fetch;
+    registry_Request = shims.Request;
+    registry_Response = shims.Response;
+    registry_Headers = shims.Headers;
+    _shims_registry_FormData = shims.FormData;
+    registry_Blob = shims.Blob;
+    registry_File = shims.File;
+    registry_ReadableStream = shims.ReadableStream;
+    _shims_registry_getMultipartRequestOptions = shims.getMultipartRequestOptions;
+    registry_getDefaultAgent = shims.getDefaultAgent;
+    registry_fileFromPath = shims.fileFromPath;
+    _shims_registry_isFsReadStream = shims.isFsReadStream;
+}
+//# sourceMappingURL=registry.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/_shims/MultipartBody.mjs
+/**
+ * Disclaimer: modules in _shims aren't intended to be imported by SDK users.
+ */
+class MultipartBody_MultipartBody {
+    constructor(body) {
+        this.body = body;
+    }
+    get [Symbol.toStringTag]() {
+        return 'MultipartBody';
+    }
+}
+//# sourceMappingURL=MultipartBody.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/_shims/node-runtime.mjs
+
+
+
+
+
+
+
+
+
+let node_runtime_fileFromPathWarned = false;
+async function _shims_node_runtime_fileFromPath(path, ...args) {
+    // this import fails in environments that don't handle export maps correctly, like old versions of Jest
+    const { fileFromPath: _fileFromPath } = await __nccwpck_require__.e(/* import() */ 73).then(__nccwpck_require__.bind(__nccwpck_require__, 4073));
+    if (!node_runtime_fileFromPathWarned) {
+        console.warn(`fileFromPath is deprecated; use fs.createReadStream(${JSON.stringify(path)}) instead`);
+        node_runtime_fileFromPathWarned = true;
+    }
+    // @ts-ignore
+    return await _fileFromPath(path, ...args);
+}
+const node_runtime_defaultHttpAgent = new agentkeepalive({ keepAlive: true, timeout: 5 * 60 * 1000 });
+const node_runtime_defaultHttpsAgent = new agentkeepalive.HttpsAgent({ keepAlive: true, timeout: 5 * 60 * 1000 });
+async function _shims_node_runtime_getMultipartRequestOptions(form, opts) {
+    const encoder = new FormDataEncoder(form);
+    const readable = external_node_stream_.Readable.from(encoder);
+    const body = new MultipartBody_MultipartBody(readable);
+    const headers = {
+        ...opts.headers,
+        ...encoder.headers,
+        'Content-Length': encoder.contentLength,
+    };
+    return { ...opts, body: body, headers };
+}
+function node_runtime_getRuntime() {
+    // Polyfill global object if needed.
+    if (typeof AbortController === 'undefined') {
+        // @ts-expect-error (the types are subtly different, but compatible in practice)
+        globalThis.AbortController = abort_controller.AbortController;
+    }
+    return {
+        kind: 'node',
+        fetch: lib,
+        Request: lib.Request,
+        Response: lib.Response,
+        Headers: lib.Headers,
+        FormData: FormData_FormData,
+        Blob: esm_Blob/* Blob */.t,
+        File: esm_File/* File */.$,
+        ReadableStream: web_namespaceObject.ReadableStream,
+        getMultipartRequestOptions: _shims_node_runtime_getMultipartRequestOptions,
+        getDefaultAgent: (url) => (url.startsWith('https') ? node_runtime_defaultHttpsAgent : node_runtime_defaultHttpAgent),
+        fileFromPath: _shims_node_runtime_fileFromPath,
+        isFsReadStream: (value) => value instanceof external_node_fs_namespaceObject.ReadStream,
+    };
+}
+//# sourceMappingURL=node-runtime.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/_shims/index.mjs
+/**
+ * Disclaimer: modules in _shims aren't intended to be imported by SDK users.
+ */
+
+
+if (!registry_kind) registry_setShims(node_runtime_getRuntime(), { auto: true });
+
+
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/streaming.mjs
+
+
+
+
+class streaming_Stream {
+    constructor(iterator, controller) {
+        this.iterator = iterator;
+        this.controller = controller;
+    }
+    static fromSSEResponse(response, controller) {
+        let consumed = false;
+        async function* iterator() {
+            if (consumed) {
+                throw new Error('Cannot iterate over a consumed stream, use `.tee()` to split the stream.');
+            }
+            consumed = true;
+            let done = false;
+            try {
+                for await (const sse of streaming_iterSSEMessages(response, controller)) {
+                    if (sse.event === 'completion') {
+                        try {
+                            yield JSON.parse(sse.data);
+                        }
+                        catch (e) {
+                            console.error(`Could not parse message into JSON:`, sse.data);
+                            console.error(`From chunk:`, sse.raw);
+                            throw e;
+                        }
+                    }
+                    if (sse.event === 'message_start' ||
+                        sse.event === 'message_delta' ||
+                        sse.event === 'message_stop' ||
+                        sse.event === 'content_block_start' ||
+                        sse.event === 'content_block_delta' ||
+                        sse.event === 'content_block_stop') {
+                        try {
+                            yield JSON.parse(sse.data);
+                        }
+                        catch (e) {
+                            console.error(`Could not parse message into JSON:`, sse.data);
+                            console.error(`From chunk:`, sse.raw);
+                            throw e;
+                        }
+                    }
+                    if (sse.event === 'ping') {
+                        continue;
+                    }
+                    if (sse.event === 'error') {
+                        const errText = sse.data;
+                        const errJSON = core_safeJSON(errText);
+                        const errMessage = errJSON ? undefined : errText;
+                        throw error_APIError.generate(undefined, errJSON, errMessage, core_createResponseHeaders(response.headers));
+                    }
+                }
+                done = true;
+            }
+            catch (e) {
+                // If the user calls `stream.controller.abort()`, we should exit without throwing.
+                if (e instanceof Error && e.name === 'AbortError')
+                    return;
+                throw e;
+            }
+            finally {
+                // If the user `break`s, abort the ongoing request.
+                if (!done)
+                    controller.abort();
+            }
+        }
+        return new streaming_Stream(iterator, controller);
+    }
+    /**
+     * Generates a Stream from a newline-separated ReadableStream
+     * where each item is a JSON value.
+     */
+    static fromReadableStream(readableStream, controller) {
+        let consumed = false;
+        async function* iterLines() {
+            const lineDecoder = new streaming_LineDecoder();
+            const iter = streaming_readableStreamAsyncIterable(readableStream);
+            for await (const chunk of iter) {
+                for (const line of lineDecoder.decode(chunk)) {
+                    yield line;
+                }
+            }
+            for (const line of lineDecoder.flush()) {
+                yield line;
+            }
+        }
+        async function* iterator() {
+            if (consumed) {
+                throw new Error('Cannot iterate over a consumed stream, use `.tee()` to split the stream.');
+            }
+            consumed = true;
+            let done = false;
+            try {
+                for await (const line of iterLines()) {
+                    if (done)
+                        continue;
+                    if (line)
+                        yield JSON.parse(line);
+                }
+                done = true;
+            }
+            catch (e) {
+                // If the user calls `stream.controller.abort()`, we should exit without throwing.
+                if (e instanceof Error && e.name === 'AbortError')
+                    return;
+                throw e;
+            }
+            finally {
+                // If the user `break`s, abort the ongoing request.
+                if (!done)
+                    controller.abort();
+            }
+        }
+        return new streaming_Stream(iterator, controller);
+    }
+    [Symbol.asyncIterator]() {
+        return this.iterator();
+    }
+    /**
+     * Splits the stream into two streams which can be
+     * independently read from at different speeds.
+     */
+    tee() {
+        const left = [];
+        const right = [];
+        const iterator = this.iterator();
+        const teeIterator = (queue) => {
+            return {
+                next: () => {
+                    if (queue.length === 0) {
+                        const result = iterator.next();
+                        left.push(result);
+                        right.push(result);
+                    }
+                    return queue.shift();
+                },
+            };
+        };
+        return [
+            new streaming_Stream(() => teeIterator(left), this.controller),
+            new streaming_Stream(() => teeIterator(right), this.controller),
+        ];
+    }
+    /**
+     * Converts this stream to a newline-separated ReadableStream of
+     * JSON stringified values in the stream
+     * which can be turned back into a Stream with `Stream.fromReadableStream()`.
+     */
+    toReadableStream() {
+        const self = this;
+        let iter;
+        const encoder = new TextEncoder();
+        return new registry_ReadableStream({
+            async start() {
+                iter = self[Symbol.asyncIterator]();
+            },
+            async pull(ctrl) {
+                try {
+                    const { value, done } = await iter.next();
+                    if (done)
+                        return ctrl.close();
+                    const bytes = encoder.encode(JSON.stringify(value) + '\n');
+                    ctrl.enqueue(bytes);
+                }
+                catch (err) {
+                    ctrl.error(err);
+                }
+            },
+            async cancel() {
+                await iter.return?.();
+            },
+        });
+    }
+}
+async function* streaming_iterSSEMessages(response, controller) {
+    if (!response.body) {
+        controller.abort();
+        throw new error_AnthropicError(`Attempted to iterate over a response with no body`);
+    }
+    const sseDecoder = new streaming_SSEDecoder();
+    const lineDecoder = new streaming_LineDecoder();
+    const iter = streaming_readableStreamAsyncIterable(response.body);
+    for await (const sseChunk of streaming_iterSSEChunks(iter)) {
+        for (const line of lineDecoder.decode(sseChunk)) {
+            const sse = sseDecoder.decode(line);
+            if (sse)
+                yield sse;
+        }
+    }
+    for (const line of lineDecoder.flush()) {
+        const sse = sseDecoder.decode(line);
+        if (sse)
+            yield sse;
+    }
+}
+/**
+ * Given an async iterable iterator, iterates over it and yields full
+ * SSE chunks, i.e. yields when a double new-line is encountered.
+ */
+async function* streaming_iterSSEChunks(iterator) {
+    let data = new Uint8Array();
+    for await (const chunk of iterator) {
+        if (chunk == null) {
+            continue;
+        }
+        const binaryChunk = chunk instanceof ArrayBuffer ? new Uint8Array(chunk)
+            : typeof chunk === 'string' ? new TextEncoder().encode(chunk)
+                : chunk;
+        let newData = new Uint8Array(data.length + binaryChunk.length);
+        newData.set(data);
+        newData.set(binaryChunk, data.length);
+        data = newData;
+        let patternIndex;
+        while ((patternIndex = streaming_findDoubleNewlineIndex(data)) !== -1) {
+            yield data.slice(0, patternIndex);
+            data = data.slice(patternIndex);
+        }
+    }
+    if (data.length > 0) {
+        yield data;
+    }
+}
+function streaming_findDoubleNewlineIndex(buffer) {
+    // This function searches the buffer for the end patterns (\r\r, \n\n, \r\n\r\n)
+    // and returns the index right after the first occurrence of any pattern,
+    // or -1 if none of the patterns are found.
+    const newline = 0x0a; // \n
+    const carriage = 0x0d; // \r
+    for (let i = 0; i < buffer.length - 2; i++) {
+        if (buffer[i] === newline && buffer[i + 1] === newline) {
+            // \n\n
+            return i + 2;
+        }
+        if (buffer[i] === carriage && buffer[i + 1] === carriage) {
+            // \r\r
+            return i + 2;
+        }
+        if (buffer[i] === carriage &&
+            buffer[i + 1] === newline &&
+            i + 3 < buffer.length &&
+            buffer[i + 2] === carriage &&
+            buffer[i + 3] === newline) {
+            // \r\n\r\n
+            return i + 4;
+        }
+    }
+    return -1;
+}
+class streaming_SSEDecoder {
+    constructor() {
+        this.event = null;
+        this.data = [];
+        this.chunks = [];
+    }
+    decode(line) {
+        if (line.endsWith('\r')) {
+            line = line.substring(0, line.length - 1);
+        }
+        if (!line) {
+            // empty line and we didn't previously encounter any messages
+            if (!this.event && !this.data.length)
+                return null;
+            const sse = {
+                event: this.event,
+                data: this.data.join('\n'),
+                raw: this.chunks,
+            };
+            this.event = null;
+            this.data = [];
+            this.chunks = [];
+            return sse;
+        }
+        this.chunks.push(line);
+        if (line.startsWith(':')) {
+            return null;
+        }
+        let [fieldname, _, value] = streaming_partition(line, ':');
+        if (value.startsWith(' ')) {
+            value = value.substring(1);
+        }
+        if (fieldname === 'event') {
+            this.event = value;
+        }
+        else if (fieldname === 'data') {
+            this.data.push(value);
+        }
+        return null;
+    }
+}
+/**
+ * A re-implementation of httpx's `LineDecoder` in Python that handles incrementally
+ * reading lines from text.
+ *
+ * https://github.com/encode/httpx/blob/920333ea98118e9cf617f246905d7b202510941c/httpx/_decoders.py#L258
+ */
+class streaming_LineDecoder {
+    constructor() {
+        this.buffer = [];
+        this.trailingCR = false;
+    }
+    decode(chunk) {
+        let text = this.decodeText(chunk);
+        if (this.trailingCR) {
+            text = '\r' + text;
+            this.trailingCR = false;
+        }
+        if (text.endsWith('\r')) {
+            this.trailingCR = true;
+            text = text.slice(0, -1);
+        }
+        if (!text) {
+            return [];
+        }
+        const trailingNewline = streaming_LineDecoder.NEWLINE_CHARS.has(text[text.length - 1] || '');
+        let lines = text.split(streaming_LineDecoder.NEWLINE_REGEXP);
+        // if there is a trailing new line then the last entry will be an empty
+        // string which we don't care about
+        if (trailingNewline) {
+            lines.pop();
+        }
+        if (lines.length === 1 && !trailingNewline) {
+            this.buffer.push(lines[0]);
+            return [];
+        }
+        if (this.buffer.length > 0) {
+            lines = [this.buffer.join('') + lines[0], ...lines.slice(1)];
+            this.buffer = [];
+        }
+        if (!trailingNewline) {
+            this.buffer = [lines.pop() || ''];
+        }
+        return lines;
+    }
+    decodeText(bytes) {
+        if (bytes == null)
+            return '';
+        if (typeof bytes === 'string')
+            return bytes;
+        // Node:
+        if (typeof Buffer !== 'undefined') {
+            if (bytes instanceof Buffer) {
+                return bytes.toString();
+            }
+            if (bytes instanceof Uint8Array) {
+                return Buffer.from(bytes).toString();
+            }
+            throw new error_AnthropicError(`Unexpected: received non-Uint8Array (${bytes.constructor.name}) stream chunk in an environment with a global "Buffer" defined, which this library assumes to be Node. Please report this error.`);
+        }
+        // Browser
+        if (typeof TextDecoder !== 'undefined') {
+            if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer) {
+                this.textDecoder ?? (this.textDecoder = new TextDecoder('utf8'));
+                return this.textDecoder.decode(bytes);
+            }
+            throw new error_AnthropicError(`Unexpected: received non-Uint8Array/ArrayBuffer (${bytes.constructor.name}) in a web platform. Please report this error.`);
+        }
+        throw new error_AnthropicError(`Unexpected: neither Buffer nor TextDecoder are available as globals. Please report this error.`);
+    }
+    flush() {
+        if (!this.buffer.length && !this.trailingCR) {
+            return [];
+        }
+        const lines = [this.buffer.join('')];
+        this.buffer = [];
+        this.trailingCR = false;
+        return lines;
+    }
+}
+// prettier-ignore
+streaming_LineDecoder.NEWLINE_CHARS = new Set(['\n', '\r']);
+streaming_LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r]/g;
+/** This is an internal helper function that's just used for testing */
+function streaming_decodeChunks(chunks) {
+    const decoder = new streaming_LineDecoder();
+    const lines = [];
+    for (const chunk of chunks) {
+        lines.push(...decoder.decode(chunk));
+    }
+    return lines;
+}
+function streaming_partition(str, delimiter) {
+    const index = str.indexOf(delimiter);
+    if (index !== -1) {
+        return [str.substring(0, index), delimiter, str.substring(index + delimiter.length)];
+    }
+    return [str, '', ''];
+}
+/**
+ * Most browsers don't yet have async iterable support for ReadableStream,
+ * and Node has a very different way of reading bytes from its "ReadableStream".
+ *
+ * This polyfill was pulled from https://github.com/MattiasBuelens/web-streams-polyfill/pull/122#issuecomment-1627354490
+ */
+function streaming_readableStreamAsyncIterable(stream) {
+    if (stream[Symbol.asyncIterator])
+        return stream;
+    const reader = stream.getReader();
+    return {
+        async next() {
+            try {
+                const result = await reader.read();
+                if (result?.done)
+                    reader.releaseLock(); // release lock when stream becomes closed
+                return result;
+            }
+            catch (e) {
+                reader.releaseLock(); // release lock when stream becomes errored
+                throw e;
+            }
+        },
+        async return() {
+            const cancelPromise = reader.cancel();
+            reader.releaseLock();
+            await cancelPromise;
+            return { done: true, value: undefined };
+        },
+        [Symbol.asyncIterator]() {
+            return this;
+        },
+    };
+}
+//# sourceMappingURL=streaming.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/uploads.mjs
+
+
+const uploads_isResponseLike = (value) => value != null &&
+    typeof value === 'object' &&
+    typeof value.url === 'string' &&
+    typeof value.blob === 'function';
+const sdk_uploads_isFileLike = (value) => value != null &&
+    typeof value === 'object' &&
+    typeof value.name === 'string' &&
+    typeof value.lastModified === 'number' &&
+    uploads_isBlobLike(value);
+/**
+ * The BlobLike type omits arrayBuffer() because @types/node-fetch@^2.6.4 lacks it; but this check
+ * adds the arrayBuffer() method type because it is available and used at runtime
+ */
+const uploads_isBlobLike = (value) => value != null &&
+    typeof value === 'object' &&
+    typeof value.size === 'number' &&
+    typeof value.type === 'string' &&
+    typeof value.text === 'function' &&
+    typeof value.slice === 'function' &&
+    typeof value.arrayBuffer === 'function';
+const uploads_isUploadable = (value) => {
+    return sdk_uploads_isFileLike(value) || uploads_isResponseLike(value) || isFsReadStream(value);
+};
+/**
+ * Helper for creating a {@link File} to pass to an SDK upload method from a variety of different data formats
+ * @param value the raw content of the file.  Can be an {@link Uploadable}, {@link BlobLikePart}, or {@link AsyncIterable} of {@link BlobLikePart}s
+ * @param {string=} name the name of the file. If omitted, toFile will try to determine a file name from bits if possible
+ * @param {Object=} options additional properties
+ * @param {string=} options.type the MIME type of the content
+ * @param {number=} options.lastModified the last modified timestamp
+ * @returns a {@link File} with the given properties
+ */
+async function uploads_toFile(value, name, options) {
+    // If it's a promise, resolve it.
+    value = await value;
+    // Use the file's options if there isn't one provided
+    options ?? (options = sdk_uploads_isFileLike(value) ? { lastModified: value.lastModified, type: value.type } : {});
+    if (uploads_isResponseLike(value)) {
+        const blob = await value.blob();
+        name || (name = new URL(value.url).pathname.split(/[\\/]/).pop() ?? 'unknown_file');
+        // we need to convert the `Blob` into an array buffer because the `Blob` class
+        // that `node-fetch` defines is incompatible with the web standard which results
+        // in `new File` interpreting it as a string instead of binary data.
+        const data = uploads_isBlobLike(blob) ? [(await blob.arrayBuffer())] : [blob];
+        return new registry_File(data, name, options);
+    }
+    const bits = await uploads_getBytes(value);
+    name || (name = uploads_getName(value) ?? 'unknown_file');
+    if (!options.type) {
+        const type = bits[0]?.type;
+        if (typeof type === 'string') {
+            options = { ...options, type };
+        }
+    }
+    return new registry_File(bits, name, options);
+}
+async function uploads_getBytes(value) {
+    let parts = [];
+    if (typeof value === 'string' ||
+        ArrayBuffer.isView(value) || // includes Uint8Array, Buffer, etc.
+        value instanceof ArrayBuffer) {
+        parts.push(value);
+    }
+    else if (uploads_isBlobLike(value)) {
+        parts.push(await value.arrayBuffer());
+    }
+    else if (uploads_isAsyncIterableIterator(value) // includes Readable, ReadableStream, etc.
+    ) {
+        for await (const chunk of value) {
+            parts.push(chunk); // TODO, consider validating?
+        }
+    }
+    else {
+        throw new Error(`Unexpected data type: ${typeof value}; constructor: ${value?.constructor
+            ?.name}; props: ${uploads_propsForError(value)}`);
+    }
+    return parts;
+}
+function uploads_propsForError(value) {
+    const props = Object.getOwnPropertyNames(value);
+    return `[${props.map((p) => `"${p}"`).join(', ')}]`;
+}
+function uploads_getName(value) {
+    return (uploads_getStringFromMaybeBuffer(value.name) ||
+        uploads_getStringFromMaybeBuffer(value.filename) ||
+        // For fs.ReadStream
+        uploads_getStringFromMaybeBuffer(value.path)?.split(/[\\/]/).pop());
+}
+const uploads_getStringFromMaybeBuffer = (x) => {
+    if (typeof x === 'string')
+        return x;
+    if (typeof Buffer !== 'undefined' && x instanceof Buffer)
+        return String(x);
+    return undefined;
+};
+const uploads_isAsyncIterableIterator = (value) => value != null && typeof value === 'object' && typeof value[Symbol.asyncIterator] === 'function';
+const uploads_isMultipartBody = (body) => body && typeof body === 'object' && body.body && body[Symbol.toStringTag] === 'MultipartBody';
+/**
+ * Returns a multipart/form-data request if any part of the given request body contains a File / Blob value.
+ * Otherwise returns the request as is.
+ */
+const uploads_maybeMultipartFormRequestOptions = async (opts) => {
+    if (!uploads_hasUploadableValue(opts.body))
+        return opts;
+    const form = await uploads_createForm(opts.body);
+    return getMultipartRequestOptions(form, opts);
+};
+const uploads_multipartFormRequestOptions = async (opts) => {
+    const form = await uploads_createForm(opts.body);
+    return getMultipartRequestOptions(form, opts);
+};
+const uploads_createForm = async (body) => {
+    const form = new FormData();
+    await Promise.all(Object.entries(body || {}).map(([key, value]) => uploads_addFormValue(form, key, value)));
+    return form;
+};
+const uploads_hasUploadableValue = (value) => {
+    if (uploads_isUploadable(value))
+        return true;
+    if (Array.isArray(value))
+        return value.some(uploads_hasUploadableValue);
+    if (value && typeof value === 'object') {
+        for (const k in value) {
+            if (uploads_hasUploadableValue(value[k]))
+                return true;
+        }
+    }
+    return false;
+};
+const uploads_addFormValue = async (form, key, value) => {
+    if (value === undefined)
+        return;
+    if (value == null) {
+        throw new TypeError(`Received null for "${key}"; to pass null in FormData, you must use the string 'null'`);
+    }
+    // TODO: make nested formats configurable
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        form.append(key, String(value));
+    }
+    else if (uploads_isUploadable(value)) {
+        const file = await uploads_toFile(value);
+        form.append(key, file);
+    }
+    else if (Array.isArray(value)) {
+        await Promise.all(value.map((entry) => uploads_addFormValue(form, key + '[]', entry)));
+    }
+    else if (typeof value === 'object') {
+        await Promise.all(Object.entries(value).map(([name, prop]) => uploads_addFormValue(form, `${key}[${name}]`, prop)));
+    }
+    else {
+        throw new TypeError(`Invalid value given to form, expected a string, number, boolean, object, Array, File or Blob but got ${value} instead`);
+    }
+};
+//# sourceMappingURL=uploads.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/core.mjs
+var sdk_core_classPrivateFieldSet = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var sdk_core_classPrivateFieldGet = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var core_AbstractPage_client;
+
+
+
+
+
+
+async function core_defaultParseResponse(props) {
+    const { response } = props;
+    if (props.options.stream) {
+        core_debug('response', response.status, response.url, response.headers, response.body);
+        // Note: there is an invariant here that isn't represented in the type system
+        // that if you set `stream: true` the response type must also be `Stream<T>`
+        if (props.options.__streamClass) {
+            return props.options.__streamClass.fromSSEResponse(response, props.controller);
+        }
+        return streaming_Stream.fromSSEResponse(response, props.controller);
+    }
+    // fetch refuses to read the body when the status code is 204.
+    if (response.status === 204) {
+        return null;
+    }
+    if (props.options.__binaryResponse) {
+        return response;
+    }
+    const contentType = response.headers.get('content-type');
+    const isJSON = contentType?.includes('application/json') || contentType?.includes('application/vnd.api+json');
+    if (isJSON) {
+        const json = await response.json();
+        core_debug('response', response.status, response.url, response.headers, json);
+        return json;
+    }
+    const text = await response.text();
+    core_debug('response', response.status, response.url, response.headers, text);
+    // TODO handle blob, arraybuffer, other content types, etc.
+    return text;
+}
+/**
+ * A subclass of `Promise` providing additional helper methods
+ * for interacting with the SDK.
+ */
+class core_APIPromise extends Promise {
+    constructor(responsePromise, parseResponse = core_defaultParseResponse) {
+        super((resolve) => {
+            // this is maybe a bit weird but this has to be a no-op to not implicitly
+            // parse the response body; instead .then, .catch, .finally are overridden
+            // to parse the response
+            resolve(null);
+        });
+        this.responsePromise = responsePromise;
+        this.parseResponse = parseResponse;
+    }
+    _thenUnwrap(transform) {
+        return new core_APIPromise(this.responsePromise, async (props) => transform(await this.parseResponse(props)));
+    }
+    /**
+     * Gets the raw `Response` instance instead of parsing the response
+     * data.
+     *
+     * If you want to parse the response body but still get the `Response`
+     * instance, you can use {@link withResponse()}.
+     *
+     * 👋 Getting the wrong TypeScript type for `Response`?
+     * Try setting `"moduleResolution": "NodeNext"` if you can,
+     * or add one of these imports before your first `import … from '@anthropic-ai/sdk'`:
+     * - `import '@anthropic-ai/sdk/shims/node'` (if you're running on Node)
+     * - `import '@anthropic-ai/sdk/shims/web'` (otherwise)
+     */
+    asResponse() {
+        return this.responsePromise.then((p) => p.response);
+    }
+    /**
+     * Gets the parsed response data and the raw `Response` instance.
+     *
+     * If you just want to get the raw `Response` instance without parsing it,
+     * you can use {@link asResponse()}.
+     *
+     *
+     * 👋 Getting the wrong TypeScript type for `Response`?
+     * Try setting `"moduleResolution": "NodeNext"` if you can,
+     * or add one of these imports before your first `import … from '@anthropic-ai/sdk'`:
+     * - `import '@anthropic-ai/sdk/shims/node'` (if you're running on Node)
+     * - `import '@anthropic-ai/sdk/shims/web'` (otherwise)
+     */
+    async withResponse() {
+        const [data, response] = await Promise.all([this.parse(), this.asResponse()]);
+        return { data, response };
+    }
+    parse() {
+        if (!this.parsedPromise) {
+            this.parsedPromise = this.responsePromise.then(this.parseResponse);
+        }
+        return this.parsedPromise;
+    }
+    then(onfulfilled, onrejected) {
+        return this.parse().then(onfulfilled, onrejected);
+    }
+    catch(onrejected) {
+        return this.parse().catch(onrejected);
+    }
+    finally(onfinally) {
+        return this.parse().finally(onfinally);
+    }
+}
+class core_APIClient {
+    constructor({ baseURL, maxRetries = 2, timeout = 600000, // 10 minutes
+    httpAgent, fetch: overridenFetch, }) {
+        this.baseURL = baseURL;
+        this.maxRetries = core_validatePositiveInteger('maxRetries', maxRetries);
+        this.timeout = core_validatePositiveInteger('timeout', timeout);
+        this.httpAgent = httpAgent;
+        this.fetch = overridenFetch ?? registry_fetch;
+    }
+    authHeaders(opts) {
+        return {};
+    }
+    /**
+     * Override this to add your own default headers, for example:
+     *
+     *  {
+     *    ...super.defaultHeaders(),
+     *    Authorization: 'Bearer 123',
+     *  }
+     */
+    defaultHeaders(opts) {
+        return {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'User-Agent': this.getUserAgent(),
+            ...core_getPlatformHeaders(),
+            ...this.authHeaders(opts),
+        };
+    }
+    /**
+     * Override this to add your own headers validation:
+     */
+    validateHeaders(headers, customHeaders) { }
+    defaultIdempotencyKey() {
+        return `stainless-node-retry-${core_uuid4()}`;
+    }
+    get(path, opts) {
+        return this.methodRequest('get', path, opts);
+    }
+    post(path, opts) {
+        return this.methodRequest('post', path, opts);
+    }
+    patch(path, opts) {
+        return this.methodRequest('patch', path, opts);
+    }
+    put(path, opts) {
+        return this.methodRequest('put', path, opts);
+    }
+    delete(path, opts) {
+        return this.methodRequest('delete', path, opts);
+    }
+    methodRequest(method, path, opts) {
+        return this.request(Promise.resolve(opts).then(async (opts) => {
+            const body = opts && uploads_isBlobLike(opts?.body) ? new DataView(await opts.body.arrayBuffer())
+                : opts?.body instanceof DataView ? opts.body
+                    : opts?.body instanceof ArrayBuffer ? new DataView(opts.body)
+                        : opts && ArrayBuffer.isView(opts?.body) ? new DataView(opts.body.buffer)
+                            : opts?.body;
+            return { method, path, ...opts, body };
+        }));
+    }
+    getAPIList(path, Page, opts) {
+        return this.requestAPIList(Page, { method: 'get', path, ...opts });
+    }
+    calculateContentLength(body) {
+        if (typeof body === 'string') {
+            if (typeof Buffer !== 'undefined') {
+                return Buffer.byteLength(body, 'utf8').toString();
+            }
+            if (typeof TextEncoder !== 'undefined') {
+                const encoder = new TextEncoder();
+                const encoded = encoder.encode(body);
+                return encoded.length.toString();
+            }
+        }
+        else if (ArrayBuffer.isView(body)) {
+            return body.byteLength.toString();
+        }
+        return null;
+    }
+    buildRequest(options) {
+        const { method, path, query, headers: headers = {} } = options;
+        const body = ArrayBuffer.isView(options.body) || (options.__binaryRequest && typeof options.body === 'string') ?
+            options.body
+            : uploads_isMultipartBody(options.body) ? options.body.body
+                : options.body ? JSON.stringify(options.body, null, 2)
+                    : null;
+        const contentLength = this.calculateContentLength(body);
+        const url = this.buildURL(path, query);
+        if ('timeout' in options)
+            core_validatePositiveInteger('timeout', options.timeout);
+        const timeout = options.timeout ?? this.timeout;
+        const httpAgent = options.httpAgent ?? this.httpAgent ?? registry_getDefaultAgent(url);
+        const minAgentTimeout = timeout + 1000;
+        if (typeof httpAgent?.options?.timeout === 'number' &&
+            minAgentTimeout > (httpAgent.options.timeout ?? 0)) {
+            // Allow any given request to bump our agent active socket timeout.
+            // This may seem strange, but leaking active sockets should be rare and not particularly problematic,
+            // and without mutating agent we would need to create more of them.
+            // This tradeoff optimizes for performance.
+            httpAgent.options.timeout = minAgentTimeout;
+        }
+        if (this.idempotencyHeader && method !== 'get') {
+            if (!options.idempotencyKey)
+                options.idempotencyKey = this.defaultIdempotencyKey();
+            headers[this.idempotencyHeader] = options.idempotencyKey;
+        }
+        const reqHeaders = this.buildHeaders({ options, headers, contentLength });
+        const req = {
+            method,
+            ...(body && { body: body }),
+            headers: reqHeaders,
+            ...(httpAgent && { agent: httpAgent }),
+            // @ts-ignore node-fetch uses a custom AbortSignal type that is
+            // not compatible with standard web types
+            signal: options.signal ?? null,
+        };
+        return { req, url, timeout };
+    }
+    buildHeaders({ options, headers, contentLength, }) {
+        const reqHeaders = {};
+        if (contentLength) {
+            reqHeaders['content-length'] = contentLength;
+        }
+        const defaultHeaders = this.defaultHeaders(options);
+        core_applyHeadersMut(reqHeaders, defaultHeaders);
+        core_applyHeadersMut(reqHeaders, headers);
+        // let builtin fetch set the Content-Type for multipart bodies
+        if (uploads_isMultipartBody(options.body) && registry_kind !== 'node') {
+            delete reqHeaders['content-type'];
+        }
+        this.validateHeaders(reqHeaders, headers);
+        return reqHeaders;
+    }
+    /**
+     * Used as a callback for mutating the given `FinalRequestOptions` object.
+     */
+    async prepareOptions(options) { }
+    /**
+     * Used as a callback for mutating the given `RequestInit` object.
+     *
+     * This is useful for cases where you want to add certain headers based off of
+     * the request properties, e.g. `method` or `url`.
+     */
+    async prepareRequest(request, { url, options }) { }
+    parseHeaders(headers) {
+        return (!headers ? {}
+            : Symbol.iterator in headers ?
+                Object.fromEntries(Array.from(headers).map((header) => [...header]))
+                : { ...headers });
+    }
+    makeStatusError(status, error, message, headers) {
+        return error_APIError.generate(status, error, message, headers);
+    }
+    request(options, remainingRetries = null) {
+        return new core_APIPromise(this.makeRequest(options, remainingRetries));
+    }
+    async makeRequest(optionsInput, retriesRemaining) {
+        const options = await optionsInput;
+        if (retriesRemaining == null) {
+            retriesRemaining = options.maxRetries ?? this.maxRetries;
+        }
+        await this.prepareOptions(options);
+        const { req, url, timeout } = this.buildRequest(options);
+        await this.prepareRequest(req, { url, options });
+        core_debug('request', url, options, req.headers);
+        if (options.signal?.aborted) {
+            throw new error_APIUserAbortError();
+        }
+        const controller = new AbortController();
+        const response = await this.fetchWithTimeout(url, req, timeout, controller).catch(core_castToError);
+        if (response instanceof Error) {
+            if (options.signal?.aborted) {
+                throw new error_APIUserAbortError();
+            }
+            if (retriesRemaining) {
+                return this.retryRequest(options, retriesRemaining);
+            }
+            if (response.name === 'AbortError') {
+                throw new error_APIConnectionTimeoutError();
+            }
+            throw new error_APIConnectionError({ cause: response });
+        }
+        const responseHeaders = core_createResponseHeaders(response.headers);
+        if (!response.ok) {
+            if (retriesRemaining && this.shouldRetry(response)) {
+                const retryMessage = `retrying, ${retriesRemaining} attempts remaining`;
+                core_debug(`response (error; ${retryMessage})`, response.status, url, responseHeaders);
+                return this.retryRequest(options, retriesRemaining, responseHeaders);
+            }
+            const errText = await response.text().catch((e) => core_castToError(e).message);
+            const errJSON = core_safeJSON(errText);
+            const errMessage = errJSON ? undefined : errText;
+            const retryMessage = retriesRemaining ? `(error; no more retries left)` : `(error; not retryable)`;
+            core_debug(`response (error; ${retryMessage})`, response.status, url, responseHeaders, errMessage);
+            const err = this.makeStatusError(response.status, errJSON, errMessage, responseHeaders);
+            throw err;
+        }
+        return { response, options, controller };
+    }
+    requestAPIList(Page, options) {
+        const request = this.makeRequest(options, null);
+        return new core_PagePromise(this, request, Page);
+    }
+    buildURL(path, query) {
+        const url = core_isAbsoluteURL(path) ?
+            new URL(path)
+            : new URL(this.baseURL + (this.baseURL.endsWith('/') && path.startsWith('/') ? path.slice(1) : path));
+        const defaultQuery = this.defaultQuery();
+        if (!core_isEmptyObj(defaultQuery)) {
+            query = { ...defaultQuery, ...query };
+        }
+        if (typeof query === 'object' && query && !Array.isArray(query)) {
+            url.search = this.stringifyQuery(query);
+        }
+        return url.toString();
+    }
+    stringifyQuery(query) {
+        return Object.entries(query)
+            .filter(([_, value]) => typeof value !== 'undefined')
+            .map(([key, value]) => {
+            if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+                return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+            }
+            if (value === null) {
+                return `${encodeURIComponent(key)}=`;
+            }
+            throw new error_AnthropicError(`Cannot stringify type ${typeof value}; Expected string, number, boolean, or null. If you need to pass nested query parameters, you can manually encode them, e.g. { query: { 'foo[key1]': value1, 'foo[key2]': value2 } }, and please open a GitHub issue requesting better support for your use case.`);
+        })
+            .join('&');
+    }
+    async fetchWithTimeout(url, init, ms, controller) {
+        const { signal, ...options } = init || {};
+        if (signal)
+            signal.addEventListener('abort', () => controller.abort());
+        const timeout = setTimeout(() => controller.abort(), ms);
+        return (this.getRequestClient()
+            // use undefined this binding; fetch errors if bound to something else in browser/cloudflare
+            .fetch.call(undefined, url, { signal: controller.signal, ...options })
+            .finally(() => {
+            clearTimeout(timeout);
+        }));
+    }
+    getRequestClient() {
+        return { fetch: this.fetch };
+    }
+    shouldRetry(response) {
+        // Note this is not a standard header.
+        const shouldRetryHeader = response.headers.get('x-should-retry');
+        // If the server explicitly says whether or not to retry, obey.
+        if (shouldRetryHeader === 'true')
+            return true;
+        if (shouldRetryHeader === 'false')
+            return false;
+        // Retry on request timeouts.
+        if (response.status === 408)
+            return true;
+        // Retry on lock timeouts.
+        if (response.status === 409)
+            return true;
+        // Retry on rate limits.
+        if (response.status === 429)
+            return true;
+        // Retry internal errors.
+        if (response.status >= 500)
+            return true;
+        return false;
+    }
+    async retryRequest(options, retriesRemaining, responseHeaders) {
+        let timeoutMillis;
+        // Note the `retry-after-ms` header may not be standard, but is a good idea and we'd like proactive support for it.
+        const retryAfterMillisHeader = responseHeaders?.['retry-after-ms'];
+        if (retryAfterMillisHeader) {
+            const timeoutMs = parseFloat(retryAfterMillisHeader);
+            if (!Number.isNaN(timeoutMs)) {
+                timeoutMillis = timeoutMs;
+            }
+        }
+        // About the Retry-After header: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
+        const retryAfterHeader = responseHeaders?.['retry-after'];
+        if (retryAfterHeader && !timeoutMillis) {
+            const timeoutSeconds = parseFloat(retryAfterHeader);
+            if (!Number.isNaN(timeoutSeconds)) {
+                timeoutMillis = timeoutSeconds * 1000;
+            }
+            else {
+                timeoutMillis = Date.parse(retryAfterHeader) - Date.now();
+            }
+        }
+        // If the API asks us to wait a certain amount of time (and it's a reasonable amount),
+        // just do what it says, but otherwise calculate a default
+        if (!(timeoutMillis && 0 <= timeoutMillis && timeoutMillis < 60 * 1000)) {
+            const maxRetries = options.maxRetries ?? this.maxRetries;
+            timeoutMillis = this.calculateDefaultRetryTimeoutMillis(retriesRemaining, maxRetries);
+        }
+        await core_sleep(timeoutMillis);
+        return this.makeRequest(options, retriesRemaining - 1);
+    }
+    calculateDefaultRetryTimeoutMillis(retriesRemaining, maxRetries) {
+        const initialRetryDelay = 0.5;
+        const maxRetryDelay = 8.0;
+        const numRetries = maxRetries - retriesRemaining;
+        // Apply exponential backoff, but not more than the max.
+        const sleepSeconds = Math.min(initialRetryDelay * Math.pow(2, numRetries), maxRetryDelay);
+        // Apply some jitter, take up to at most 25 percent of the retry time.
+        const jitter = 1 - Math.random() * 0.25;
+        return sleepSeconds * jitter * 1000;
+    }
+    getUserAgent() {
+        return `${this.constructor.name}/JS ${version_VERSION}`;
+    }
+}
+class core_AbstractPage {
+    constructor(client, response, body, options) {
+        core_AbstractPage_client.set(this, void 0);
+        sdk_core_classPrivateFieldSet(this, core_AbstractPage_client, client, "f");
+        this.options = options;
+        this.response = response;
+        this.body = body;
+    }
+    hasNextPage() {
+        const items = this.getPaginatedItems();
+        if (!items.length)
+            return false;
+        return this.nextPageInfo() != null;
+    }
+    async getNextPage() {
+        const nextInfo = this.nextPageInfo();
+        if (!nextInfo) {
+            throw new AnthropicError('No next page expected; please check `.hasNextPage()` before calling `.getNextPage()`.');
+        }
+        const nextOptions = { ...this.options };
+        if ('params' in nextInfo && typeof nextOptions.query === 'object') {
+            nextOptions.query = { ...nextOptions.query, ...nextInfo.params };
+        }
+        else if ('url' in nextInfo) {
+            const params = [...Object.entries(nextOptions.query || {}), ...nextInfo.url.searchParams.entries()];
+            for (const [key, value] of params) {
+                nextInfo.url.searchParams.set(key, value);
+            }
+            nextOptions.query = undefined;
+            nextOptions.path = nextInfo.url.toString();
+        }
+        return await sdk_core_classPrivateFieldGet(this, core_AbstractPage_client, "f").requestAPIList(this.constructor, nextOptions);
+    }
+    async *iterPages() {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        let page = this;
+        yield page;
+        while (page.hasNextPage()) {
+            page = await page.getNextPage();
+            yield page;
+        }
+    }
+    async *[(core_AbstractPage_client = new WeakMap(), Symbol.asyncIterator)]() {
+        for await (const page of this.iterPages()) {
+            for (const item of page.getPaginatedItems()) {
+                yield item;
+            }
+        }
+    }
+}
+/**
+ * This subclass of Promise will resolve to an instantiated Page once the request completes.
+ *
+ * It also implements AsyncIterable to allow auto-paginating iteration on an unawaited list call, eg:
+ *
+ *    for await (const item of client.items.list()) {
+ *      console.log(item)
+ *    }
+ */
+class core_PagePromise extends core_APIPromise {
+    constructor(client, request, Page) {
+        super(request, async (props) => new Page(client, props.response, await core_defaultParseResponse(props), props.options));
+    }
+    /**
+     * Allow auto-paginating iteration on an unawaited list call, eg:
+     *
+     *    for await (const item of client.items.list()) {
+     *      console.log(item)
+     *    }
+     */
+    async *[Symbol.asyncIterator]() {
+        const page = await this;
+        for await (const item of page) {
+            yield item;
+        }
+    }
+}
+const core_createResponseHeaders = (headers) => {
+    return new Proxy(Object.fromEntries(
+    // @ts-ignore
+    headers.entries()), {
+        get(target, name) {
+            const key = name.toString();
+            return target[key.toLowerCase()] || target[key];
+        },
+    });
+};
+// This is required so that we can determine if a given object matches the RequestOptions
+// type at runtime. While this requires duplication, it is enforced by the TypeScript
+// compiler such that any missing / extraneous keys will cause an error.
+const core_requestOptionsKeys = {
+    method: true,
+    path: true,
+    query: true,
+    body: true,
+    headers: true,
+    maxRetries: true,
+    stream: true,
+    timeout: true,
+    httpAgent: true,
+    signal: true,
+    idempotencyKey: true,
+    __binaryRequest: true,
+    __binaryResponse: true,
+    __streamClass: true,
+};
+const core_isRequestOptions = (obj) => {
+    return (typeof obj === 'object' &&
+        obj !== null &&
+        !core_isEmptyObj(obj) &&
+        Object.keys(obj).every((k) => core_hasOwn(core_requestOptionsKeys, k)));
+};
+const core_getPlatformProperties = () => {
+    if (typeof Deno !== 'undefined' && Deno.build != null) {
+        return {
+            'X-Stainless-Lang': 'js',
+            'X-Stainless-Package-Version': version_VERSION,
+            'X-Stainless-OS': core_normalizePlatform(Deno.build.os),
+            'X-Stainless-Arch': core_normalizeArch(Deno.build.arch),
+            'X-Stainless-Runtime': 'deno',
+            'X-Stainless-Runtime-Version': typeof Deno.version === 'string' ? Deno.version : Deno.version?.deno ?? 'unknown',
+        };
+    }
+    if (typeof EdgeRuntime !== 'undefined') {
+        return {
+            'X-Stainless-Lang': 'js',
+            'X-Stainless-Package-Version': version_VERSION,
+            'X-Stainless-OS': 'Unknown',
+            'X-Stainless-Arch': `other:${EdgeRuntime}`,
+            'X-Stainless-Runtime': 'edge',
+            'X-Stainless-Runtime-Version': process.version,
+        };
+    }
+    // Check if Node.js
+    if (Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]') {
+        return {
+            'X-Stainless-Lang': 'js',
+            'X-Stainless-Package-Version': version_VERSION,
+            'X-Stainless-OS': core_normalizePlatform(process.platform),
+            'X-Stainless-Arch': core_normalizeArch(process.arch),
+            'X-Stainless-Runtime': 'node',
+            'X-Stainless-Runtime-Version': process.version,
+        };
+    }
+    const browserInfo = core_getBrowserInfo();
+    if (browserInfo) {
+        return {
+            'X-Stainless-Lang': 'js',
+            'X-Stainless-Package-Version': version_VERSION,
+            'X-Stainless-OS': 'Unknown',
+            'X-Stainless-Arch': 'unknown',
+            'X-Stainless-Runtime': `browser:${browserInfo.browser}`,
+            'X-Stainless-Runtime-Version': browserInfo.version,
+        };
+    }
+    // TODO add support for Cloudflare workers, etc.
+    return {
+        'X-Stainless-Lang': 'js',
+        'X-Stainless-Package-Version': version_VERSION,
+        'X-Stainless-OS': 'Unknown',
+        'X-Stainless-Arch': 'unknown',
+        'X-Stainless-Runtime': 'unknown',
+        'X-Stainless-Runtime-Version': 'unknown',
+    };
+};
+// Note: modified from https://github.com/JS-DevTools/host-environment/blob/b1ab79ecde37db5d6e163c050e54fe7d287d7c92/src/isomorphic.browser.ts
+function core_getBrowserInfo() {
+    if (typeof navigator === 'undefined' || !navigator) {
+        return null;
+    }
+    // NOTE: The order matters here!
+    const browserPatterns = [
+        { key: 'edge', pattern: /Edge(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+        { key: 'ie', pattern: /MSIE(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+        { key: 'ie', pattern: /Trident(?:.*rv\:(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+        { key: 'chrome', pattern: /Chrome(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+        { key: 'firefox', pattern: /Firefox(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+        { key: 'safari', pattern: /(?:Version\W+(\d+)\.(\d+)(?:\.(\d+))?)?(?:\W+Mobile\S*)?\W+Safari/ },
+    ];
+    // Find the FIRST matching browser
+    for (const { key, pattern } of browserPatterns) {
+        const match = pattern.exec(navigator.userAgent);
+        if (match) {
+            const major = match[1] || 0;
+            const minor = match[2] || 0;
+            const patch = match[3] || 0;
+            return { browser: key, version: `${major}.${minor}.${patch}` };
+        }
+    }
+    return null;
+}
+const core_normalizeArch = (arch) => {
+    // Node docs:
+    // - https://nodejs.org/api/process.html#processarch
+    // Deno docs:
+    // - https://doc.deno.land/deno/stable/~/Deno.build
+    if (arch === 'x32')
+        return 'x32';
+    if (arch === 'x86_64' || arch === 'x64')
+        return 'x64';
+    if (arch === 'arm')
+        return 'arm';
+    if (arch === 'aarch64' || arch === 'arm64')
+        return 'arm64';
+    if (arch)
+        return `other:${arch}`;
+    return 'unknown';
+};
+const core_normalizePlatform = (platform) => {
+    // Node platforms:
+    // - https://nodejs.org/api/process.html#processplatform
+    // Deno platforms:
+    // - https://doc.deno.land/deno/stable/~/Deno.build
+    // - https://github.com/denoland/deno/issues/14799
+    platform = platform.toLowerCase();
+    // NOTE: this iOS check is untested and may not work
+    // Node does not work natively on IOS, there is a fork at
+    // https://github.com/nodejs-mobile/nodejs-mobile
+    // however it is unknown at the time of writing how to detect if it is running
+    if (platform.includes('ios'))
+        return 'iOS';
+    if (platform === 'android')
+        return 'Android';
+    if (platform === 'darwin')
+        return 'MacOS';
+    if (platform === 'win32')
+        return 'Windows';
+    if (platform === 'freebsd')
+        return 'FreeBSD';
+    if (platform === 'openbsd')
+        return 'OpenBSD';
+    if (platform === 'linux')
+        return 'Linux';
+    if (platform)
+        return `Other:${platform}`;
+    return 'Unknown';
+};
+let core_platformHeaders;
+const core_getPlatformHeaders = () => {
+    return (core_platformHeaders ?? (core_platformHeaders = core_getPlatformProperties()));
+};
+const core_safeJSON = (text) => {
+    try {
+        return JSON.parse(text);
+    }
+    catch (err) {
+        return undefined;
+    }
+};
+// https://stackoverflow.com/a/19709846
+const core_startsWithSchemeRegexp = new RegExp('^(?:[a-z]+:)?//', 'i');
+const core_isAbsoluteURL = (url) => {
+    return core_startsWithSchemeRegexp.test(url);
+};
+const core_sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const core_validatePositiveInteger = (name, n) => {
+    if (typeof n !== 'number' || !Number.isInteger(n)) {
+        throw new error_AnthropicError(`${name} must be an integer`);
+    }
+    if (n < 0) {
+        throw new error_AnthropicError(`${name} must be a positive integer`);
+    }
+    return n;
+};
+const core_castToError = (err) => {
+    if (err instanceof Error)
+        return err;
+    return new Error(err);
+};
+const core_ensurePresent = (value) => {
+    if (value == null)
+        throw new AnthropicError(`Expected a value to be given but received ${value} instead.`);
+    return value;
+};
+/**
+ * Read an environment variable.
+ *
+ * Trims beginning and trailing whitespace.
+ *
+ * Will return undefined if the environment variable doesn't exist or cannot be accessed.
+ */
+const core_readEnv = (env) => {
+    if (typeof process !== 'undefined') {
+        return process.env?.[env]?.trim() ?? undefined;
+    }
+    if (typeof Deno !== 'undefined') {
+        return Deno.env?.get?.(env)?.trim();
+    }
+    return undefined;
+};
+const core_coerceInteger = (value) => {
+    if (typeof value === 'number')
+        return Math.round(value);
+    if (typeof value === 'string')
+        return parseInt(value, 10);
+    throw new AnthropicError(`Could not coerce ${value} (type: ${typeof value}) into a number`);
+};
+const core_coerceFloat = (value) => {
+    if (typeof value === 'number')
+        return value;
+    if (typeof value === 'string')
+        return parseFloat(value);
+    throw new AnthropicError(`Could not coerce ${value} (type: ${typeof value}) into a number`);
+};
+const core_coerceBoolean = (value) => {
+    if (typeof value === 'boolean')
+        return value;
+    if (typeof value === 'string')
+        return value === 'true';
+    return Boolean(value);
+};
+const core_maybeCoerceInteger = (value) => {
+    if (value === undefined) {
+        return undefined;
+    }
+    return core_coerceInteger(value);
+};
+const core_maybeCoerceFloat = (value) => {
+    if (value === undefined) {
+        return undefined;
+    }
+    return core_coerceFloat(value);
+};
+const core_maybeCoerceBoolean = (value) => {
+    if (value === undefined) {
+        return undefined;
+    }
+    return core_coerceBoolean(value);
+};
+// https://stackoverflow.com/a/34491287
+function core_isEmptyObj(obj) {
+    if (!obj)
+        return true;
+    for (const _k in obj)
+        return false;
+    return true;
+}
+// https://eslint.org/docs/latest/rules/no-prototype-builtins
+function core_hasOwn(obj, key) {
+    return Object.prototype.hasOwnProperty.call(obj, key);
+}
+/**
+ * Copies headers from "newHeaders" onto "targetHeaders",
+ * using lower-case for all properties,
+ * ignoring any keys with undefined values,
+ * and deleting any keys with null values.
+ */
+function core_applyHeadersMut(targetHeaders, newHeaders) {
+    for (const k in newHeaders) {
+        if (!core_hasOwn(newHeaders, k))
+            continue;
+        const lowerKey = k.toLowerCase();
+        if (!lowerKey)
+            continue;
+        const val = newHeaders[k];
+        if (val === null) {
+            delete targetHeaders[lowerKey];
+        }
+        else if (val !== undefined) {
+            targetHeaders[lowerKey] = val;
+        }
+    }
+}
+function core_debug(action, ...args) {
+    if (typeof process !== 'undefined' && process?.env?.['DEBUG'] === 'true') {
+        console.log(`Anthropic:DEBUG:${action}`, ...args);
+    }
+}
+/**
+ * https://stackoverflow.com/a/2117523
+ */
+const core_uuid4 = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+};
+const core_isRunningInBrowser = () => {
+    return (
+    // @ts-ignore
+    typeof window !== 'undefined' &&
+        // @ts-ignore
+        typeof window.document !== 'undefined' &&
+        // @ts-ignore
+        typeof navigator !== 'undefined');
+};
+const core_isHeadersProtocol = (headers) => {
+    return typeof headers?.get === 'function';
+};
+const core_getRequiredHeader = (headers, header) => {
+    const lowerCasedHeader = header.toLowerCase();
+    if (core_isHeadersProtocol(headers)) {
+        // to deal with the case where the header looks like Stainless-Event-Id
+        const intercapsHeader = header[0]?.toUpperCase() +
+            header.substring(1).replace(/([^\w])(\w)/g, (_m, g1, g2) => g1 + g2.toUpperCase());
+        for (const key of [header, lowerCasedHeader, header.toUpperCase(), intercapsHeader]) {
+            const value = headers.get(key);
+            if (value) {
+                return value;
+            }
+        }
+    }
+    for (const [key, value] of Object.entries(headers)) {
+        if (key.toLowerCase() === lowerCasedHeader) {
+            if (Array.isArray(value)) {
+                if (value.length <= 1)
+                    return value[0];
+                console.warn(`Received ${value.length} entries for the ${header} header, using the first entry.`);
+                return value[0];
+            }
+            return value;
+        }
+    }
+    throw new Error(`Could not find ${header} header`);
+};
+/**
+ * Encodes a string to Base64 format.
+ */
+const core_toBase64 = (str) => {
+    if (!str)
+        return '';
+    if (typeof Buffer !== 'undefined') {
+        return Buffer.from(str).toString('base64');
+    }
+    if (typeof btoa !== 'undefined') {
+        return btoa(str);
+    }
+    throw new AnthropicError('Cannot generate b64 string; Expected `Buffer` or `btoa` to be defined');
+};
+function core_isObj(obj) {
+    return obj != null && typeof obj === 'object' && !Array.isArray(obj);
+}
+//# sourceMappingURL=core.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/error.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+class error_AnthropicError extends Error {
+}
+class error_APIError extends error_AnthropicError {
+    constructor(status, error, message, headers) {
+        super(`${error_APIError.makeMessage(status, error, message)}`);
+        this.status = status;
+        this.headers = headers;
+        this.request_id = headers?.['request-id'];
+        this.error = error;
+    }
+    static makeMessage(status, error, message) {
+        const msg = error?.message ?
+            typeof error.message === 'string' ?
+                error.message
+                : JSON.stringify(error.message)
+            : error ? JSON.stringify(error)
+                : message;
+        if (status && msg) {
+            return `${status} ${msg}`;
+        }
+        if (status) {
+            return `${status} status code (no body)`;
+        }
+        if (msg) {
+            return msg;
+        }
+        return '(no status code or body)';
+    }
+    static generate(status, errorResponse, message, headers) {
+        if (!status) {
+            return new error_APIConnectionError({ cause: core_castToError(errorResponse) });
+        }
+        const error = errorResponse;
+        if (status === 400) {
+            return new error_BadRequestError(status, error, message, headers);
+        }
+        if (status === 401) {
+            return new error_AuthenticationError(status, error, message, headers);
+        }
+        if (status === 403) {
+            return new error_PermissionDeniedError(status, error, message, headers);
+        }
+        if (status === 404) {
+            return new error_NotFoundError(status, error, message, headers);
+        }
+        if (status === 409) {
+            return new error_ConflictError(status, error, message, headers);
+        }
+        if (status === 422) {
+            return new error_UnprocessableEntityError(status, error, message, headers);
+        }
+        if (status === 429) {
+            return new error_RateLimitError(status, error, message, headers);
+        }
+        if (status >= 500) {
+            return new error_InternalServerError(status, error, message, headers);
+        }
+        return new error_APIError(status, error, message, headers);
+    }
+}
+class error_APIUserAbortError extends error_APIError {
+    constructor({ message } = {}) {
+        super(undefined, undefined, message || 'Request was aborted.', undefined);
+        this.status = undefined;
+    }
+}
+class error_APIConnectionError extends error_APIError {
+    constructor({ message, cause }) {
+        super(undefined, undefined, message || 'Connection error.', undefined);
+        this.status = undefined;
+        // in some environments the 'cause' property is already declared
+        // @ts-ignore
+        if (cause)
+            this.cause = cause;
+    }
+}
+class error_APIConnectionTimeoutError extends error_APIConnectionError {
+    constructor({ message } = {}) {
+        super({ message: message ?? 'Request timed out.' });
+    }
+}
+class error_BadRequestError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 400;
+    }
+}
+class error_AuthenticationError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 401;
+    }
+}
+class error_PermissionDeniedError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 403;
+    }
+}
+class error_NotFoundError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 404;
+    }
+}
+class error_ConflictError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 409;
+    }
+}
+class error_UnprocessableEntityError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 422;
+    }
+}
+class error_RateLimitError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 429;
+    }
+}
+class error_InternalServerError extends error_APIError {
+}
+//# sourceMappingURL=error.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resource.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class resource_APIResource {
+    constructor(client) {
+        this._client = client;
+    }
+}
+//# sourceMappingURL=resource.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/completions.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+class resources_completions_Completions extends resource_APIResource {
+    create(body, options) {
+        return this._client.post('/v1/complete', {
+            body,
+            timeout: this._client._options.timeout ?? 600000,
+            ...options,
+            stream: body.stream ?? false,
+        });
+    }
+}
+(function (Completions) {
+})(resources_completions_Completions || (resources_completions_Completions = {}));
+//# sourceMappingURL=completions.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs
+const parser_tokenize = (input) => {
+    let current = 0;
+    let tokens = [];
+    while (current < input.length) {
+        let char = input[current];
+        if (char === '\\') {
+            current++;
+            continue;
+        }
+        if (char === '{') {
+            tokens.push({
+                type: 'brace',
+                value: '{',
+            });
+            current++;
+            continue;
+        }
+        if (char === '}') {
+            tokens.push({
+                type: 'brace',
+                value: '}',
+            });
+            current++;
+            continue;
+        }
+        if (char === '[') {
+            tokens.push({
+                type: 'paren',
+                value: '[',
+            });
+            current++;
+            continue;
+        }
+        if (char === ']') {
+            tokens.push({
+                type: 'paren',
+                value: ']',
+            });
+            current++;
+            continue;
+        }
+        if (char === ':') {
+            tokens.push({
+                type: 'separator',
+                value: ':',
+            });
+            current++;
+            continue;
+        }
+        if (char === ',') {
+            tokens.push({
+                type: 'delimiter',
+                value: ',',
+            });
+            current++;
+            continue;
+        }
+        if (char === '"') {
+            let value = '';
+            let danglingQuote = false;
+            char = input[++current];
+            while (char !== '"') {
+                if (current === input.length) {
+                    danglingQuote = true;
+                    break;
+                }
+                if (char === '\\') {
+                    current++;
+                    if (current === input.length) {
+                        danglingQuote = true;
+                        break;
+                    }
+                    value += char + input[current];
+                    char = input[++current];
+                }
+                else {
+                    value += char;
+                    char = input[++current];
+                }
+            }
+            char = input[++current];
+            if (!danglingQuote) {
+                tokens.push({
+                    type: 'string',
+                    value,
+                });
+            }
+            continue;
+        }
+        let WHITESPACE = /\s/;
+        if (char && WHITESPACE.test(char)) {
+            current++;
+            continue;
+        }
+        let NUMBERS = /[0-9]/;
+        if ((char && NUMBERS.test(char)) || char === '-' || char === '.') {
+            let value = '';
+            if (char === '-') {
+                value += char;
+                char = input[++current];
+            }
+            while ((char && NUMBERS.test(char)) || char === '.') {
+                value += char;
+                char = input[++current];
+            }
+            tokens.push({
+                type: 'number',
+                value,
+            });
+            continue;
+        }
+        let LETTERS = /[a-z]/i;
+        if (char && LETTERS.test(char)) {
+            let value = '';
+            while (char && LETTERS.test(char)) {
+                if (current === input.length) {
+                    break;
+                }
+                value += char;
+                char = input[++current];
+            }
+            if (value == 'true' || value == 'false' || value === 'null') {
+                tokens.push({
+                    type: 'name',
+                    value,
+                });
+            }
+            else {
+                // unknown token, e.g. `nul` which isn't quite `null`
+                current++;
+                continue;
+            }
+            continue;
+        }
+        current++;
+    }
+    return tokens;
+}, parser_strip = (tokens) => {
+    if (tokens.length === 0) {
+        return tokens;
+    }
+    let lastToken = tokens[tokens.length - 1];
+    switch (lastToken.type) {
+        case 'separator':
+            tokens = tokens.slice(0, tokens.length - 1);
+            return parser_strip(tokens);
+            break;
+        case 'number':
+            let lastCharacterOfLastToken = lastToken.value[lastToken.value.length - 1];
+            if (lastCharacterOfLastToken === '.' || lastCharacterOfLastToken === '-') {
+                tokens = tokens.slice(0, tokens.length - 1);
+                return parser_strip(tokens);
+            }
+        case 'string':
+            let tokenBeforeTheLastToken = tokens[tokens.length - 2];
+            if (tokenBeforeTheLastToken?.type === 'delimiter') {
+                tokens = tokens.slice(0, tokens.length - 1);
+                return parser_strip(tokens);
+            }
+            else if (tokenBeforeTheLastToken?.type === 'brace' && tokenBeforeTheLastToken.value === '{') {
+                tokens = tokens.slice(0, tokens.length - 1);
+                return parser_strip(tokens);
+            }
+            break;
+        case 'delimiter':
+            tokens = tokens.slice(0, tokens.length - 1);
+            return parser_strip(tokens);
+            break;
+    }
+    return tokens;
+}, parser_unstrip = (tokens) => {
+    let tail = [];
+    tokens.map((token) => {
+        if (token.type === 'brace') {
+            if (token.value === '{') {
+                tail.push('}');
+            }
+            else {
+                tail.splice(tail.lastIndexOf('}'), 1);
+            }
+        }
+        if (token.type === 'paren') {
+            if (token.value === '[') {
+                tail.push(']');
+            }
+            else {
+                tail.splice(tail.lastIndexOf(']'), 1);
+            }
+        }
+    });
+    if (tail.length > 0) {
+        tail.reverse().map((item) => {
+            if (item === '}') {
+                tokens.push({
+                    type: 'brace',
+                    value: '}',
+                });
+            }
+            else if (item === ']') {
+                tokens.push({
+                    type: 'paren',
+                    value: ']',
+                });
+            }
+        });
+    }
+    return tokens;
+}, parser_generate = (tokens) => {
+    let output = '';
+    tokens.map((token) => {
+        switch (token.type) {
+            case 'string':
+                output += '"' + token.value + '"';
+                break;
+            default:
+                output += token.value;
+                break;
+        }
+    });
+    return output;
+}, parser_partialParse = (input) => JSON.parse(parser_generate(parser_unstrip(parser_strip(parser_tokenize(input)))));
+
+//# sourceMappingURL=parser.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs
+var MessageStream_classPrivateFieldSet = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var MessageStream_classPrivateFieldGet = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _MessageStream_instances, _MessageStream_currentMessageSnapshot, _MessageStream_connectedPromise, _MessageStream_resolveConnectedPromise, _MessageStream_rejectConnectedPromise, _MessageStream_endPromise, _MessageStream_resolveEndPromise, _MessageStream_rejectEndPromise, _MessageStream_listeners, _MessageStream_ended, _MessageStream_errored, _MessageStream_aborted, _MessageStream_catchingPromiseCreated, _MessageStream_getFinalMessage, _MessageStream_getFinalText, _MessageStream_handleError, _MessageStream_beginRequest, _MessageStream_addStreamEvent, _MessageStream_endRequest, _MessageStream_accumulateMessage;
+
+
+
+const JSON_BUF_PROPERTY = '__json_buf';
+class MessageStream {
+    constructor() {
+        _MessageStream_instances.add(this);
+        this.messages = [];
+        this.receivedMessages = [];
+        _MessageStream_currentMessageSnapshot.set(this, void 0);
+        this.controller = new AbortController();
+        _MessageStream_connectedPromise.set(this, void 0);
+        _MessageStream_resolveConnectedPromise.set(this, () => { });
+        _MessageStream_rejectConnectedPromise.set(this, () => { });
+        _MessageStream_endPromise.set(this, void 0);
+        _MessageStream_resolveEndPromise.set(this, () => { });
+        _MessageStream_rejectEndPromise.set(this, () => { });
+        _MessageStream_listeners.set(this, {});
+        _MessageStream_ended.set(this, false);
+        _MessageStream_errored.set(this, false);
+        _MessageStream_aborted.set(this, false);
+        _MessageStream_catchingPromiseCreated.set(this, false);
+        _MessageStream_handleError.set(this, (error) => {
+            MessageStream_classPrivateFieldSet(this, _MessageStream_errored, true, "f");
+            if (error instanceof Error && error.name === 'AbortError') {
+                error = new error_APIUserAbortError();
+            }
+            if (error instanceof error_APIUserAbortError) {
+                MessageStream_classPrivateFieldSet(this, _MessageStream_aborted, true, "f");
+                return this._emit('abort', error);
+            }
+            if (error instanceof error_AnthropicError) {
+                return this._emit('error', error);
+            }
+            if (error instanceof Error) {
+                const anthropicError = new error_AnthropicError(error.message);
+                // @ts-ignore
+                anthropicError.cause = error;
+                return this._emit('error', anthropicError);
+            }
+            return this._emit('error', new error_AnthropicError(String(error)));
+        });
+        MessageStream_classPrivateFieldSet(this, _MessageStream_connectedPromise, new Promise((resolve, reject) => {
+            MessageStream_classPrivateFieldSet(this, _MessageStream_resolveConnectedPromise, resolve, "f");
+            MessageStream_classPrivateFieldSet(this, _MessageStream_rejectConnectedPromise, reject, "f");
+        }), "f");
+        MessageStream_classPrivateFieldSet(this, _MessageStream_endPromise, new Promise((resolve, reject) => {
+            MessageStream_classPrivateFieldSet(this, _MessageStream_resolveEndPromise, resolve, "f");
+            MessageStream_classPrivateFieldSet(this, _MessageStream_rejectEndPromise, reject, "f");
+        }), "f");
+        // Don't let these promises cause unhandled rejection errors.
+        // we will manually cause an unhandled rejection error later
+        // if the user hasn't registered any error listener or called
+        // any promise-returning method.
+        MessageStream_classPrivateFieldGet(this, _MessageStream_connectedPromise, "f").catch(() => { });
+        MessageStream_classPrivateFieldGet(this, _MessageStream_endPromise, "f").catch(() => { });
+    }
+    /**
+     * Intended for use on the frontend, consuming a stream produced with
+     * `.toReadableStream()` on the backend.
+     *
+     * Note that messages sent to the model do not appear in `.on('message')`
+     * in this context.
+     */
+    static fromReadableStream(stream) {
+        const runner = new MessageStream();
+        runner._run(() => runner._fromReadableStream(stream));
+        return runner;
+    }
+    static createMessage(messages, params, options) {
+        const runner = new MessageStream();
+        for (const message of params.messages) {
+            runner._addMessageParam(message);
+        }
+        runner._run(() => runner._createMessage(messages, { ...params, stream: true }, { ...options, headers: { ...options?.headers, 'X-Stainless-Helper-Method': 'stream' } }));
+        return runner;
+    }
+    _run(executor) {
+        executor().then(() => {
+            this._emitFinal();
+            this._emit('end');
+        }, MessageStream_classPrivateFieldGet(this, _MessageStream_handleError, "f"));
+    }
+    _addMessageParam(message) {
+        this.messages.push(message);
+    }
+    _addMessage(message, emit = true) {
+        this.receivedMessages.push(message);
+        if (emit) {
+            this._emit('message', message);
+        }
+    }
+    async _createMessage(messages, params, options) {
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        MessageStream_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_beginRequest).call(this);
+        const stream = await messages.create({ ...params, stream: true }, { ...options, signal: this.controller.signal });
+        this._connected();
+        for await (const event of stream) {
+            MessageStream_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_addStreamEvent).call(this, event);
+        }
+        if (stream.controller.signal?.aborted) {
+            throw new error_APIUserAbortError();
+        }
+        MessageStream_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_endRequest).call(this);
+    }
+    _connected() {
+        if (this.ended)
+            return;
+        MessageStream_classPrivateFieldGet(this, _MessageStream_resolveConnectedPromise, "f").call(this);
+        this._emit('connect');
+    }
+    get ended() {
+        return MessageStream_classPrivateFieldGet(this, _MessageStream_ended, "f");
+    }
+    get errored() {
+        return MessageStream_classPrivateFieldGet(this, _MessageStream_errored, "f");
+    }
+    get aborted() {
+        return MessageStream_classPrivateFieldGet(this, _MessageStream_aborted, "f");
+    }
+    abort() {
+        this.controller.abort();
+    }
+    /**
+     * Adds the listener function to the end of the listeners array for the event.
+     * No checks are made to see if the listener has already been added. Multiple calls passing
+     * the same combination of event and listener will result in the listener being added, and
+     * called, multiple times.
+     * @returns this MessageStream, so that calls can be chained
+     */
+    on(event, listener) {
+        const listeners = MessageStream_classPrivateFieldGet(this, _MessageStream_listeners, "f")[event] || (MessageStream_classPrivateFieldGet(this, _MessageStream_listeners, "f")[event] = []);
+        listeners.push({ listener });
+        return this;
+    }
+    /**
+     * Removes the specified listener from the listener array for the event.
+     * off() will remove, at most, one instance of a listener from the listener array. If any single
+     * listener has been added multiple times to the listener array for the specified event, then
+     * off() must be called multiple times to remove each instance.
+     * @returns this MessageStream, so that calls can be chained
+     */
+    off(event, listener) {
+        const listeners = MessageStream_classPrivateFieldGet(this, _MessageStream_listeners, "f")[event];
+        if (!listeners)
+            return this;
+        const index = listeners.findIndex((l) => l.listener === listener);
+        if (index >= 0)
+            listeners.splice(index, 1);
+        return this;
+    }
+    /**
+     * Adds a one-time listener function for the event. The next time the event is triggered,
+     * this listener is removed and then invoked.
+     * @returns this MessageStream, so that calls can be chained
+     */
+    once(event, listener) {
+        const listeners = MessageStream_classPrivateFieldGet(this, _MessageStream_listeners, "f")[event] || (MessageStream_classPrivateFieldGet(this, _MessageStream_listeners, "f")[event] = []);
+        listeners.push({ listener, once: true });
+        return this;
+    }
+    /**
+     * This is similar to `.once()`, but returns a Promise that resolves the next time
+     * the event is triggered, instead of calling a listener callback.
+     * @returns a Promise that resolves the next time given event is triggered,
+     * or rejects if an error is emitted.  (If you request the 'error' event,
+     * returns a promise that resolves with the error).
+     *
+     * Example:
+     *
+     *   const message = await stream.emitted('message') // rejects if the stream errors
+     */
+    emitted(event) {
+        return new Promise((resolve, reject) => {
+            MessageStream_classPrivateFieldSet(this, _MessageStream_catchingPromiseCreated, true, "f");
+            if (event !== 'error')
+                this.once('error', reject);
+            this.once(event, resolve);
+        });
+    }
+    async done() {
+        MessageStream_classPrivateFieldSet(this, _MessageStream_catchingPromiseCreated, true, "f");
+        await MessageStream_classPrivateFieldGet(this, _MessageStream_endPromise, "f");
+    }
+    get currentMessage() {
+        return MessageStream_classPrivateFieldGet(this, _MessageStream_currentMessageSnapshot, "f");
+    }
+    /**
+     * @returns a promise that resolves with the the final assistant Message response,
+     * or rejects if an error occurred or the stream ended prematurely without producing a Message.
+     */
+    async finalMessage() {
+        await this.done();
+        return MessageStream_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_getFinalMessage).call(this);
+    }
+    /**
+     * @returns a promise that resolves with the the final assistant Message's text response, concatenated
+     * together if there are more than one text blocks.
+     * Rejects if an error occurred or the stream ended prematurely without producing a Message.
+     */
+    async finalText() {
+        await this.done();
+        return MessageStream_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_getFinalText).call(this);
+    }
+    _emit(event, ...args) {
+        // make sure we don't emit any MessageStreamEvents after end
+        if (MessageStream_classPrivateFieldGet(this, _MessageStream_ended, "f"))
+            return;
+        if (event === 'end') {
+            MessageStream_classPrivateFieldSet(this, _MessageStream_ended, true, "f");
+            MessageStream_classPrivateFieldGet(this, _MessageStream_resolveEndPromise, "f").call(this);
+        }
+        const listeners = MessageStream_classPrivateFieldGet(this, _MessageStream_listeners, "f")[event];
+        if (listeners) {
+            MessageStream_classPrivateFieldGet(this, _MessageStream_listeners, "f")[event] = listeners.filter((l) => !l.once);
+            listeners.forEach(({ listener }) => listener(...args));
+        }
+        if (event === 'abort') {
+            const error = args[0];
+            if (!MessageStream_classPrivateFieldGet(this, _MessageStream_catchingPromiseCreated, "f") && !listeners?.length) {
+                Promise.reject(error);
+            }
+            MessageStream_classPrivateFieldGet(this, _MessageStream_rejectConnectedPromise, "f").call(this, error);
+            MessageStream_classPrivateFieldGet(this, _MessageStream_rejectEndPromise, "f").call(this, error);
+            this._emit('end');
+            return;
+        }
+        if (event === 'error') {
+            // NOTE: _emit('error', error) should only be called from #handleError().
+            const error = args[0];
+            if (!MessageStream_classPrivateFieldGet(this, _MessageStream_catchingPromiseCreated, "f") && !listeners?.length) {
+                // Trigger an unhandled rejection if the user hasn't registered any error handlers.
+                // If you are seeing stack traces here, make sure to handle errors via either:
+                // - runner.on('error', () => ...)
+                // - await runner.done()
+                // - await runner.final...()
+                // - etc.
+                Promise.reject(error);
+            }
+            MessageStream_classPrivateFieldGet(this, _MessageStream_rejectConnectedPromise, "f").call(this, error);
+            MessageStream_classPrivateFieldGet(this, _MessageStream_rejectEndPromise, "f").call(this, error);
+            this._emit('end');
+        }
+    }
+    _emitFinal() {
+        const finalMessage = this.receivedMessages.at(-1);
+        if (finalMessage) {
+            this._emit('finalMessage', MessageStream_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_getFinalMessage).call(this));
+        }
+    }
+    async _fromReadableStream(readableStream, options) {
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        MessageStream_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_beginRequest).call(this);
+        this._connected();
+        const stream = streaming_Stream.fromReadableStream(readableStream, this.controller);
+        for await (const event of stream) {
+            MessageStream_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_addStreamEvent).call(this, event);
+        }
+        if (stream.controller.signal?.aborted) {
+            throw new error_APIUserAbortError();
+        }
+        MessageStream_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_endRequest).call(this);
+    }
+    [(_MessageStream_currentMessageSnapshot = new WeakMap(), _MessageStream_connectedPromise = new WeakMap(), _MessageStream_resolveConnectedPromise = new WeakMap(), _MessageStream_rejectConnectedPromise = new WeakMap(), _MessageStream_endPromise = new WeakMap(), _MessageStream_resolveEndPromise = new WeakMap(), _MessageStream_rejectEndPromise = new WeakMap(), _MessageStream_listeners = new WeakMap(), _MessageStream_ended = new WeakMap(), _MessageStream_errored = new WeakMap(), _MessageStream_aborted = new WeakMap(), _MessageStream_catchingPromiseCreated = new WeakMap(), _MessageStream_handleError = new WeakMap(), _MessageStream_instances = new WeakSet(), _MessageStream_getFinalMessage = function _MessageStream_getFinalMessage() {
+        if (this.receivedMessages.length === 0) {
+            throw new error_AnthropicError('stream ended without producing a Message with role=assistant');
+        }
+        return this.receivedMessages.at(-1);
+    }, _MessageStream_getFinalText = function _MessageStream_getFinalText() {
+        if (this.receivedMessages.length === 0) {
+            throw new error_AnthropicError('stream ended without producing a Message with role=assistant');
+        }
+        const textBlocks = this.receivedMessages
+            .at(-1)
+            .content.filter((block) => block.type === 'text')
+            .map((block) => block.text);
+        if (textBlocks.length === 0) {
+            throw new error_AnthropicError('stream ended without producing a content block with type=text');
+        }
+        return textBlocks.join(' ');
+    }, _MessageStream_beginRequest = function _MessageStream_beginRequest() {
+        if (this.ended)
+            return;
+        MessageStream_classPrivateFieldSet(this, _MessageStream_currentMessageSnapshot, undefined, "f");
+    }, _MessageStream_addStreamEvent = function _MessageStream_addStreamEvent(event) {
+        if (this.ended)
+            return;
+        const messageSnapshot = MessageStream_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_accumulateMessage).call(this, event);
+        this._emit('streamEvent', event, messageSnapshot);
+        switch (event.type) {
+            case 'content_block_delta': {
+                const content = messageSnapshot.content.at(-1);
+                if (event.delta.type === 'text_delta' && content.type === 'text') {
+                    this._emit('text', event.delta.text, content.text || '');
+                }
+                else if (event.delta.type === 'input_json_delta' && content.type === 'tool_use') {
+                    if (content.input) {
+                        this._emit('inputJson', event.delta.partial_json, content.input);
+                    }
+                }
+                break;
+            }
+            case 'message_stop': {
+                this._addMessageParam(messageSnapshot);
+                this._addMessage(messageSnapshot, true);
+                break;
+            }
+            case 'content_block_stop': {
+                this._emit('contentBlock', messageSnapshot.content.at(-1));
+                break;
+            }
+            case 'message_start': {
+                MessageStream_classPrivateFieldSet(this, _MessageStream_currentMessageSnapshot, messageSnapshot, "f");
+                break;
+            }
+            case 'content_block_start':
+            case 'message_delta':
+                break;
+        }
+    }, _MessageStream_endRequest = function _MessageStream_endRequest() {
+        if (this.ended) {
+            throw new error_AnthropicError(`stream has ended, this shouldn't happen`);
+        }
+        const snapshot = MessageStream_classPrivateFieldGet(this, _MessageStream_currentMessageSnapshot, "f");
+        if (!snapshot) {
+            throw new error_AnthropicError(`request ended without sending any chunks`);
+        }
+        MessageStream_classPrivateFieldSet(this, _MessageStream_currentMessageSnapshot, undefined, "f");
+        return snapshot;
+    }, _MessageStream_accumulateMessage = function _MessageStream_accumulateMessage(event) {
+        let snapshot = MessageStream_classPrivateFieldGet(this, _MessageStream_currentMessageSnapshot, "f");
+        if (event.type === 'message_start') {
+            if (snapshot) {
+                throw new error_AnthropicError(`Unexpected event order, got ${event.type} before receiving "message_stop"`);
+            }
+            return event.message;
+        }
+        if (!snapshot) {
+            throw new error_AnthropicError(`Unexpected event order, got ${event.type} before "message_start"`);
+        }
+        switch (event.type) {
+            case 'message_stop':
+                return snapshot;
+            case 'message_delta':
+                snapshot.stop_reason = event.delta.stop_reason;
+                snapshot.stop_sequence = event.delta.stop_sequence;
+                snapshot.usage.output_tokens = event.usage.output_tokens;
+                return snapshot;
+            case 'content_block_start':
+                snapshot.content.push(event.content_block);
+                return snapshot;
+            case 'content_block_delta': {
+                const snapshotContent = snapshot.content.at(event.index);
+                if (snapshotContent?.type === 'text' && event.delta.type === 'text_delta') {
+                    snapshotContent.text += event.delta.text;
+                }
+                else if (snapshotContent?.type === 'tool_use' && event.delta.type === 'input_json_delta') {
+                    // we need to keep track of the raw JSON string as well so that we can
+                    // re-parse it for each delta, for now we just store it as an untyped
+                    // non-enumerable property on the snapshot
+                    let jsonBuf = snapshotContent[JSON_BUF_PROPERTY] || '';
+                    jsonBuf += event.delta.partial_json;
+                    Object.defineProperty(snapshotContent, JSON_BUF_PROPERTY, {
+                        value: jsonBuf,
+                        enumerable: false,
+                        writable: true,
+                    });
+                    if (jsonBuf) {
+                        snapshotContent.input = parser_partialParse(jsonBuf);
+                    }
+                }
+                return snapshot;
+            }
+            case 'content_block_stop':
+                return snapshot;
+        }
+    }, Symbol.asyncIterator)]() {
+        const pushQueue = [];
+        const readQueue = [];
+        let done = false;
+        this.on('streamEvent', (event) => {
+            const reader = readQueue.shift();
+            if (reader) {
+                reader.resolve(event);
+            }
+            else {
+                pushQueue.push(event);
+            }
+        });
+        this.on('end', () => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.resolve(undefined);
+            }
+            readQueue.length = 0;
+        });
+        this.on('abort', (err) => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.reject(err);
+            }
+            readQueue.length = 0;
+        });
+        this.on('error', (err) => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.reject(err);
+            }
+            readQueue.length = 0;
+        });
+        return {
+            next: async () => {
+                if (!pushQueue.length) {
+                    if (done) {
+                        return { value: undefined, done: true };
+                    }
+                    return new Promise((resolve, reject) => readQueue.push({ resolve, reject })).then((chunk) => (chunk ? { value: chunk, done: false } : { value: undefined, done: true }));
+                }
+                const chunk = pushQueue.shift();
+                return { value: chunk, done: false };
+            },
+            return: async () => {
+                this.abort();
+                return { value: undefined, done: true };
+            },
+        };
+    }
+    toReadableStream() {
+        const stream = new streaming_Stream(this[Symbol.asyncIterator].bind(this), this.controller);
+        return stream.toReadableStream();
+    }
+}
+//# sourceMappingURL=MessageStream.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/messages.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+
+
+class messages_Messages extends resource_APIResource {
+    create(body, options) {
+        if (body.model in DEPRECATED_MODELS) {
+            console.warn(`The model '${body.model}' is deprecated and will reach end-of-life on ${DEPRECATED_MODELS[body.model]}\nPlease migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resources/model-deprecations for more information.`);
+        }
+        return this._client.post('/v1/messages', {
+            body,
+            timeout: this._client._options.timeout ?? 600000,
+            ...options,
+            stream: body.stream ?? false,
+        });
+    }
+    /**
+     * Create a Message stream
+     */
+    stream(body, options) {
+        return MessageStream.createMessage(this, body, options);
+    }
+}
+const DEPRECATED_MODELS = {
+    'claude-1.3': 'November 6th, 2024',
+    'claude-1.3-100k': 'November 6th, 2024',
+    'claude-instant-1.1': 'November 6th, 2024',
+    'claude-instant-1.1-100k': 'November 6th, 2024',
+    'claude-instant-1.2': 'November 6th, 2024',
+};
+(function (Messages) {
+})(messages_Messages || (messages_Messages = {}));
+//# sourceMappingURL=messages.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/lib/PromptCachingBetaMessageStream.mjs
+var PromptCachingBetaMessageStream_classPrivateFieldSet = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var PromptCachingBetaMessageStream_classPrivateFieldGet = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _PromptCachingBetaMessageStream_instances, _PromptCachingBetaMessageStream_currentMessageSnapshot, _PromptCachingBetaMessageStream_connectedPromise, _PromptCachingBetaMessageStream_resolveConnectedPromise, _PromptCachingBetaMessageStream_rejectConnectedPromise, _PromptCachingBetaMessageStream_endPromise, _PromptCachingBetaMessageStream_resolveEndPromise, _PromptCachingBetaMessageStream_rejectEndPromise, _PromptCachingBetaMessageStream_listeners, _PromptCachingBetaMessageStream_ended, _PromptCachingBetaMessageStream_errored, _PromptCachingBetaMessageStream_aborted, _PromptCachingBetaMessageStream_catchingPromiseCreated, _PromptCachingBetaMessageStream_getFinalMessage, _PromptCachingBetaMessageStream_getFinalText, _PromptCachingBetaMessageStream_handleError, _PromptCachingBetaMessageStream_beginRequest, _PromptCachingBetaMessageStream_addStreamEvent, _PromptCachingBetaMessageStream_endRequest, _PromptCachingBetaMessageStream_accumulateMessage;
+
+
+
+const PromptCachingBetaMessageStream_JSON_BUF_PROPERTY = '__json_buf';
+class PromptCachingBetaMessageStream {
+    constructor() {
+        _PromptCachingBetaMessageStream_instances.add(this);
+        this.messages = [];
+        this.receivedMessages = [];
+        _PromptCachingBetaMessageStream_currentMessageSnapshot.set(this, void 0);
+        this.controller = new AbortController();
+        _PromptCachingBetaMessageStream_connectedPromise.set(this, void 0);
+        _PromptCachingBetaMessageStream_resolveConnectedPromise.set(this, () => { });
+        _PromptCachingBetaMessageStream_rejectConnectedPromise.set(this, () => { });
+        _PromptCachingBetaMessageStream_endPromise.set(this, void 0);
+        _PromptCachingBetaMessageStream_resolveEndPromise.set(this, () => { });
+        _PromptCachingBetaMessageStream_rejectEndPromise.set(this, () => { });
+        _PromptCachingBetaMessageStream_listeners.set(this, {});
+        _PromptCachingBetaMessageStream_ended.set(this, false);
+        _PromptCachingBetaMessageStream_errored.set(this, false);
+        _PromptCachingBetaMessageStream_aborted.set(this, false);
+        _PromptCachingBetaMessageStream_catchingPromiseCreated.set(this, false);
+        _PromptCachingBetaMessageStream_handleError.set(this, (error) => {
+            PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_errored, true, "f");
+            if (error instanceof Error && error.name === 'AbortError') {
+                error = new error_APIUserAbortError();
+            }
+            if (error instanceof error_APIUserAbortError) {
+                PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_aborted, true, "f");
+                return this._emit('abort', error);
+            }
+            if (error instanceof error_AnthropicError) {
+                return this._emit('error', error);
+            }
+            if (error instanceof Error) {
+                const anthropicError = new error_AnthropicError(error.message);
+                // @ts-ignore
+                anthropicError.cause = error;
+                return this._emit('error', anthropicError);
+            }
+            return this._emit('error', new error_AnthropicError(String(error)));
+        });
+        PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_connectedPromise, new Promise((resolve, reject) => {
+            PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_resolveConnectedPromise, resolve, "f");
+            PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_rejectConnectedPromise, reject, "f");
+        }), "f");
+        PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_endPromise, new Promise((resolve, reject) => {
+            PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_resolveEndPromise, resolve, "f");
+            PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_rejectEndPromise, reject, "f");
+        }), "f");
+        // Don't let these promises cause unhandled rejection errors.
+        // we will manually cause an unhandled rejection error later
+        // if the user hasn't registered any error listener or called
+        // any promise-returning method.
+        PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_connectedPromise, "f").catch(() => { });
+        PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_endPromise, "f").catch(() => { });
+    }
+    /**
+     * Intended for use on the frontend, consuming a stream produced with
+     * `.toReadableStream()` on the backend.
+     *
+     * Note that messages sent to the model do not appear in `.on('message')`
+     * in this context.
+     */
+    static fromReadableStream(stream) {
+        const runner = new PromptCachingBetaMessageStream();
+        runner._run(() => runner._fromReadableStream(stream));
+        return runner;
+    }
+    static createMessage(messages, params, options) {
+        const runner = new PromptCachingBetaMessageStream();
+        for (const message of params.messages) {
+            runner._addPromptCachingBetaMessageParam(message);
+        }
+        runner._run(() => runner._createPromptCachingBetaMessage(messages, { ...params, stream: true }, { ...options, headers: { ...options?.headers, 'X-Stainless-Helper-Method': 'stream' } }));
+        return runner;
+    }
+    _run(executor) {
+        executor().then(() => {
+            this._emitFinal();
+            this._emit('end');
+        }, PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_handleError, "f"));
+    }
+    _addPromptCachingBetaMessageParam(message) {
+        this.messages.push(message);
+    }
+    _addPromptCachingBetaMessage(message, emit = true) {
+        this.receivedMessages.push(message);
+        if (emit) {
+            this._emit('message', message);
+        }
+    }
+    async _createPromptCachingBetaMessage(messages, params, options) {
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_instances, "m", _PromptCachingBetaMessageStream_beginRequest).call(this);
+        const stream = await messages.create({ ...params, stream: true }, { ...options, signal: this.controller.signal });
+        this._connected();
+        for await (const event of stream) {
+            PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_instances, "m", _PromptCachingBetaMessageStream_addStreamEvent).call(this, event);
+        }
+        if (stream.controller.signal?.aborted) {
+            throw new error_APIUserAbortError();
+        }
+        PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_instances, "m", _PromptCachingBetaMessageStream_endRequest).call(this);
+    }
+    _connected() {
+        if (this.ended)
+            return;
+        PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_resolveConnectedPromise, "f").call(this);
+        this._emit('connect');
+    }
+    get ended() {
+        return PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_ended, "f");
+    }
+    get errored() {
+        return PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_errored, "f");
+    }
+    get aborted() {
+        return PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_aborted, "f");
+    }
+    abort() {
+        this.controller.abort();
+    }
+    /**
+     * Adds the listener function to the end of the listeners array for the event.
+     * No checks are made to see if the listener has already been added. Multiple calls passing
+     * the same combination of event and listener will result in the listener being added, and
+     * called, multiple times.
+     * @returns this PromptCachingBetaMessageStream, so that calls can be chained
+     */
+    on(event, listener) {
+        const listeners = PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_listeners, "f")[event] || (PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_listeners, "f")[event] = []);
+        listeners.push({ listener });
+        return this;
+    }
+    /**
+     * Removes the specified listener from the listener array for the event.
+     * off() will remove, at most, one instance of a listener from the listener array. If any single
+     * listener has been added multiple times to the listener array for the specified event, then
+     * off() must be called multiple times to remove each instance.
+     * @returns this PromptCachingBetaMessageStream, so that calls can be chained
+     */
+    off(event, listener) {
+        const listeners = PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_listeners, "f")[event];
+        if (!listeners)
+            return this;
+        const index = listeners.findIndex((l) => l.listener === listener);
+        if (index >= 0)
+            listeners.splice(index, 1);
+        return this;
+    }
+    /**
+     * Adds a one-time listener function for the event. The next time the event is triggered,
+     * this listener is removed and then invoked.
+     * @returns this PromptCachingBetaMessageStream, so that calls can be chained
+     */
+    once(event, listener) {
+        const listeners = PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_listeners, "f")[event] || (PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_listeners, "f")[event] = []);
+        listeners.push({ listener, once: true });
+        return this;
+    }
+    /**
+     * This is similar to `.once()`, but returns a Promise that resolves the next time
+     * the event is triggered, instead of calling a listener callback.
+     * @returns a Promise that resolves the next time given event is triggered,
+     * or rejects if an error is emitted.  (If you request the 'error' event,
+     * returns a promise that resolves with the error).
+     *
+     * Example:
+     *
+     *   const message = await stream.emitted('message') // rejects if the stream errors
+     */
+    emitted(event) {
+        return new Promise((resolve, reject) => {
+            PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_catchingPromiseCreated, true, "f");
+            if (event !== 'error')
+                this.once('error', reject);
+            this.once(event, resolve);
+        });
+    }
+    async done() {
+        PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_catchingPromiseCreated, true, "f");
+        await PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_endPromise, "f");
+    }
+    get currentMessage() {
+        return PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_currentMessageSnapshot, "f");
+    }
+    /**
+     * @returns a promise that resolves with the the final assistant PromptCachingBetaMessage response,
+     * or rejects if an error occurred or the stream ended prematurely without producing a PromptCachingBetaMessage.
+     */
+    async finalMessage() {
+        await this.done();
+        return PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_instances, "m", _PromptCachingBetaMessageStream_getFinalMessage).call(this);
+    }
+    /**
+     * @returns a promise that resolves with the the final assistant PromptCachingBetaMessage's text response, concatenated
+     * together if there are more than one text blocks.
+     * Rejects if an error occurred or the stream ended prematurely without producing a PromptCachingBetaMessage.
+     */
+    async finalText() {
+        await this.done();
+        return PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_instances, "m", _PromptCachingBetaMessageStream_getFinalText).call(this);
+    }
+    _emit(event, ...args) {
+        // make sure we don't emit any PromptCachingBetaMessageStreamEvents after end
+        if (PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_ended, "f"))
+            return;
+        if (event === 'end') {
+            PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_ended, true, "f");
+            PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_resolveEndPromise, "f").call(this);
+        }
+        const listeners = PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_listeners, "f")[event];
+        if (listeners) {
+            PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_listeners, "f")[event] = listeners.filter((l) => !l.once);
+            listeners.forEach(({ listener }) => listener(...args));
+        }
+        if (event === 'abort') {
+            const error = args[0];
+            if (!PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_catchingPromiseCreated, "f") && !listeners?.length) {
+                Promise.reject(error);
+            }
+            PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_rejectConnectedPromise, "f").call(this, error);
+            PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_rejectEndPromise, "f").call(this, error);
+            this._emit('end');
+            return;
+        }
+        if (event === 'error') {
+            // NOTE: _emit('error', error) should only be called from #handleError().
+            const error = args[0];
+            if (!PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_catchingPromiseCreated, "f") && !listeners?.length) {
+                // Trigger an unhandled rejection if the user hasn't registered any error handlers.
+                // If you are seeing stack traces here, make sure to handle errors via either:
+                // - runner.on('error', () => ...)
+                // - await runner.done()
+                // - await runner.final...()
+                // - etc.
+                Promise.reject(error);
+            }
+            PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_rejectConnectedPromise, "f").call(this, error);
+            PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_rejectEndPromise, "f").call(this, error);
+            this._emit('end');
+        }
+    }
+    _emitFinal() {
+        const finalPromptCachingBetaMessage = this.receivedMessages.at(-1);
+        if (finalPromptCachingBetaMessage) {
+            this._emit('finalPromptCachingBetaMessage', PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_instances, "m", _PromptCachingBetaMessageStream_getFinalMessage).call(this));
+        }
+    }
+    async _fromReadableStream(readableStream, options) {
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_instances, "m", _PromptCachingBetaMessageStream_beginRequest).call(this);
+        this._connected();
+        const stream = streaming_Stream.fromReadableStream(readableStream, this.controller);
+        for await (const event of stream) {
+            PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_instances, "m", _PromptCachingBetaMessageStream_addStreamEvent).call(this, event);
+        }
+        if (stream.controller.signal?.aborted) {
+            throw new error_APIUserAbortError();
+        }
+        PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_instances, "m", _PromptCachingBetaMessageStream_endRequest).call(this);
+    }
+    [(_PromptCachingBetaMessageStream_currentMessageSnapshot = new WeakMap(), _PromptCachingBetaMessageStream_connectedPromise = new WeakMap(), _PromptCachingBetaMessageStream_resolveConnectedPromise = new WeakMap(), _PromptCachingBetaMessageStream_rejectConnectedPromise = new WeakMap(), _PromptCachingBetaMessageStream_endPromise = new WeakMap(), _PromptCachingBetaMessageStream_resolveEndPromise = new WeakMap(), _PromptCachingBetaMessageStream_rejectEndPromise = new WeakMap(), _PromptCachingBetaMessageStream_listeners = new WeakMap(), _PromptCachingBetaMessageStream_ended = new WeakMap(), _PromptCachingBetaMessageStream_errored = new WeakMap(), _PromptCachingBetaMessageStream_aborted = new WeakMap(), _PromptCachingBetaMessageStream_catchingPromiseCreated = new WeakMap(), _PromptCachingBetaMessageStream_handleError = new WeakMap(), _PromptCachingBetaMessageStream_instances = new WeakSet(), _PromptCachingBetaMessageStream_getFinalMessage = function _PromptCachingBetaMessageStream_getFinalMessage() {
+        if (this.receivedMessages.length === 0) {
+            throw new error_AnthropicError('stream ended without producing a PromptCachingBetaMessage with role=assistant');
+        }
+        return this.receivedMessages.at(-1);
+    }, _PromptCachingBetaMessageStream_getFinalText = function _PromptCachingBetaMessageStream_getFinalText() {
+        if (this.receivedMessages.length === 0) {
+            throw new error_AnthropicError('stream ended without producing a PromptCachingBetaMessage with role=assistant');
+        }
+        const textBlocks = this.receivedMessages
+            .at(-1)
+            .content.filter((block) => block.type === 'text')
+            .map((block) => block.text);
+        if (textBlocks.length === 0) {
+            throw new error_AnthropicError('stream ended without producing a content block with type=text');
+        }
+        return textBlocks.join(' ');
+    }, _PromptCachingBetaMessageStream_beginRequest = function _PromptCachingBetaMessageStream_beginRequest() {
+        if (this.ended)
+            return;
+        PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_currentMessageSnapshot, undefined, "f");
+    }, _PromptCachingBetaMessageStream_addStreamEvent = function _PromptCachingBetaMessageStream_addStreamEvent(event) {
+        if (this.ended)
+            return;
+        const messageSnapshot = PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_instances, "m", _PromptCachingBetaMessageStream_accumulateMessage).call(this, event);
+        this._emit('streamEvent', event, messageSnapshot);
+        switch (event.type) {
+            case 'content_block_delta': {
+                const content = messageSnapshot.content.at(-1);
+                if (event.delta.type === 'text_delta' && content.type === 'text') {
+                    this._emit('text', event.delta.text, content.text || '');
+                }
+                else if (event.delta.type === 'input_json_delta' && content.type === 'tool_use') {
+                    if (content.input) {
+                        this._emit('inputJson', event.delta.partial_json, content.input);
+                    }
+                }
+                break;
+            }
+            case 'message_stop': {
+                this._addPromptCachingBetaMessageParam(messageSnapshot);
+                this._addPromptCachingBetaMessage(messageSnapshot, true);
+                break;
+            }
+            case 'content_block_stop': {
+                this._emit('contentBlock', messageSnapshot.content.at(-1));
+                break;
+            }
+            case 'message_start': {
+                PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_currentMessageSnapshot, messageSnapshot, "f");
+                break;
+            }
+            case 'content_block_start':
+            case 'message_delta':
+                break;
+        }
+    }, _PromptCachingBetaMessageStream_endRequest = function _PromptCachingBetaMessageStream_endRequest() {
+        if (this.ended) {
+            throw new error_AnthropicError(`stream has ended, this shouldn't happen`);
+        }
+        const snapshot = PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_currentMessageSnapshot, "f");
+        if (!snapshot) {
+            throw new error_AnthropicError(`request ended without sending any chunks`);
+        }
+        PromptCachingBetaMessageStream_classPrivateFieldSet(this, _PromptCachingBetaMessageStream_currentMessageSnapshot, undefined, "f");
+        return snapshot;
+    }, _PromptCachingBetaMessageStream_accumulateMessage = function _PromptCachingBetaMessageStream_accumulateMessage(event) {
+        let snapshot = PromptCachingBetaMessageStream_classPrivateFieldGet(this, _PromptCachingBetaMessageStream_currentMessageSnapshot, "f");
+        if (event.type === 'message_start') {
+            if (snapshot) {
+                throw new error_AnthropicError(`Unexpected event order, got ${event.type} before receiving "message_stop"`);
+            }
+            return event.message;
+        }
+        if (!snapshot) {
+            throw new error_AnthropicError(`Unexpected event order, got ${event.type} before "message_start"`);
+        }
+        switch (event.type) {
+            case 'message_stop':
+                return snapshot;
+            case 'message_delta':
+                snapshot.stop_reason = event.delta.stop_reason;
+                snapshot.stop_sequence = event.delta.stop_sequence;
+                snapshot.usage.output_tokens = event.usage.output_tokens;
+                return snapshot;
+            case 'content_block_start':
+                snapshot.content.push(event.content_block);
+                return snapshot;
+            case 'content_block_delta': {
+                const snapshotContent = snapshot.content.at(event.index);
+                if (snapshotContent?.type === 'text' && event.delta.type === 'text_delta') {
+                    snapshotContent.text += event.delta.text;
+                }
+                else if (snapshotContent?.type === 'tool_use' && event.delta.type === 'input_json_delta') {
+                    // we need to keep track of the raw JSON string as well so that we can
+                    // re-parse it for each delta, for now we just store it as an untyped
+                    // non-enumerable property on the snapshot
+                    let jsonBuf = snapshotContent[PromptCachingBetaMessageStream_JSON_BUF_PROPERTY] || '';
+                    jsonBuf += event.delta.partial_json;
+                    Object.defineProperty(snapshotContent, PromptCachingBetaMessageStream_JSON_BUF_PROPERTY, {
+                        value: jsonBuf,
+                        enumerable: false,
+                        writable: true,
+                    });
+                    if (jsonBuf) {
+                        snapshotContent.input = parser_partialParse(jsonBuf);
+                    }
+                }
+                return snapshot;
+            }
+            case 'content_block_stop':
+                return snapshot;
+        }
+    }, Symbol.asyncIterator)]() {
+        const pushQueue = [];
+        const readQueue = [];
+        let done = false;
+        this.on('streamEvent', (event) => {
+            const reader = readQueue.shift();
+            if (reader) {
+                reader.resolve(event);
+            }
+            else {
+                pushQueue.push(event);
+            }
+        });
+        this.on('end', () => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.resolve(undefined);
+            }
+            readQueue.length = 0;
+        });
+        this.on('abort', (err) => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.reject(err);
+            }
+            readQueue.length = 0;
+        });
+        this.on('error', (err) => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.reject(err);
+            }
+            readQueue.length = 0;
+        });
+        return {
+            next: async () => {
+                if (!pushQueue.length) {
+                    if (done) {
+                        return { value: undefined, done: true };
+                    }
+                    return new Promise((resolve, reject) => readQueue.push({ resolve, reject })).then((chunk) => (chunk ? { value: chunk, done: false } : { value: undefined, done: true }));
+                }
+                const chunk = pushQueue.shift();
+                return { value: chunk, done: false };
+            },
+            return: async () => {
+                this.abort();
+                return { value: undefined, done: true };
+            },
+        };
+    }
+    toReadableStream() {
+        const stream = new streaming_Stream(this[Symbol.asyncIterator].bind(this), this.controller);
+        return stream.toReadableStream();
+    }
+}
+//# sourceMappingURL=PromptCachingBetaMessageStream.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/beta/prompt-caching/messages.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+
+class prompt_caching_messages_Messages extends resource_APIResource {
+    create(body, options) {
+        return this._client.post('/v1/messages?beta=prompt_caching', {
+            body,
+            timeout: this._client._options.timeout ?? 600000,
+            ...options,
+            headers: { 'anthropic-beta': 'prompt-caching-2024-07-31', ...options?.headers },
+            stream: body.stream ?? false,
+        });
+    }
+    /**
+     * Create a Message stream
+     */
+    stream(body, options) {
+        return PromptCachingBetaMessageStream.createMessage(this, body, options);
+    }
+}
+(function (Messages) {
+})(prompt_caching_messages_Messages || (prompt_caching_messages_Messages = {}));
+//# sourceMappingURL=messages.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/beta/prompt-caching/prompt-caching.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+
+class PromptCaching extends resource_APIResource {
+    constructor() {
+        super(...arguments);
+        this.messages = new prompt_caching_messages_Messages(this._client);
+    }
+}
+(function (PromptCaching) {
+    PromptCaching.Messages = prompt_caching_messages_Messages;
+})(PromptCaching || (PromptCaching = {}));
+//# sourceMappingURL=prompt-caching.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+
+class beta_Beta extends resource_APIResource {
+    constructor() {
+        super(...arguments);
+        this.promptCaching = new PromptCaching(this._client);
+    }
+}
+(function (Beta) {
+    Beta.PromptCaching = PromptCaching;
+})(beta_Beta || (beta_Beta = {}));
+//# sourceMappingURL=beta.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/index.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+var sdk_a;
+
+
+
+
+/**
+ * API Client for interfacing with the Anthropic API.
+ */
+class Anthropic extends core_APIClient {
+    /**
+     * API Client for interfacing with the Anthropic API.
+     *
+     * @param {string | null | undefined} [opts.apiKey=process.env['ANTHROPIC_API_KEY'] ?? null]
+     * @param {string | null | undefined} [opts.authToken=process.env['ANTHROPIC_AUTH_TOKEN'] ?? null]
+     * @param {string} [opts.baseURL=process.env['ANTHROPIC_BASE_URL'] ?? https://api.anthropic.com] - Override the default base URL for the API.
+     * @param {number} [opts.timeout=10 minutes] - The maximum amount of time (in milliseconds) the client will wait for a response before timing out.
+     * @param {number} [opts.httpAgent] - An HTTP agent used to manage HTTP(s) connections.
+     * @param {Core.Fetch} [opts.fetch] - Specify a custom `fetch` function implementation.
+     * @param {number} [opts.maxRetries=2] - The maximum number of times the client will retry a request.
+     * @param {Core.Headers} opts.defaultHeaders - Default headers to include with every request to the API.
+     * @param {Core.DefaultQuery} opts.defaultQuery - Default query parameters to include with every request to the API.
+     * @param {boolean} [opts.dangerouslyAllowBrowser=false] - By default, client-side use of this library is not allowed, as it risks exposing your secret API credentials to attackers.
+     */
+    constructor({ baseURL = core_readEnv('ANTHROPIC_BASE_URL'), apiKey = core_readEnv('ANTHROPIC_API_KEY') ?? null, authToken = core_readEnv('ANTHROPIC_AUTH_TOKEN') ?? null, ...opts } = {}) {
+        const options = {
+            apiKey,
+            authToken,
+            ...opts,
+            baseURL: baseURL || `https://api.anthropic.com`,
+        };
+        if (!options.dangerouslyAllowBrowser && core_isRunningInBrowser()) {
+            throw new error_AnthropicError("It looks like you're running in a browser-like environment.\n\nThis is disabled by default, as it risks exposing your secret API credentials to attackers.\nIf you understand the risks and have appropriate mitigations in place,\nyou can set the `dangerouslyAllowBrowser` option to `true`, e.g.,\n\nnew Anthropic({ apiKey, dangerouslyAllowBrowser: true });\n\nTODO: link!\n");
+        }
+        super({
+            baseURL: options.baseURL,
+            timeout: options.timeout ?? 600000 /* 10 minutes */,
+            httpAgent: options.httpAgent,
+            maxRetries: options.maxRetries,
+            fetch: options.fetch,
+        });
+        this.completions = new resources_completions_Completions(this);
+        this.messages = new messages_Messages(this);
+        this.beta = new beta_Beta(this);
+        this._options = options;
+        this.apiKey = apiKey;
+        this.authToken = authToken;
+    }
+    defaultQuery() {
+        return this._options.defaultQuery;
+    }
+    defaultHeaders(opts) {
+        return {
+            ...super.defaultHeaders(opts),
+            ...(this._options.dangerouslyAllowBrowser ?
+                { 'anthropic-dangerous-direct-browser-access': 'true' }
+                : undefined),
+            'anthropic-version': '2023-06-01',
+            ...this._options.defaultHeaders,
+        };
+    }
+    validateHeaders(headers, customHeaders) {
+        if (this.apiKey && headers['x-api-key']) {
+            return;
+        }
+        if (customHeaders['x-api-key'] === null) {
+            return;
+        }
+        if (this.authToken && headers['authorization']) {
+            return;
+        }
+        if (customHeaders['authorization'] === null) {
+            return;
+        }
+        throw new Error('Could not resolve authentication method. Expected either apiKey or authToken to be set. Or for one of the "X-Api-Key" or "Authorization" headers to be explicitly omitted');
+    }
+    authHeaders(opts) {
+        const apiKeyAuth = this.apiKeyAuth(opts);
+        const bearerAuth = this.bearerAuth(opts);
+        if (apiKeyAuth != null && !core_isEmptyObj(apiKeyAuth)) {
+            return apiKeyAuth;
+        }
+        if (bearerAuth != null && !core_isEmptyObj(bearerAuth)) {
+            return bearerAuth;
+        }
+        return {};
+    }
+    apiKeyAuth(opts) {
+        if (this.apiKey == null) {
+            return {};
+        }
+        return { 'X-Api-Key': this.apiKey };
+    }
+    bearerAuth(opts) {
+        if (this.authToken == null) {
+            return {};
+        }
+        return { Authorization: `Bearer ${this.authToken}` };
+    }
+}
+sdk_a = Anthropic;
+Anthropic.Anthropic = sdk_a;
+Anthropic.HUMAN_PROMPT = '\n\nHuman:';
+Anthropic.AI_PROMPT = '\n\nAssistant:';
+Anthropic.DEFAULT_TIMEOUT = 600000; // 10 minutes
+Anthropic.AnthropicError = error_AnthropicError;
+Anthropic.APIError = error_APIError;
+Anthropic.APIConnectionError = error_APIConnectionError;
+Anthropic.APIConnectionTimeoutError = error_APIConnectionTimeoutError;
+Anthropic.APIUserAbortError = error_APIUserAbortError;
+Anthropic.NotFoundError = error_NotFoundError;
+Anthropic.ConflictError = error_ConflictError;
+Anthropic.RateLimitError = error_RateLimitError;
+Anthropic.BadRequestError = error_BadRequestError;
+Anthropic.AuthenticationError = error_AuthenticationError;
+Anthropic.InternalServerError = error_InternalServerError;
+Anthropic.PermissionDeniedError = error_PermissionDeniedError;
+Anthropic.UnprocessableEntityError = error_UnprocessableEntityError;
+Anthropic.toFile = uploads_toFile;
+Anthropic.fileFromPath = registry_fileFromPath;
+const { HUMAN_PROMPT, AI_PROMPT } = Anthropic;
+const { AnthropicError: sdk_AnthropicError, APIError: sdk_APIError, APIConnectionError: sdk_APIConnectionError, APIConnectionTimeoutError: sdk_APIConnectionTimeoutError, APIUserAbortError: sdk_APIUserAbortError, NotFoundError: sdk_NotFoundError, ConflictError: sdk_ConflictError, RateLimitError: sdk_RateLimitError, BadRequestError: sdk_BadRequestError, AuthenticationError: sdk_AuthenticationError, InternalServerError: sdk_InternalServerError, PermissionDeniedError: sdk_PermissionDeniedError, UnprocessableEntityError: sdk_UnprocessableEntityError, } = sdk_error_namespaceObject;
+var sdk_toFile = uploads_toFile;
+var sdk_fileFromPath = registry_fileFromPath;
+(function (Anthropic) {
+    Anthropic.Completions = resources_completions_Completions;
+    Anthropic.Messages = messages_Messages;
+    Anthropic.Beta = beta_Beta;
+})(Anthropic || (Anthropic = {}));
+/* harmony default export */ const sdk = (Anthropic);
+//# sourceMappingURL=index.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/zod/lib/index.mjs
 var util;
 (function (util) {
@@ -49718,7 +52808,7 @@ function parseArrayDef(def, refs) {
         type: 'array',
     };
     if (def.type?._def?.typeName !== ZodFirstPartyTypeKind.ZodAny) {
-        res.items = parseDef(def.type._def, {
+        res.items = parseDef_parseDef(def.type._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'items'],
         });
@@ -49797,13 +52887,13 @@ function parseBooleanDef() {
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/branded.mjs
 
 function parseBrandedDef(_def, refs) {
-    return parseDef(_def.type._def, refs);
+    return parseDef_parseDef(_def.type._def, refs);
 }
 //# sourceMappingURL=branded.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/catch.mjs
 
 const parseCatchDef = (def, refs) => {
-    return parseDef(def.innerType._def, refs);
+    return parseDef_parseDef(def.innerType._def, refs);
 };
 //# sourceMappingURL=catch.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/date.mjs
@@ -49858,7 +52948,7 @@ const integerDateParser = (def, refs) => {
 
 function parseDefaultDef(_def, refs) {
     return {
-        ...parseDef(_def.innerType._def, refs),
+        ...parseDef_parseDef(_def.innerType._def, refs),
         default: _def.defaultValue(),
     };
 }
@@ -49866,7 +52956,7 @@ function parseDefaultDef(_def, refs) {
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/effects.mjs
 
 function parseEffectsDef(_def, refs) {
-    return refs.effectStrategy === 'input' ? parseDef(_def.schema._def, refs) : {};
+    return refs.effectStrategy === 'input' ? parseDef_parseDef(_def.schema._def, refs) : {};
 }
 //# sourceMappingURL=effects.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/enum.mjs
@@ -49886,11 +52976,11 @@ const isJsonSchema7AllOfType = (type) => {
 };
 function parseIntersectionDef(def, refs) {
     const allOf = [
-        parseDef(def.left._def, {
+        parseDef_parseDef(def.left._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'allOf', '0'],
         }),
-        parseDef(def.right._def, {
+        parseDef_parseDef(def.right._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'allOf', '1'],
         }),
@@ -50275,7 +53365,7 @@ function parseRecordDef(def, refs) {
             required: def.keyType._def.values,
             properties: def.keyType._def.values.reduce((acc, key) => ({
                 ...acc,
-                [key]: parseDef(def.valueType._def, {
+                [key]: parseDef_parseDef(def.valueType._def, {
                     ...refs,
                     currentPath: [...refs.currentPath, 'properties', key],
                 }) ?? {},
@@ -50285,7 +53375,7 @@ function parseRecordDef(def, refs) {
     }
     const schema = {
         type: 'object',
-        additionalProperties: parseDef(def.valueType._def, {
+        additionalProperties: parseDef_parseDef(def.valueType._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'additionalProperties'],
         }) ?? {},
@@ -50318,11 +53408,11 @@ function parseMapDef(def, refs) {
     if (refs.mapStrategy === 'record') {
         return parseRecordDef(def, refs);
     }
-    const keys = parseDef(def.keyType._def, {
+    const keys = parseDef_parseDef(def.keyType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'items', 'items', '0'],
     }) || {};
-    const values = parseDef(def.valueType._def, {
+    const values = parseDef_parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'items', 'items', '1'],
     }) || {};
@@ -50441,7 +53531,7 @@ function parseUnionDef(def, refs) {
 }
 const asAnyOf = (def, refs) => {
     const anyOf = (def.options instanceof Map ? Array.from(def.options.values()) : def.options)
-        .map((x, i) => parseDef(x._def, {
+        .map((x, i) => parseDef_parseDef(x._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'anyOf', `${i}`],
     }))
@@ -50466,7 +53556,7 @@ function parseNullableDef(def, refs) {
         };
     }
     if (refs.target === 'openApi3') {
-        const base = parseDef(def.innerType._def, {
+        const base = parseDef_parseDef(def.innerType._def, {
             ...refs,
             currentPath: [...refs.currentPath],
         });
@@ -50474,7 +53564,7 @@ function parseNullableDef(def, refs) {
             return { allOf: [base], nullable: true };
         return base && { ...base, nullable: true };
     }
-    const base = parseDef(def.innerType._def, {
+    const base = parseDef_parseDef(def.innerType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'anyOf', '0'],
     });
@@ -50541,7 +53631,7 @@ function decideAdditionalProperties(def, refs) {
     if (refs.removeAdditionalStrategy === 'strict') {
         return def.catchall._def.typeName === 'ZodNever' ?
             def.unknownKeys !== 'strict'
-            : parseDef(def.catchall._def, {
+            : parseDef_parseDef(def.catchall._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'additionalProperties'],
             }) ?? true;
@@ -50549,7 +53639,7 @@ function decideAdditionalProperties(def, refs) {
     else {
         return def.catchall._def.typeName === 'ZodNever' ?
             def.unknownKeys === 'passthrough'
-            : parseDef(def.catchall._def, {
+            : parseDef_parseDef(def.catchall._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'additionalProperties'],
             }) ?? true;
@@ -50561,7 +53651,7 @@ function parseObjectDef(def, refs) {
         ...Object.entries(def.shape()).reduce((acc, [propName, propDef]) => {
             if (propDef === undefined || propDef._def === undefined)
                 return acc;
-            const parsedDef = parseDef(propDef._def, {
+            const parsedDef = parseDef_parseDef(propDef._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'properties', propName],
                 propertyPath: [...refs.currentPath, 'properties', propName],
@@ -50587,9 +53677,9 @@ function parseObjectDef(def, refs) {
 
 const parseOptionalDef = (def, refs) => {
     if (refs.currentPath.toString() === refs.propertyPath?.toString()) {
-        return parseDef(def.innerType._def, refs);
+        return parseDef_parseDef(def.innerType._def, refs);
     }
-    const innerSchema = parseDef(def.innerType._def, {
+    const innerSchema = parseDef_parseDef(def.innerType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'anyOf', '1'],
     });
@@ -50609,16 +53699,16 @@ const parseOptionalDef = (def, refs) => {
 
 const parsePipelineDef = (def, refs) => {
     if (refs.pipeStrategy === 'input') {
-        return parseDef(def.in._def, refs);
+        return parseDef_parseDef(def.in._def, refs);
     }
     else if (refs.pipeStrategy === 'output') {
-        return parseDef(def.out._def, refs);
+        return parseDef_parseDef(def.out._def, refs);
     }
-    const a = parseDef(def.in._def, {
+    const a = parseDef_parseDef(def.in._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'allOf', '0'],
     });
-    const b = parseDef(def.out._def, {
+    const b = parseDef_parseDef(def.out._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'allOf', a ? '1' : '0'],
     });
@@ -50630,14 +53720,14 @@ const parsePipelineDef = (def, refs) => {
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/promise.mjs
 
 function parsePromiseDef(def, refs) {
-    return parseDef(def.type._def, refs);
+    return parseDef_parseDef(def.type._def, refs);
 }
 //# sourceMappingURL=promise.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/set.mjs
 
 
 function parseSetDef(def, refs) {
-    const items = parseDef(def.valueType._def, {
+    const items = parseDef_parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'items'],
     });
@@ -50663,12 +53753,12 @@ function parseTupleDef(def, refs) {
             type: 'array',
             minItems: def.items.length,
             items: def.items
-                .map((x, i) => parseDef(x._def, {
+                .map((x, i) => parseDef_parseDef(x._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'items', `${i}`],
             }))
                 .reduce((acc, x) => (x === undefined ? acc : [...acc, x]), []),
-            additionalItems: parseDef(def.rest._def, {
+            additionalItems: parseDef_parseDef(def.rest._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'additionalItems'],
             }),
@@ -50680,7 +53770,7 @@ function parseTupleDef(def, refs) {
             minItems: def.items.length,
             maxItems: def.items.length,
             items: def.items
-                .map((x, i) => parseDef(x._def, {
+                .map((x, i) => parseDef_parseDef(x._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'items', `${i}`],
             }))
@@ -50704,7 +53794,7 @@ function parseUnknownDef() {
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/readonly.mjs
 
 const parseReadonlyDef = (def, refs) => {
-    return parseDef(def.innerType._def, refs);
+    return parseDef_parseDef(def.innerType._def, refs);
 };
 //# sourceMappingURL=readonly.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/Options.mjs
@@ -50779,7 +53869,7 @@ const getDefaultOptions = (options) => {
 
 
 
-function parseDef(def, refs, forceResolution = false) {
+function parseDef_parseDef(def, refs, forceResolution = false) {
     const seenItem = refs.seen.get(def);
     if (refs.override) {
         const overrideResult = refs.override?.(def, refs, seenItem, forceResolution);
@@ -50890,7 +53980,7 @@ const selectParser = (def, typeName, refs) => {
         case ZodFirstPartyTypeKind.ZodSet:
             return parseSetDef(def, refs);
         case ZodFirstPartyTypeKind.ZodLazy:
-            return parseDef(def.getter()._def, refs);
+            return parseDef_parseDef(def.getter()._def, refs);
         case ZodFirstPartyTypeKind.ZodPromise:
             return parsePromiseDef(def, refs);
         case ZodFirstPartyTypeKind.ZodNaN:
@@ -50971,12 +54061,12 @@ const getRefs = (options) => {
 
 
 
-const zodToJsonSchema = (schema, options) => {
+const zodToJsonSchema_zodToJsonSchema = (schema, options) => {
     const refs = getRefs(options);
     const name = typeof options === 'string' ? options
         : options?.nameStrategy === 'title' ? undefined
             : options?.name;
-    const main = parseDef(schema._def, name === undefined ? refs : ({
+    const main = parseDef_parseDef(schema._def, name === undefined ? refs : ({
         ...refs,
         currentPath: [...refs.basePath, refs.definitionPath, name],
     }), false) ?? {};
@@ -51003,7 +54093,7 @@ const zodToJsonSchema = (schema, options) => {
                 break;
             for (const [key, schema] of newDefinitions) {
                 definitions[key] =
-                    parseDef(zodDef(schema), { ...refs, currentPath: [...refs.basePath, refs.definitionPath, key] }, true) ?? {};
+                    parseDef_parseDef(zodDef(schema), { ...refs, currentPath: [...refs.basePath, refs.definitionPath, key] }, true) ?? {};
                 processedDefinitions.add(key);
             }
         }
@@ -51051,7 +54141,7 @@ const zodToJsonSchema = (schema, options) => {
 
 
 function zod_zodToJsonSchema(schema, options) {
-    return zodToJsonSchema(schema, {
+    return zodToJsonSchema_zodToJsonSchema(schema, {
         openaiStrictMode: true,
         name: options.name,
         nameStrategy: 'duplicate-ref',
@@ -51128,6 +54218,1428 @@ function zodFunction(options) {
     });
 }
 //# sourceMappingURL=zod.mjs.map
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/Options.js
+const Options_ignoreOverride = Symbol("Let zodToJsonSchema decide on which parser to use");
+const esm_Options_defaultOptions = {
+    name: undefined,
+    $refStrategy: "root",
+    basePath: ["#"],
+    effectStrategy: "input",
+    pipeStrategy: "all",
+    dateStrategy: "format:date-time",
+    mapStrategy: "entries",
+    removeAdditionalStrategy: "passthrough",
+    definitionPath: "definitions",
+    target: "jsonSchema7",
+    strictUnions: false,
+    definitions: {},
+    errorMessages: false,
+    markdownDescription: false,
+    patternStrategy: "escape",
+    applyRegexFlags: false,
+    emailStrategy: "format:email",
+    base64Strategy: "contentEncoding:base64",
+    nameStrategy: "ref"
+};
+const Options_getDefaultOptions = (options) => (typeof options === "string"
+    ? {
+        ...esm_Options_defaultOptions,
+        name: options,
+    }
+    : {
+        ...esm_Options_defaultOptions,
+        ...options,
+    });
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/Refs.js
+
+const Refs_getRefs = (options) => {
+    const _options = Options_getDefaultOptions(options);
+    const currentPath = _options.name !== undefined
+        ? [..._options.basePath, _options.definitionPath, _options.name]
+        : _options.basePath;
+    return {
+        ..._options,
+        currentPath: currentPath,
+        propertyPath: undefined,
+        seen: new Map(Object.entries(_options.definitions).map(([name, def]) => [
+            def._def,
+            {
+                def: def._def,
+                path: [..._options.basePath, _options.definitionPath, name],
+                // Resolution of references will be forced even though seen, so it's ok that the schema is undefined here for now.
+                jsonSchema: undefined,
+            },
+        ])),
+    };
+};
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/any.js
+function any_parseAnyDef() {
+    return {};
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/errorMessages.js
+function errorMessages_addErrorMessage(res, key, errorMessage, refs) {
+    if (!refs?.errorMessages)
+        return;
+    if (errorMessage) {
+        res.errorMessage = {
+            ...res.errorMessage,
+            [key]: errorMessage,
+        };
+    }
+}
+function errorMessages_setResponseValueAndErrors(res, key, value, errorMessage, refs) {
+    res[key] = value;
+    errorMessages_addErrorMessage(res, key, errorMessage, refs);
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/array.js
+
+
+
+function array_parseArrayDef(def, refs) {
+    const res = {
+        type: "array",
+    };
+    if (def.type?._def?.typeName !== ZodFirstPartyTypeKind.ZodAny) {
+        res.items = esm_parseDef_parseDef(def.type._def, {
+            ...refs,
+            currentPath: [...refs.currentPath, "items"],
+        });
+    }
+    if (def.minLength) {
+        errorMessages_setResponseValueAndErrors(res, "minItems", def.minLength.value, def.minLength.message, refs);
+    }
+    if (def.maxLength) {
+        errorMessages_setResponseValueAndErrors(res, "maxItems", def.maxLength.value, def.maxLength.message, refs);
+    }
+    if (def.exactLength) {
+        errorMessages_setResponseValueAndErrors(res, "minItems", def.exactLength.value, def.exactLength.message, refs);
+        errorMessages_setResponseValueAndErrors(res, "maxItems", def.exactLength.value, def.exactLength.message, refs);
+    }
+    return res;
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/bigint.js
+
+function bigint_parseBigintDef(def, refs) {
+    const res = {
+        type: "integer",
+        format: "int64",
+    };
+    if (!def.checks)
+        return res;
+    for (const check of def.checks) {
+        switch (check.kind) {
+            case "min":
+                if (refs.target === "jsonSchema7") {
+                    if (check.inclusive) {
+                        errorMessages_setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
+                    }
+                    else {
+                        errorMessages_setResponseValueAndErrors(res, "exclusiveMinimum", check.value, check.message, refs);
+                    }
+                }
+                else {
+                    if (!check.inclusive) {
+                        res.exclusiveMinimum = true;
+                    }
+                    errorMessages_setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
+                }
+                break;
+            case "max":
+                if (refs.target === "jsonSchema7") {
+                    if (check.inclusive) {
+                        errorMessages_setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
+                    }
+                    else {
+                        errorMessages_setResponseValueAndErrors(res, "exclusiveMaximum", check.value, check.message, refs);
+                    }
+                }
+                else {
+                    if (!check.inclusive) {
+                        res.exclusiveMaximum = true;
+                    }
+                    errorMessages_setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
+                }
+                break;
+            case "multipleOf":
+                errorMessages_setResponseValueAndErrors(res, "multipleOf", check.value, check.message, refs);
+                break;
+        }
+    }
+    return res;
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/boolean.js
+function boolean_parseBooleanDef() {
+    return {
+        type: "boolean",
+    };
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/branded.js
+
+function branded_parseBrandedDef(_def, refs) {
+    return esm_parseDef_parseDef(_def.type._def, refs);
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/catch.js
+
+const catch_parseCatchDef = (def, refs) => {
+    return esm_parseDef_parseDef(def.innerType._def, refs);
+};
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/date.js
+
+function date_parseDateDef(def, refs, overrideDateStrategy) {
+    const strategy = overrideDateStrategy ?? refs.dateStrategy;
+    if (Array.isArray(strategy)) {
+        return {
+            anyOf: strategy.map((item, i) => date_parseDateDef(def, refs, item)),
+        };
+    }
+    switch (strategy) {
+        case "string":
+        case "format:date-time":
+            return {
+                type: "string",
+                format: "date-time",
+            };
+        case "format:date":
+            return {
+                type: "string",
+                format: "date",
+            };
+        case "integer":
+            return date_integerDateParser(def, refs);
+    }
+}
+const date_integerDateParser = (def, refs) => {
+    const res = {
+        type: "integer",
+        format: "unix-time",
+    };
+    if (refs.target === "openApi3") {
+        return res;
+    }
+    for (const check of def.checks) {
+        switch (check.kind) {
+            case "min":
+                errorMessages_setResponseValueAndErrors(res, "minimum", check.value, // This is in milliseconds
+                check.message, refs);
+                break;
+            case "max":
+                errorMessages_setResponseValueAndErrors(res, "maximum", check.value, // This is in milliseconds
+                check.message, refs);
+                break;
+        }
+    }
+    return res;
+};
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/default.js
+
+function default_parseDefaultDef(_def, refs) {
+    return {
+        ...esm_parseDef_parseDef(_def.innerType._def, refs),
+        default: _def.defaultValue(),
+    };
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/effects.js
+
+function effects_parseEffectsDef(_def, refs) {
+    return refs.effectStrategy === "input"
+        ? esm_parseDef_parseDef(_def.schema._def, refs)
+        : {};
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/enum.js
+function enum_parseEnumDef(def) {
+    return {
+        type: "string",
+        enum: def.values,
+    };
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/intersection.js
+
+const intersection_isJsonSchema7AllOfType = (type) => {
+    if ("type" in type && type.type === "string")
+        return false;
+    return "allOf" in type;
+};
+function intersection_parseIntersectionDef(def, refs) {
+    const allOf = [
+        esm_parseDef_parseDef(def.left._def, {
+            ...refs,
+            currentPath: [...refs.currentPath, "allOf", "0"],
+        }),
+        esm_parseDef_parseDef(def.right._def, {
+            ...refs,
+            currentPath: [...refs.currentPath, "allOf", "1"],
+        }),
+    ].filter((x) => !!x);
+    let unevaluatedProperties = refs.target === "jsonSchema2019-09"
+        ? { unevaluatedProperties: false }
+        : undefined;
+    const mergedAllOf = [];
+    // If either of the schemas is an allOf, merge them into a single allOf
+    allOf.forEach((schema) => {
+        if (intersection_isJsonSchema7AllOfType(schema)) {
+            mergedAllOf.push(...schema.allOf);
+            if (schema.unevaluatedProperties === undefined) {
+                // If one of the schemas has no unevaluatedProperties set,
+                // the merged schema should also have no unevaluatedProperties set
+                unevaluatedProperties = undefined;
+            }
+        }
+        else {
+            let nestedSchema = schema;
+            if ("additionalProperties" in schema &&
+                schema.additionalProperties === false) {
+                const { additionalProperties, ...rest } = schema;
+                nestedSchema = rest;
+            }
+            else {
+                // As soon as one of the schemas has additionalProperties set not to false, we allow unevaluatedProperties
+                unevaluatedProperties = undefined;
+            }
+            mergedAllOf.push(nestedSchema);
+        }
+    });
+    return mergedAllOf.length
+        ? {
+            allOf: mergedAllOf,
+            ...unevaluatedProperties,
+        }
+        : undefined;
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/literal.js
+function literal_parseLiteralDef(def, refs) {
+    const parsedType = typeof def.value;
+    if (parsedType !== "bigint" &&
+        parsedType !== "number" &&
+        parsedType !== "boolean" &&
+        parsedType !== "string") {
+        return {
+            type: Array.isArray(def.value) ? "array" : "object",
+        };
+    }
+    if (refs.target === "openApi3") {
+        return {
+            type: parsedType === "bigint" ? "integer" : parsedType,
+            enum: [def.value],
+        };
+    }
+    return {
+        type: parsedType === "bigint" ? "integer" : parsedType,
+        const: def.value,
+    };
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/string.js
+
+let parsers_string_emojiRegex;
+/**
+ * Generated from the regular expressions found here as of 2024-05-22:
+ * https://github.com/colinhacks/zod/blob/master/src/types.ts.
+ *
+ * Expressions with /i flag have been changed accordingly.
+ */
+const string_zodPatterns = {
+    /**
+     * `c` was changed to `[cC]` to replicate /i flag
+     */
+    cuid: /^[cC][^\s-]{8,}$/,
+    cuid2: /^[0-9a-z]+$/,
+    ulid: /^[0-9A-HJKMNP-TV-Z]{26}$/,
+    /**
+     * `a-z` was added to replicate /i flag
+     */
+    email: /^(?!\.)(?!.*\.\.)([a-zA-Z0-9_'+\-\.]*)[a-zA-Z0-9_+-]@([a-zA-Z0-9][a-zA-Z0-9\-]*\.)+[a-zA-Z]{2,}$/,
+    /**
+     * Constructed a valid Unicode RegExp
+     *
+     * Lazily instantiate since this type of regex isn't supported
+     * in all envs (e.g. React Native).
+     *
+     * See:
+     * https://github.com/colinhacks/zod/issues/2433
+     * Fix in Zod:
+     * https://github.com/colinhacks/zod/commit/9340fd51e48576a75adc919bff65dbc4a5d4c99b
+     */
+    emoji: () => {
+        if (parsers_string_emojiRegex === undefined) {
+            parsers_string_emojiRegex = RegExp("^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$", "u");
+        }
+        return parsers_string_emojiRegex;
+    },
+    /**
+     * Unused
+     */
+    uuid: /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/,
+    /**
+     * Unused
+     */
+    ipv4: /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/,
+    /**
+     * Unused
+     */
+    ipv6: /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/,
+    base64: /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/,
+    nanoid: /^[a-zA-Z0-9_-]{21}$/,
+};
+function string_parseStringDef(def, refs) {
+    const res = {
+        type: "string",
+    };
+    function processPattern(value) {
+        return refs.patternStrategy === "escape"
+            ? string_escapeNonAlphaNumeric(value)
+            : value;
+    }
+    if (def.checks) {
+        for (const check of def.checks) {
+            switch (check.kind) {
+                case "min":
+                    errorMessages_setResponseValueAndErrors(res, "minLength", typeof res.minLength === "number"
+                        ? Math.max(res.minLength, check.value)
+                        : check.value, check.message, refs);
+                    break;
+                case "max":
+                    errorMessages_setResponseValueAndErrors(res, "maxLength", typeof res.maxLength === "number"
+                        ? Math.min(res.maxLength, check.value)
+                        : check.value, check.message, refs);
+                    break;
+                case "email":
+                    switch (refs.emailStrategy) {
+                        case "format:email":
+                            string_addFormat(res, "email", check.message, refs);
+                            break;
+                        case "format:idn-email":
+                            string_addFormat(res, "idn-email", check.message, refs);
+                            break;
+                        case "pattern:zod":
+                            string_addPattern(res, string_zodPatterns.email, check.message, refs);
+                            break;
+                    }
+                    break;
+                case "url":
+                    string_addFormat(res, "uri", check.message, refs);
+                    break;
+                case "uuid":
+                    string_addFormat(res, "uuid", check.message, refs);
+                    break;
+                case "regex":
+                    string_addPattern(res, check.regex, check.message, refs);
+                    break;
+                case "cuid":
+                    string_addPattern(res, string_zodPatterns.cuid, check.message, refs);
+                    break;
+                case "cuid2":
+                    string_addPattern(res, string_zodPatterns.cuid2, check.message, refs);
+                    break;
+                case "startsWith":
+                    string_addPattern(res, RegExp(`^${processPattern(check.value)}`), check.message, refs);
+                    break;
+                case "endsWith":
+                    string_addPattern(res, RegExp(`${processPattern(check.value)}$`), check.message, refs);
+                    break;
+                case "datetime":
+                    string_addFormat(res, "date-time", check.message, refs);
+                    break;
+                case "date":
+                    string_addFormat(res, "date", check.message, refs);
+                    break;
+                case "time":
+                    string_addFormat(res, "time", check.message, refs);
+                    break;
+                case "duration":
+                    string_addFormat(res, "duration", check.message, refs);
+                    break;
+                case "length":
+                    errorMessages_setResponseValueAndErrors(res, "minLength", typeof res.minLength === "number"
+                        ? Math.max(res.minLength, check.value)
+                        : check.value, check.message, refs);
+                    errorMessages_setResponseValueAndErrors(res, "maxLength", typeof res.maxLength === "number"
+                        ? Math.min(res.maxLength, check.value)
+                        : check.value, check.message, refs);
+                    break;
+                case "includes": {
+                    string_addPattern(res, RegExp(processPattern(check.value)), check.message, refs);
+                    break;
+                }
+                case "ip": {
+                    if (check.version !== "v6") {
+                        string_addFormat(res, "ipv4", check.message, refs);
+                    }
+                    if (check.version !== "v4") {
+                        string_addFormat(res, "ipv6", check.message, refs);
+                    }
+                    break;
+                }
+                case "emoji":
+                    string_addPattern(res, string_zodPatterns.emoji, check.message, refs);
+                    break;
+                case "ulid": {
+                    string_addPattern(res, string_zodPatterns.ulid, check.message, refs);
+                    break;
+                }
+                case "base64": {
+                    switch (refs.base64Strategy) {
+                        case "format:binary": {
+                            string_addFormat(res, "binary", check.message, refs);
+                            break;
+                        }
+                        case "contentEncoding:base64": {
+                            errorMessages_setResponseValueAndErrors(res, "contentEncoding", "base64", check.message, refs);
+                            break;
+                        }
+                        case "pattern:zod": {
+                            string_addPattern(res, string_zodPatterns.base64, check.message, refs);
+                            break;
+                        }
+                    }
+                    break;
+                }
+                case "nanoid": {
+                    string_addPattern(res, string_zodPatterns.nanoid, check.message, refs);
+                }
+                case "toLowerCase":
+                case "toUpperCase":
+                case "trim":
+                    break;
+                default:
+                    ((_) => { })(check);
+            }
+        }
+    }
+    return res;
+}
+const string_escapeNonAlphaNumeric = (value) => Array.from(value)
+    .map((c) => (/[a-zA-Z0-9]/.test(c) ? c : `\\${c}`))
+    .join("");
+const string_addFormat = (schema, value, message, refs) => {
+    if (schema.format || schema.anyOf?.some((x) => x.format)) {
+        if (!schema.anyOf) {
+            schema.anyOf = [];
+        }
+        if (schema.format) {
+            schema.anyOf.push({
+                format: schema.format,
+                ...(schema.errorMessage &&
+                    refs.errorMessages && {
+                    errorMessage: { format: schema.errorMessage.format },
+                }),
+            });
+            delete schema.format;
+            if (schema.errorMessage) {
+                delete schema.errorMessage.format;
+                if (Object.keys(schema.errorMessage).length === 0) {
+                    delete schema.errorMessage;
+                }
+            }
+        }
+        schema.anyOf.push({
+            format: value,
+            ...(message &&
+                refs.errorMessages && { errorMessage: { format: message } }),
+        });
+    }
+    else {
+        errorMessages_setResponseValueAndErrors(schema, "format", value, message, refs);
+    }
+};
+const string_addPattern = (schema, regex, message, refs) => {
+    if (schema.pattern || schema.allOf?.some((x) => x.pattern)) {
+        if (!schema.allOf) {
+            schema.allOf = [];
+        }
+        if (schema.pattern) {
+            schema.allOf.push({
+                pattern: schema.pattern,
+                ...(schema.errorMessage &&
+                    refs.errorMessages && {
+                    errorMessage: { pattern: schema.errorMessage.pattern },
+                }),
+            });
+            delete schema.pattern;
+            if (schema.errorMessage) {
+                delete schema.errorMessage.pattern;
+                if (Object.keys(schema.errorMessage).length === 0) {
+                    delete schema.errorMessage;
+                }
+            }
+        }
+        schema.allOf.push({
+            pattern: string_processRegExp(regex, refs),
+            ...(message &&
+                refs.errorMessages && { errorMessage: { pattern: message } }),
+        });
+    }
+    else {
+        errorMessages_setResponseValueAndErrors(schema, "pattern", string_processRegExp(regex, refs), message, refs);
+    }
+};
+// Mutate z.string.regex() in a best attempt to accommodate for regex flags when applyRegexFlags is true
+const string_processRegExp = (regexOrFunction, refs) => {
+    const regex = typeof regexOrFunction === "function" ? regexOrFunction() : regexOrFunction;
+    if (!refs.applyRegexFlags || !regex.flags)
+        return regex.source;
+    // Currently handled flags
+    const flags = {
+        i: regex.flags.includes("i"),
+        m: regex.flags.includes("m"),
+        s: regex.flags.includes("s"), // `.` matches newlines
+    };
+    // The general principle here is to step through each character, one at a time, applying mutations as flags require. We keep track when the current character is escaped, and when it's inside a group /like [this]/ or (also) a range like /[a-z]/. The following is fairly brittle imperative code; edit at your peril!
+    const source = flags.i ? regex.source.toLowerCase() : regex.source;
+    let pattern = "";
+    let isEscaped = false;
+    let inCharGroup = false;
+    let inCharRange = false;
+    for (let i = 0; i < source.length; i++) {
+        if (isEscaped) {
+            pattern += source[i];
+            isEscaped = false;
+            continue;
+        }
+        if (flags.i) {
+            if (inCharGroup) {
+                if (source[i].match(/[a-z]/)) {
+                    if (inCharRange) {
+                        pattern += source[i];
+                        pattern += `${source[i - 2]}-${source[i]}`.toUpperCase();
+                        inCharRange = false;
+                    }
+                    else if (source[i + 1] === "-" && source[i + 2]?.match(/[a-z]/)) {
+                        pattern += source[i];
+                        inCharRange = true;
+                    }
+                    else {
+                        pattern += `${source[i]}${source[i].toUpperCase()}`;
+                    }
+                    continue;
+                }
+            }
+            else if (source[i].match(/[a-z]/)) {
+                pattern += `[${source[i]}${source[i].toUpperCase()}]`;
+                continue;
+            }
+        }
+        if (flags.m) {
+            if (source[i] === "^") {
+                pattern += `(^|(?<=[\r\n]))`;
+                continue;
+            }
+            else if (source[i] === "$") {
+                pattern += `($|(?=[\r\n]))`;
+                continue;
+            }
+        }
+        if (flags.s && source[i] === ".") {
+            pattern += inCharGroup ? `${source[i]}\r\n` : `[${source[i]}\r\n]`;
+            continue;
+        }
+        pattern += source[i];
+        if (source[i] === "\\") {
+            isEscaped = true;
+        }
+        else if (inCharGroup && source[i] === "]") {
+            inCharGroup = false;
+        }
+        else if (!inCharGroup && source[i] === "[") {
+            inCharGroup = true;
+        }
+    }
+    try {
+        const regexTest = new RegExp(pattern);
+    }
+    catch {
+        console.warn(`Could not convert regex pattern at ${refs.currentPath.join("/")} to a flag-independent form! Falling back to the flag-ignorant source`);
+        return regex.source;
+    }
+    return pattern;
+};
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/record.js
+
+
+
+function record_parseRecordDef(def, refs) {
+    if (refs.target === "openApi3" &&
+        def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodEnum) {
+        return {
+            type: "object",
+            required: def.keyType._def.values,
+            properties: def.keyType._def.values.reduce((acc, key) => ({
+                ...acc,
+                [key]: esm_parseDef_parseDef(def.valueType._def, {
+                    ...refs,
+                    currentPath: [...refs.currentPath, "properties", key],
+                }) ?? {},
+            }), {}),
+            additionalProperties: false,
+        };
+    }
+    const schema = {
+        type: "object",
+        additionalProperties: esm_parseDef_parseDef(def.valueType._def, {
+            ...refs,
+            currentPath: [...refs.currentPath, "additionalProperties"],
+        }) ?? {},
+    };
+    if (refs.target === "openApi3") {
+        return schema;
+    }
+    if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodString &&
+        def.keyType._def.checks?.length) {
+        const keyType = Object.entries(string_parseStringDef(def.keyType._def, refs)).reduce((acc, [key, value]) => (key === "type" ? acc : { ...acc, [key]: value }), {});
+        return {
+            ...schema,
+            propertyNames: keyType,
+        };
+    }
+    else if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodEnum) {
+        return {
+            ...schema,
+            propertyNames: {
+                enum: def.keyType._def.values,
+            },
+        };
+    }
+    return schema;
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/map.js
+
+
+function map_parseMapDef(def, refs) {
+    if (refs.mapStrategy === "record") {
+        return record_parseRecordDef(def, refs);
+    }
+    const keys = esm_parseDef_parseDef(def.keyType._def, {
+        ...refs,
+        currentPath: [...refs.currentPath, "items", "items", "0"],
+    }) || {};
+    const values = esm_parseDef_parseDef(def.valueType._def, {
+        ...refs,
+        currentPath: [...refs.currentPath, "items", "items", "1"],
+    }) || {};
+    return {
+        type: "array",
+        maxItems: 125,
+        items: {
+            type: "array",
+            items: [keys, values],
+            minItems: 2,
+            maxItems: 2,
+        },
+    };
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/nativeEnum.js
+function nativeEnum_parseNativeEnumDef(def) {
+    const object = def.values;
+    const actualKeys = Object.keys(def.values).filter((key) => {
+        return typeof object[object[key]] !== "number";
+    });
+    const actualValues = actualKeys.map((key) => object[key]);
+    const parsedTypes = Array.from(new Set(actualValues.map((values) => typeof values)));
+    return {
+        type: parsedTypes.length === 1
+            ? parsedTypes[0] === "string"
+                ? "string"
+                : "number"
+            : ["string", "number"],
+        enum: actualValues,
+    };
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/never.js
+function never_parseNeverDef() {
+    return {
+        not: {},
+    };
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/null.js
+function null_parseNullDef(refs) {
+    return refs.target === "openApi3"
+        ? {
+            enum: ["null"],
+            nullable: true,
+        }
+        : {
+            type: "null",
+        };
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/union.js
+
+const union_primitiveMappings = {
+    ZodString: "string",
+    ZodNumber: "number",
+    ZodBigInt: "integer",
+    ZodBoolean: "boolean",
+    ZodNull: "null",
+};
+function union_parseUnionDef(def, refs) {
+    if (refs.target === "openApi3")
+        return union_asAnyOf(def, refs);
+    const options = def.options instanceof Map ? Array.from(def.options.values()) : def.options;
+    // This blocks tries to look ahead a bit to produce nicer looking schemas with type array instead of anyOf.
+    if (options.every((x) => x._def.typeName in union_primitiveMappings &&
+        (!x._def.checks || !x._def.checks.length))) {
+        // all types in union are primitive and lack checks, so might as well squash into {type: [...]}
+        const types = options.reduce((types, x) => {
+            const type = union_primitiveMappings[x._def.typeName]; //Can be safely casted due to row 43
+            return type && !types.includes(type) ? [...types, type] : types;
+        }, []);
+        return {
+            type: types.length > 1 ? types : types[0],
+        };
+    }
+    else if (options.every((x) => x._def.typeName === "ZodLiteral" && !x.description)) {
+        // all options literals
+        const types = options.reduce((acc, x) => {
+            const type = typeof x._def.value;
+            switch (type) {
+                case "string":
+                case "number":
+                case "boolean":
+                    return [...acc, type];
+                case "bigint":
+                    return [...acc, "integer"];
+                case "object":
+                    if (x._def.value === null)
+                        return [...acc, "null"];
+                case "symbol":
+                case "undefined":
+                case "function":
+                default:
+                    return acc;
+            }
+        }, []);
+        if (types.length === options.length) {
+            // all the literals are primitive, as far as null can be considered primitive
+            const uniqueTypes = types.filter((x, i, a) => a.indexOf(x) === i);
+            return {
+                type: uniqueTypes.length > 1 ? uniqueTypes : uniqueTypes[0],
+                enum: options.reduce((acc, x) => {
+                    return acc.includes(x._def.value) ? acc : [...acc, x._def.value];
+                }, []),
+            };
+        }
+    }
+    else if (options.every((x) => x._def.typeName === "ZodEnum")) {
+        return {
+            type: "string",
+            enum: options.reduce((acc, x) => [
+                ...acc,
+                ...x._def.values.filter((x) => !acc.includes(x)),
+            ], []),
+        };
+    }
+    return union_asAnyOf(def, refs);
+}
+const union_asAnyOf = (def, refs) => {
+    const anyOf = (def.options instanceof Map
+        ? Array.from(def.options.values())
+        : def.options)
+        .map((x, i) => esm_parseDef_parseDef(x._def, {
+        ...refs,
+        currentPath: [...refs.currentPath, "anyOf", `${i}`],
+    }))
+        .filter((x) => !!x &&
+        (!refs.strictUnions ||
+            (typeof x === "object" && Object.keys(x).length > 0)));
+    return anyOf.length ? { anyOf } : undefined;
+};
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/nullable.js
+
+
+function nullable_parseNullableDef(def, refs) {
+    if (["ZodString", "ZodNumber", "ZodBigInt", "ZodBoolean", "ZodNull"].includes(def.innerType._def.typeName) &&
+        (!def.innerType._def.checks || !def.innerType._def.checks.length)) {
+        if (refs.target === "openApi3") {
+            return {
+                type: union_primitiveMappings[def.innerType._def.typeName],
+                nullable: true,
+            };
+        }
+        return {
+            type: [
+                union_primitiveMappings[def.innerType._def.typeName],
+                "null",
+            ],
+        };
+    }
+    if (refs.target === "openApi3") {
+        const base = esm_parseDef_parseDef(def.innerType._def, {
+            ...refs,
+            currentPath: [...refs.currentPath],
+        });
+        if (base && '$ref' in base)
+            return { allOf: [base], nullable: true };
+        return base && { ...base, nullable: true };
+    }
+    const base = esm_parseDef_parseDef(def.innerType._def, {
+        ...refs,
+        currentPath: [...refs.currentPath, "anyOf", "0"],
+    });
+    return base && { anyOf: [base, { type: "null" }] };
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/number.js
+
+function number_parseNumberDef(def, refs) {
+    const res = {
+        type: "number",
+    };
+    if (!def.checks)
+        return res;
+    for (const check of def.checks) {
+        switch (check.kind) {
+            case "int":
+                res.type = "integer";
+                errorMessages_addErrorMessage(res, "type", check.message, refs);
+                break;
+            case "min":
+                if (refs.target === "jsonSchema7") {
+                    if (check.inclusive) {
+                        errorMessages_setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
+                    }
+                    else {
+                        errorMessages_setResponseValueAndErrors(res, "exclusiveMinimum", check.value, check.message, refs);
+                    }
+                }
+                else {
+                    if (!check.inclusive) {
+                        res.exclusiveMinimum = true;
+                    }
+                    errorMessages_setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
+                }
+                break;
+            case "max":
+                if (refs.target === "jsonSchema7") {
+                    if (check.inclusive) {
+                        errorMessages_setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
+                    }
+                    else {
+                        errorMessages_setResponseValueAndErrors(res, "exclusiveMaximum", check.value, check.message, refs);
+                    }
+                }
+                else {
+                    if (!check.inclusive) {
+                        res.exclusiveMaximum = true;
+                    }
+                    errorMessages_setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
+                }
+                break;
+            case "multipleOf":
+                errorMessages_setResponseValueAndErrors(res, "multipleOf", check.value, check.message, refs);
+                break;
+        }
+    }
+    return res;
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/object.js
+
+function object_decideAdditionalProperties(def, refs) {
+    if (refs.removeAdditionalStrategy === "strict") {
+        return def.catchall._def.typeName === "ZodNever"
+            ? def.unknownKeys !== "strict"
+            : esm_parseDef_parseDef(def.catchall._def, {
+                ...refs,
+                currentPath: [...refs.currentPath, "additionalProperties"],
+            }) ?? true;
+    }
+    else {
+        return def.catchall._def.typeName === "ZodNever"
+            ? def.unknownKeys === "passthrough"
+            : esm_parseDef_parseDef(def.catchall._def, {
+                ...refs,
+                currentPath: [...refs.currentPath, "additionalProperties"],
+            }) ?? true;
+    }
+}
+;
+function parseObjectDefX(def, refs) {
+    Object.keys(def.shape()).reduce((schema, key) => {
+        let prop = def.shape()[key];
+        const isOptional = prop.isOptional();
+        if (!isOptional) {
+            prop = { ...prop._def.innerSchema };
+        }
+        const propSchema = parseDef(prop._def, {
+            ...refs,
+            currentPath: [...refs.currentPath, "properties", key],
+            propertyPath: [...refs.currentPath, "properties", key],
+        });
+        if (propSchema !== undefined) {
+            schema.properties[key] = propSchema;
+            if (!isOptional) {
+                if (!schema.required) {
+                    schema.required = [];
+                }
+                schema.required.push(key);
+            }
+        }
+        return schema;
+    }, {
+        type: "object",
+        properties: {},
+        additionalProperties: object_decideAdditionalProperties(def, refs),
+    });
+    const result = {
+        type: "object",
+        ...Object.entries(def.shape()).reduce((acc, [propName, propDef]) => {
+            if (propDef === undefined || propDef._def === undefined)
+                return acc;
+            const parsedDef = parseDef(propDef._def, {
+                ...refs,
+                currentPath: [...refs.currentPath, "properties", propName],
+                propertyPath: [...refs.currentPath, "properties", propName],
+            });
+            if (parsedDef === undefined)
+                return acc;
+            return {
+                properties: { ...acc.properties, [propName]: parsedDef },
+                required: propDef.isOptional()
+                    ? acc.required
+                    : [...acc.required, propName],
+            };
+        }, { properties: {}, required: [] }),
+        additionalProperties: object_decideAdditionalProperties(def, refs),
+    };
+    if (!result.required.length)
+        delete result.required;
+    return result;
+}
+function object_parseObjectDef(def, refs) {
+    const result = {
+        type: "object",
+        ...Object.entries(def.shape()).reduce((acc, [propName, propDef]) => {
+            if (propDef === undefined || propDef._def === undefined)
+                return acc;
+            const parsedDef = esm_parseDef_parseDef(propDef._def, {
+                ...refs,
+                currentPath: [...refs.currentPath, "properties", propName],
+                propertyPath: [...refs.currentPath, "properties", propName],
+            });
+            if (parsedDef === undefined)
+                return acc;
+            return {
+                properties: { ...acc.properties, [propName]: parsedDef },
+                required: propDef.isOptional()
+                    ? acc.required
+                    : [...acc.required, propName],
+            };
+        }, { properties: {}, required: [] }),
+        additionalProperties: object_decideAdditionalProperties(def, refs),
+    };
+    if (!result.required.length)
+        delete result.required;
+    return result;
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/optional.js
+
+const optional_parseOptionalDef = (def, refs) => {
+    if (refs.currentPath.toString() === refs.propertyPath?.toString()) {
+        return esm_parseDef_parseDef(def.innerType._def, refs);
+    }
+    const innerSchema = esm_parseDef_parseDef(def.innerType._def, {
+        ...refs,
+        currentPath: [...refs.currentPath, "anyOf", "1"],
+    });
+    return innerSchema
+        ? {
+            anyOf: [
+                {
+                    not: {},
+                },
+                innerSchema,
+            ],
+        }
+        : {};
+};
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/pipeline.js
+
+const pipeline_parsePipelineDef = (def, refs) => {
+    if (refs.pipeStrategy === "input") {
+        return esm_parseDef_parseDef(def.in._def, refs);
+    }
+    else if (refs.pipeStrategy === "output") {
+        return esm_parseDef_parseDef(def.out._def, refs);
+    }
+    const a = esm_parseDef_parseDef(def.in._def, {
+        ...refs,
+        currentPath: [...refs.currentPath, "allOf", "0"],
+    });
+    const b = esm_parseDef_parseDef(def.out._def, {
+        ...refs,
+        currentPath: [...refs.currentPath, "allOf", a ? "1" : "0"],
+    });
+    return {
+        allOf: [a, b].filter((x) => x !== undefined),
+    };
+};
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/promise.js
+
+function promise_parsePromiseDef(def, refs) {
+    return esm_parseDef_parseDef(def.type._def, refs);
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/set.js
+
+
+function set_parseSetDef(def, refs) {
+    const items = esm_parseDef_parseDef(def.valueType._def, {
+        ...refs,
+        currentPath: [...refs.currentPath, "items"],
+    });
+    const schema = {
+        type: "array",
+        uniqueItems: true,
+        items,
+    };
+    if (def.minSize) {
+        errorMessages_setResponseValueAndErrors(schema, "minItems", def.minSize.value, def.minSize.message, refs);
+    }
+    if (def.maxSize) {
+        errorMessages_setResponseValueAndErrors(schema, "maxItems", def.maxSize.value, def.maxSize.message, refs);
+    }
+    return schema;
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/tuple.js
+
+function tuple_parseTupleDef(def, refs) {
+    if (def.rest) {
+        return {
+            type: "array",
+            minItems: def.items.length,
+            items: def.items
+                .map((x, i) => esm_parseDef_parseDef(x._def, {
+                ...refs,
+                currentPath: [...refs.currentPath, "items", `${i}`],
+            }))
+                .reduce((acc, x) => (x === undefined ? acc : [...acc, x]), []),
+            additionalItems: esm_parseDef_parseDef(def.rest._def, {
+                ...refs,
+                currentPath: [...refs.currentPath, "additionalItems"],
+            }),
+        };
+    }
+    else {
+        return {
+            type: "array",
+            minItems: def.items.length,
+            maxItems: def.items.length,
+            items: def.items
+                .map((x, i) => esm_parseDef_parseDef(x._def, {
+                ...refs,
+                currentPath: [...refs.currentPath, "items", `${i}`],
+            }))
+                .reduce((acc, x) => (x === undefined ? acc : [...acc, x]), []),
+        };
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/undefined.js
+function undefined_parseUndefinedDef() {
+    return {
+        not: {},
+    };
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/unknown.js
+function unknown_parseUnknownDef() {
+    return {};
+}
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/readonly.js
+
+const readonly_parseReadonlyDef = (def, refs) => {
+    return esm_parseDef_parseDef(def.innerType._def, refs);
+};
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parseDef.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function esm_parseDef_parseDef(def, refs, forceResolution = false) {
+    const seenItem = refs.seen.get(def);
+    if (refs.override) {
+        const overrideResult = refs.override?.(def, refs, seenItem, forceResolution);
+        if (overrideResult !== Options_ignoreOverride) {
+            return overrideResult;
+        }
+    }
+    if (seenItem && !forceResolution) {
+        const seenSchema = parseDef_get$ref(seenItem, refs);
+        if (seenSchema !== undefined) {
+            return seenSchema;
+        }
+    }
+    const newItem = { def, path: refs.currentPath, jsonSchema: undefined };
+    refs.seen.set(def, newItem);
+    const jsonSchema = parseDef_selectParser(def, def.typeName, refs);
+    if (jsonSchema) {
+        parseDef_addMeta(def, refs, jsonSchema);
+    }
+    newItem.jsonSchema = jsonSchema;
+    return jsonSchema;
+}
+const parseDef_get$ref = (item, refs) => {
+    switch (refs.$refStrategy) {
+        case "root":
+            return { $ref: item.path.join("/") };
+        case "relative":
+            return { $ref: parseDef_getRelativePath(refs.currentPath, item.path) };
+        case "none":
+        case "seen": {
+            if (item.path.length < refs.currentPath.length &&
+                item.path.every((value, index) => refs.currentPath[index] === value)) {
+                console.warn(`Recursive reference detected at ${refs.currentPath.join("/")}! Defaulting to any`);
+                return {};
+            }
+            return refs.$refStrategy === "seen" ? {} : undefined;
+        }
+    }
+};
+const parseDef_getRelativePath = (pathA, pathB) => {
+    let i = 0;
+    for (; i < pathA.length && i < pathB.length; i++) {
+        if (pathA[i] !== pathB[i])
+            break;
+    }
+    return [(pathA.length - i).toString(), ...pathB.slice(i)].join("/");
+};
+const parseDef_selectParser = (def, typeName, refs) => {
+    switch (typeName) {
+        case ZodFirstPartyTypeKind.ZodString:
+            return string_parseStringDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodNumber:
+            return number_parseNumberDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodObject:
+            return object_parseObjectDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodBigInt:
+            return bigint_parseBigintDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodBoolean:
+            return boolean_parseBooleanDef();
+        case ZodFirstPartyTypeKind.ZodDate:
+            return date_parseDateDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodUndefined:
+            return undefined_parseUndefinedDef();
+        case ZodFirstPartyTypeKind.ZodNull:
+            return null_parseNullDef(refs);
+        case ZodFirstPartyTypeKind.ZodArray:
+            return array_parseArrayDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodUnion:
+        case ZodFirstPartyTypeKind.ZodDiscriminatedUnion:
+            return union_parseUnionDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodIntersection:
+            return intersection_parseIntersectionDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodTuple:
+            return tuple_parseTupleDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodRecord:
+            return record_parseRecordDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodLiteral:
+            return literal_parseLiteralDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodEnum:
+            return enum_parseEnumDef(def);
+        case ZodFirstPartyTypeKind.ZodNativeEnum:
+            return nativeEnum_parseNativeEnumDef(def);
+        case ZodFirstPartyTypeKind.ZodNullable:
+            return nullable_parseNullableDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodOptional:
+            return optional_parseOptionalDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodMap:
+            return map_parseMapDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodSet:
+            return set_parseSetDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodLazy:
+            return esm_parseDef_parseDef(def.getter()._def, refs);
+        case ZodFirstPartyTypeKind.ZodPromise:
+            return promise_parsePromiseDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodNaN:
+        case ZodFirstPartyTypeKind.ZodNever:
+            return never_parseNeverDef();
+        case ZodFirstPartyTypeKind.ZodEffects:
+            return effects_parseEffectsDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodAny:
+            return any_parseAnyDef();
+        case ZodFirstPartyTypeKind.ZodUnknown:
+            return unknown_parseUnknownDef();
+        case ZodFirstPartyTypeKind.ZodDefault:
+            return default_parseDefaultDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodBranded:
+            return branded_parseBrandedDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodReadonly:
+            return readonly_parseReadonlyDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodCatch:
+            return catch_parseCatchDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodPipeline:
+            return pipeline_parsePipelineDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodFunction:
+        case ZodFirstPartyTypeKind.ZodVoid:
+        case ZodFirstPartyTypeKind.ZodSymbol:
+            return undefined;
+        default:
+            return ((_) => undefined)(typeName);
+    }
+};
+const parseDef_addMeta = (def, refs, jsonSchema) => {
+    if (def.description) {
+        jsonSchema.description = def.description;
+        if (refs.markdownDescription) {
+            jsonSchema.markdownDescription = def.description;
+        }
+    }
+    return jsonSchema;
+};
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/zodToJsonSchema.js
+
+
+const esm_zodToJsonSchema_zodToJsonSchema = (schema, options) => {
+    const refs = Refs_getRefs(options);
+    const definitions = typeof options === "object" && options.definitions
+        ? Object.entries(options.definitions).reduce((acc, [name, schema]) => ({
+            ...acc,
+            [name]: esm_parseDef_parseDef(schema._def, {
+                ...refs,
+                currentPath: [...refs.basePath, refs.definitionPath, name],
+            }, true) ?? {},
+        }), {})
+        : undefined;
+    const name = typeof options === "string"
+        ? options
+        : options?.nameStrategy === "title"
+            ? undefined
+            : options?.name;
+    const main = esm_parseDef_parseDef(schema._def, name === undefined
+        ? refs
+        : {
+            ...refs,
+            currentPath: [...refs.basePath, refs.definitionPath, name],
+        }, false) ?? {};
+    const title = typeof options === "object" &&
+        options.name !== undefined &&
+        options.nameStrategy === "title"
+        ? options.name
+        : undefined;
+    if (title !== undefined) {
+        main.title = title;
+    }
+    const combined = name === undefined
+        ? definitions
+            ? {
+                ...main,
+                [refs.definitionPath]: definitions,
+            }
+            : main
+        : {
+            $ref: [
+                ...(refs.$refStrategy === "relative" ? [] : refs.basePath),
+                refs.definitionPath,
+                name,
+            ].join("/"),
+            [refs.definitionPath]: {
+                ...definitions,
+                [name]: main,
+            },
+        };
+    if (refs.target === "jsonSchema7") {
+        combined.$schema = "http://json-schema.org/draft-07/schema#";
+    }
+    else if (refs.target === "jsonSchema2019-09") {
+        combined.$schema = "https://json-schema.org/draft/2019-09/schema#";
+    }
+    return combined;
+};
+
+
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/index.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* harmony default export */ const esm = ((/* unused pure expression or super */ null && (zodToJsonSchema)));
+
 ;// CONCATENATED MODULE: ./utils/types.js
 
 
@@ -51156,12 +55668,45 @@ const diffPayloadSchema = z.object(
 
 ;// CONCATENATED MODULE: ./utils/constants.js
 const DEFAULT_MODEL = {
-    name: 'gpt-4o-2024-08-06'
+    OPENAI: {
+        name: "gpt-4o-2024-08-06",
+    },
+    ANTHROPIC: {
+        name: "claude-3-5-sonnet-20240620",
+    },
 };
+
+const COMMON_SYSTEM_PROMPT = `
+    You are a highly experienced software engineer and code reviewer with a focus on code quality, maintainability, and adherence to best practices.
+    Your goal is to provide thorough, constructive, and actionable feedback to help developers improve their code.
+    You consider various aspects, including readability, efficiency, and security.
+    The user will provide you with a diff payload and some rules on how the code should be (they are separated by --), and you have to make suggestions on what can be improved by looking at the diff changes. You might be provided with a PR description for more context (most probably in markdown format).
+    Take the user input diff payload and analyze the changes from the "content" property (ignore the first "+" or "-" character at the start of the string because that's just a diff character) of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
+    If you think there are no improvements to be made, don't return **that** object from the payload.
+    Rest, **return everything as it is (in the same order)** along with your suggestions. Ignore formatting issues.
+    IMPORTANT: 
+    - Don't be lazy.
+    - Only make suggestions when they are significant, relevant and add value to the code changes.
+    - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
+    - Only modify/add the "suggestions" property (if required).
+    - DO NOT modify the value of any other property. Return them as they are in the input.
+    - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes on those positions (see "content" or "previously" (if it exists) property).
+    - If there is a suggestion which is similar across multiple positions, only suggest that change at any one of those positions.
+    - Keep the suggestions precise and to the point (in a constructive way).
+    - If possible, add references to some really good resources like stackoverflow or from programming articles, blogs, etc. for suggested code changes. Keep the references in context of the programming language you are reviewing.
+    - Suggestions should be inclusive of the rules (if any) provided by the user.
+    - You can also give suggested code changes in markdown format.
+    - If there are no suggestions, please don't spam with "No suggestions".
+    - Rules are not exhaustive, so use you own judgement as well.
+    - Rules start with and are separated by --
+`;
 
 
 
 ;// CONCATENATED MODULE: ./index.js
+
+
+
 
 
 
@@ -51188,10 +55733,11 @@ const DEFAULT_MODEL = {
 
 /**
  * @param {string} name
+ * @param {'openai' | 'anthropic'} platform
  * @returns {string}
  */
-function getModelName(name) {
-    return name !== "" ? name : DEFAULT_MODEL.name;
+function getModelName(name, platform) {
+    return name !== "" ? name : DEFAULT_MODEL[`${platform.toUpperCase()}`].name;
 }
 
 function extractComments() {
@@ -51292,61 +55838,114 @@ function extractComments() {
 }
 
 /**
- * @param {rawCommentsPayload} rawComments
- * @param {OpenAI} openAI
- * @param {string} rules
- * @param {string} modelName
- * @param {PullRequestContext} pullRequestContext
+ * @param {{
+ *  rawComments: rawCommentsPayload,
+ *  openAI: OpenAI,
+ *  rules: string,
+ *  modelName: string,
+ *  pullRequestContext: PullRequestContext
+ * }} params
+ * @returns {Promise<suggestionsPayload | null>}
  */
-async function getSuggestions(rawComments, openAI, rules, modelName, pullRequestContext) {
+async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext }) {
+    const result = await openAI.beta.chat.completions.parse({
+        model: getModelName(modelName, "openai"),
+        messages: [
+            {
+                role: "system",
+                content: COMMON_SYSTEM_PROMPT,
+            },
+            {
+                role: "user",
+                content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ""}. Here's the diff payload:
+                ${JSON.stringify(rawComments, null, 2)}
+                ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})` : ""}`,
+            },
+        ],
+        response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
+    });
+
+    const { message } = result.choices[0];
+
+    if (message.refusal) {
+        throw new Error(`the model refused to generate suggestions - ${message.refusal}`);
+    }
+
+    return message.parsed;
+}
+
+/**
+ * @param {{
+ *  rawComments: rawCommentsPayload,
+ *  anthropic: Anthropic,
+ *  rules: string,
+ *  modelName: string,
+ *  pullRequestContext: PullRequestContext
+ * }} params
+ * @returns {Promise<suggestionsPayload | null>}
+ */
+async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequestContext }) {
+    const { definitions } = esm_zodToJsonSchema_zodToJsonSchema(diffPayloadSchema, "diffPayloadSchema");
+    const result = await anthropic.messages.create({
+        max_tokens: 8192,
+        model: getModelName(modelName, "anthropic"),
+        system: COMMON_SYSTEM_PROMPT,
+        tools: [
+            {
+                name: "structuredOutput",
+                description: "Structured Output",
+                input_schema: definitions["diffPayloadSchema"],
+            },
+        ],
+        tool_choice: {
+            type: "tool",
+            name: "structuredOutput",
+        },
+        messages: [
+            {
+                role: "user",
+                content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ""}. Here's the diff payload:
+                ${JSON.stringify(rawComments, null, 2)}
+                ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})` : ""}`,
+            },
+        ],
+    });
+
+    let parsed = null;
+    for (const block of result.content) {
+        if (block.type === "tool_use") {
+            parsed = block.input;
+            break;
+        }
+    }
+
+    return parsed;
+}
+
+/**
+ * @param {{
+ *  platform: 'openai' | 'anthropic',
+ *  rawComments: rawCommentsPayload,
+ *  platformSDK: OpenAI | Anthropic,
+ *  rules: string,
+ *  modelName: string,
+ *  pullRequestContext: PullRequestContext
+ * }} params
+ * @returns {Promise<suggestionsPayload | null>}
+ */
+async function getSuggestions({ platform, rawComments, platformSDK, rules, modelName, pullRequestContext }) {
     const { error } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
 
     try {
-        const result = await openAI.beta.chat.completions.parse({
-            model: getModelName(modelName),
-            messages: [
-                {
-                    role: "system",
-                    content: `You are a highly experienced software engineer and code reviewer with a focus on code quality, maintainability, and adherence to best practices.
-                    Your goal is to provide thorough, constructive, and actionable feedback to help developers improve their code.
-                    You consider various aspects, including readability, efficiency, and security.
-                    The user will provide you with a diff payload and some rules on how the code should be (they are separated by --), and you have to make suggestions on what can be improved by looking at the diff changes. You might be provided with a PR description for more context (most probably in markdown format).
-                    Take the user input diff payload and analyze the changes from the "content" property (ignore the first "+" or "-" character at the start of the string because that's just a diff character) of the payload and suggest some improvements (if an object contains "previously" property, compare it against the "content" property and consider that as well to make suggestions).
-                    If you think there are no improvements to be made, don't return **that** object from the payload.
-                    Rest, **return everything as it is (in the same order)** along with your suggestions. Ignore formatting issues.
-                    IMPORTANT: 
-                    - Don't be lazy.
-                    - Only make suggestions when they are significant, relevant and add value to the code changes.
-                    - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
-                    - Only modify/add the "suggestions" property (if required).
-                    - DO NOT modify the value of any other property. Return them as they are in the input.
-                    - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes on those positions (see "content" or "previously" (if it exists) property).
-                    - If there is a suggestion which is similar across multiple positions, only suggest that change at any one of those positions.
-                    - Keep the suggestions precise and to the point (in a constructive way).
-                    - If possible, add references to some really good resources like stackoverflow or from programming articles, blogs, etc. for suggested code changes. Keep the references in context of the programming language you are reviewing.
-                    - Suggestions should be inclusive of the rules (if any) provided by the user.
-                    - You can also give suggested code changes in markdown format.
-                    - If there are no suggestions, please don't spam with "No suggestions".
-                    - Rules are not exhaustive, so use you own judgement as well.
-                    - Rules start with and are separated by --`,
-                },
-                {
-                    role: "user",
-                    content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ""}. Here's the diff payload:
-                    ${JSON.stringify(rawComments, null, 2)}
-                    ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})` : ""}`,
-                },
-            ],
-            response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
-        });
-
-        const { message } = result.choices[0];
-
-        if (message.refusal) {
-            throw new Error(`the model refused to generate suggestions - ${message.refusal}`);
+        if (platform === "openai") {
+            return await useOpenAI({ rawComments, openAI: platformSDK, rules, modelName, pullRequestContext });
         }
 
-        return message.parsed;
+        if (platform === "anthropic") {
+            return await useAnthropic({ rawComments, anthropic: platformSDK, rules, modelName, pullRequestContext });
+        }
+
+        throw new Error(`Unsupported AI platform: ${platform}`);
     } catch (err) {
         if (err.constructor.name == "LengthFinishReasonError") {
             error(`Too many tokens: ${err.message}`);
@@ -51373,15 +55972,16 @@ function filterPositionsNotPresentInRawPayload(rawComments, comments) {
  * @param {suggestionsPayload} suggestions
  * @param {OctokitApi} octokit
  * @param {rawCommentsPayload} rawComments
+ * @param {string} modelName
  */
-async function addReviewComments(suggestions, octokit, rawComments) {
+async function addReviewComments(suggestions, octokit, rawComments, modelName) {
     const comments = filterPositionsNotPresentInRawPayload(rawComments, extractComments().comments(suggestions));
 
     await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
-        body: `Code Review`,
+        body: `Code Review by ${modelName}`,
         event: "COMMENT",
         comments,
     });
@@ -51480,12 +56080,16 @@ async function run() {
         const token = core.getInput("repo-token");
         const modelName = core.getInput("ai-model-name");
         const modelToken = core.getInput("ai-model-api-key");
+        const platform = core.getInput("platform");
         const octokit = github.getOctokit(token);
 
         info("Initializing AI model...");
-        const openAI = new openai({
-            apiKey: modelToken,
-        });
+        const platformSDK =
+            platform === "openai"
+                ? new openai({ apiKey: modelToken })
+                : new sdk({
+                      apiKey: modelToken,
+                  });
 
         if (github.context.payload.pull_request) {
             info("Fetching pull request details...");
@@ -51530,18 +56134,25 @@ async function run() {
             const parsedDiff = parse_diff(pullRequestDiff.data);
             const rawComments = extractComments().raw(parsedDiff);
 
-            info(`Generating suggestions using model ${getModelName(modelName)}...`);
-            const suggestions = await getSuggestions(rawComments, openAI, rules, modelName, {
-                body: pullRequestData.data.body,
+            info(`Generating suggestions using model ${getModelName(modelName, platform)}...`);
+            const suggestions = await getSuggestions({
+                platform,
+                rawComments,
+                platformSDK,
+                rules,
+                modelName,
+                pullRequestContext: {
+                    body: pullRequestData.data.body,
+                },
             });
 
-            if (suggestions.commentsToAdd.length === 0) {
+            if (suggestions?.commentsToAdd.length === 0) {
                 info("No suggestions found. Code review complete. All good!");
                 return;
             }
 
             info("Adding review comments...");
-            await addReviewComments(suggestions, octokit, rawComments);
+            await addReviewComments(suggestions, octokit, rawComments, getModelName(modelName, platform));
 
             info("Code review complete!");
         } else {

@@ -41,7 +41,8 @@ jobs:
               uses: murtuzaalisurti/better@main # this is the ref of the github action - https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_iduses
               with:
                 repo-token: ${{ secrets.GITHUB_TOKEN }} # this is auto generated
-                ai-model-api-key: ${{ secrets.OPEN_AI_KEY }} # make sure to set this in your repository secrets - /settings/secrets/actions (Settings > Secrets and Variables > Actions > Secrets Tab)
+                ai-model-api-key: ${{ secrets.MODEL_API_KEY }} # make sure to set this in your repository secrets - /settings/secrets/actions (Settings > Secrets and Variables > Actions > Secrets Tab)
+                platform: 'openai'
                 delete-existing-review-by-bot: true #default is true
                 rules: |- # Rules to consider for code review
                     -- It must follow industry standard best practices
@@ -58,9 +59,9 @@ jobs:
 
 ---
 
-### 2. Add OpenAI API key to your repository secrets
+### 2. Add your platform API key to your repository secrets
 
-Go to ***your*** repository settings, `Settings > Secrets and Variables > Actions > Secrets Tab` and add `OPEN_AI_KEY` as a secret with your OpenAI API key as a value. You can refer to it in the workflow file using `${{ secrets.OPEN_AI_KEY }}` against the `ai-model-api-key` field.
+Go to ***your*** repository settings, `Settings > Secrets and Variables > Actions > Secrets Tab` and add your platform API key. For example, add `OPEN_AI_KEY` as a secret with your OpenAI API key as a value. You can refer to it in the workflow file using `${{ secrets.OPEN_AI_KEY }}` against the `ai-model-api-key` field.
 
 ![repo-settings-page](./assets/repo-settings-page.png)
 
@@ -86,32 +87,54 @@ The `repo-token` is the authorization token of your repository. It is auto gener
 
 ---
 
-### 2. `ai-model-name` (Optional)
+### 2. `platform`
 
-Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` if not specified. Here's a list of supported models:
+The `platform` is the name of the AI platform you want to use. It can be either `openai` or `anthropic`.
+
+> *This action only supports ***OpenAI*** and ***Anthropic*** models for now*.
+
+---
+
+### 3. `ai-model-api-key`
+
+The `ai-model-api-key` is your platform's API key which you have set in your repository secrets.
+
+Example:
+
+- `OPEN_AI_KEY` as a secret with your OpenAI API key as a value.
+- `ANTHROPIC_KEY` as a secret with your Anthropic API key as a value.
+
+They can be accessed in the workflow file using `${{ secrets.YOUR_KEY_NAME }}`.
+
+---
+
+### 4. `ai-model-name` (Optional)
+
+Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` for OpenAI and `claude-3-5-sonnet-20240620` for Anthropic if not specified. Here's a list of supported models:
+
+For OpenAI:
 
 - `gpt-4o-mini-2024-07-18` and later
 - `gpt-4o-2024-08-06` and later
 
 > This project uses [*Structured Outputs*](https://platform.openai.com/docs/guides/structured-outputs/supported-models) and that's why only the above listed models are supported. More info [here](https://platform.openai.com/docs/models).
 
+For Anthropic:
+
+- `claude-3-5-sonnet-20240620`
+- `claude-3-opus-20240229`
+- `claude-3-sonnet-20240229`
+- `claude-3-haiku-20240307`
+
 ---
 
-### 3. `ai-model-api-key`
-
-The `ai-model-api-key` is your OpenAI API key which you have set in your repository secrets.
-
-> *This action only supports OpenAI models for now*.
-
----
-
-### 4. `delete-existing-review-by-bot` (Optional)
+### 5. `delete-existing-review-by-bot` (Optional)
 
 By default, the action will delete any existing review(s) by the bot before creating a new one on every PR push. If you want to keep them, set this option to `false`.
 
 ---
 
-### 5. `rules` (Optional)
+### 6. `rules` (Optional)
 
 The rules to consider for code review. It is a multiline text field. Each rule should be on a new line and should start with `--`.
 
