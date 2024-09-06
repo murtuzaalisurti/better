@@ -20,6 +20,8 @@ inputs:
         default: true
     rules:
         description: "The rules to consider for code review"
+    filesToIgnore:
+        description: "List of files to ignore"
 runs:
     using: "node20"
     main: "dist/index.js"

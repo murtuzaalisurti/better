@@ -6,6 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import mm from "micromatch";
 
 import { aDiff, diffPayloadSchema } from "./utils/types.js";
 import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT } from "./utils/constants.js";
@@ -224,19 +225,44 @@ async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequ
  *  rules: string,
  *  modelName: string,
  *  pullRequestContext: PullRequestContext
+ *  filesToIgnore: string[]
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
-async function getSuggestions({ platform, rawComments, platformSDK, rules, modelName, pullRequestContext }) {
+async function getSuggestions({
+    platform,
+    rawComments,
+    platformSDK,
+    rules,
+    modelName,
+    pullRequestContext,
+    filesToIgnore,
+}) {
     const { error } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
+    const filteredRawComments = rawComments.filter(comment => {
+        return !mm.isMatch(comment.path, filesToIgnore);
+    });
+    console.log(`Filtered rawComments: ${JSON.stringify(filteredRawComments, null, 2)}`);
 
     try {
         if (platform === "openai") {
-            return await useOpenAI({ rawComments, openAI: platformSDK, rules, modelName, pullRequestContext });
+            return await useOpenAI({
+                rawComments: filteredRawComments,
+                openAI: platformSDK,
+                rules,
+                modelName,
+                pullRequestContext,
+            });
         }
 
         if (platform === "anthropic") {
-            return await useAnthropic({ rawComments, anthropic: platformSDK, rules, modelName, pullRequestContext });
+            return await useAnthropic({
+                rawComments: filteredRawComments,
+                anthropic: platformSDK,
+                rules,
+                modelName,
+                pullRequestContext,
+            });
         }
 
         throw new Error(`Unsupported AI platform: ${platform}`);
@@ -375,6 +401,7 @@ async function run() {
         const modelName = core.getInput("ai-model-name");
         const modelToken = core.getInput("ai-model-api-key");
         const platform = core.getInput("platform");
+        const filesToIgnore = core.getInput("filesToIgnore");
         const octokit = github.getOctokit(token);
 
         info("Initializing AI model...");
@@ -428,6 +455,12 @@ async function run() {
             const parsedDiff = parseDiff(pullRequestDiff.data);
             const rawComments = extractComments().raw(parsedDiff);
 
+            info("Getting files to ignore...");
+            const filesToIgnoreList = filesToIgnore
+                .split(",")
+                .map(file => file.trim())
+                .filter(file => file !== "");
+
             info(`Generating suggestions using model ${getModelName(modelName, platform)}...`);
             const suggestions = await getSuggestions({
                 platform,
@@ -435,6 +468,7 @@ async function run() {
                 platformSDK,
                 rules,
                 modelName,
+                filesToIgnore: filesToIgnoreList,
                 pullRequestContext: {
                     body: pullRequestData.data.body,
                 },
