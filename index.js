@@ -240,7 +240,7 @@ async function getSuggestions({
 }) {
     const { error } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
     const filteredRawComments = rawComments.filter(comment => {
-        return !mm.isMatch(comment.path, filesToIgnore);
+        return !mm.isMatch(comment.path, filesToIgnore, { dot: true });
     });
     console.log(`Filtered rawComments: ${JSON.stringify(filteredRawComments, null, 2)}`);
 

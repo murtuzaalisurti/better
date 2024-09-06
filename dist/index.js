@@ -60041,20 +60041,40 @@ async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequ
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
-async function getSuggestions({ platform, rawComments, platformSDK, rules, modelName, pullRequestContext, filesToIgnore }) {
+async function getSuggestions({
+    platform,
+    rawComments,
+    platformSDK,
+    rules,
+    modelName,
+    pullRequestContext,
+    filesToIgnore,
+}) {
     const { error } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
     const filteredRawComments = rawComments.filter(comment => {
-        return !micromatch.isMatch(comment.path, filesToIgnore);
-    })
+        return !micromatch.isMatch(comment.path, filesToIgnore, { dot: true });
+    });
     console.log(`Filtered rawComments: ${JSON.stringify(filteredRawComments, null, 2)}`);
 
     try {
         if (platform === "openai") {
-            return await useOpenAI({ rawComments: filteredRawComments, openAI: platformSDK, rules, modelName, pullRequestContext });
+            return await useOpenAI({
+                rawComments: filteredRawComments,
+                openAI: platformSDK,
+                rules,
+                modelName,
+                pullRequestContext,
+            });
         }
 
         if (platform === "anthropic") {
-            return await useAnthropic({ rawComments: filteredRawComments, anthropic: platformSDK, rules, modelName, pullRequestContext });
+            return await useAnthropic({
+                rawComments: filteredRawComments,
+                anthropic: platformSDK,
+                rules,
+                modelName,
+                pullRequestContext,
+            });
         }
 
         throw new Error(`Unsupported AI platform: ${platform}`);
