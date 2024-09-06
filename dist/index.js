@@ -59807,6 +59807,14 @@ const COMMON_SYSTEM_PROMPT = `
     - Rules start with and are separated by --
 `;
 
+const FILES_IGNORED_BY_DEFAULT = [
+    "**/node_modules/**",
+    "**/package-lock.json",
+    "**/yarn.lock",
+    ".cache/**",
+    "**/*.{jpg,jpeg,png,svg,webp,avif,gif,ico,woff,woff2,ttf,otf,}",
+];
+
 
 
 ;// CONCATENATED MODULE: ./index.js
@@ -60054,7 +60062,6 @@ async function getSuggestions({
     const filteredRawComments = rawComments.filter(comment => {
         return !micromatch.isMatch(comment.path, filesToIgnore, { dot: true });
     });
-    console.log(`Filtered rawComments: ${JSON.stringify(filteredRawComments, null, 2)}`);
 
     try {
         if (platform === "openai") {
@@ -60221,8 +60228,8 @@ async function run() {
             platform === "openai"
                 ? new openai({ apiKey: modelToken })
                 : new sdk({
-                      apiKey: modelToken,
-                  });
+                    apiKey: modelToken,
+                });
 
         if (github.context.payload.pull_request) {
             info("Fetching pull request details...");
@@ -60268,10 +60275,13 @@ async function run() {
             const rawComments = extractComments().raw(parsedDiff);
 
             info("Getting files to ignore...");
-            const filesToIgnoreList = filesToIgnore
-                .split(",")
-                .map(file => file.trim())
-                .filter(file => file !== "");
+            const filesToIgnoreList = new Set(
+                filesToIgnore
+                    .split(",")
+                    .map(file => file.trim())
+                    .filter(file => file !== "")
+                    .concat(FILES_IGNORED_BY_DEFAULT)
+            );
 
             info(`Generating suggestions using model ${getModelName(modelName, platform)}...`);
             const suggestions = await getSuggestions({

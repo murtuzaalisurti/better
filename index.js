@@ -9,7 +9,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import mm from "micromatch";
 
 import { aDiff, diffPayloadSchema } from "./utils/types.js";
-import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT } from "./utils/constants.js";
+import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT } from "./utils/constants.js";
 
 /**
  * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
@@ -242,7 +242,6 @@ async function getSuggestions({
     const filteredRawComments = rawComments.filter(comment => {
         return !mm.isMatch(comment.path, filesToIgnore, { dot: true });
     });
-    console.log(`Filtered rawComments: ${JSON.stringify(filteredRawComments, null, 2)}`);
 
     try {
         if (platform === "openai") {
@@ -456,10 +455,13 @@ async function run() {
             const rawComments = extractComments().raw(parsedDiff);
 
             info("Getting files to ignore...");
-            const filesToIgnoreList = filesToIgnore
-                .split(",")
-                .map(file => file.trim())
-                .filter(file => file !== "");
+            const filesToIgnoreList = new Set(
+                filesToIgnore
+                    .split(",")
+                    .map(file => file.trim())
+                    .filter(file => file !== "")
+                    .concat(FILES_IGNORED_BY_DEFAULT)
+            );
 
             info(`Generating suggestions using model ${getModelName(modelName, platform)}...`);
             const suggestions = await getSuggestions({

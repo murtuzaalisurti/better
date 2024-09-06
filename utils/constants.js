@@ -32,4 +32,12 @@ const COMMON_SYSTEM_PROMPT = `
     - Rules start with and are separated by --
 `;
 
-export { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT };
+const FILES_IGNORED_BY_DEFAULT = [
+    "**/node_modules/**",
+    "**/package-lock.json",
+    "**/yarn.lock",
+    ".cache/**",
+    "**/*.{jpg,jpeg,png,svg,webp,avif,gif,ico,woff,woff2,ttf,otf,}",
+];
+
+export { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT };
