@@ -455,13 +455,15 @@ async function run() {
             const rawComments = extractComments().raw(parsedDiff);
 
             info("Getting files to ignore...");
-            const filesToIgnoreList = new Set(
-                filesToIgnore
-                    .split(",")
-                    .map(file => file.trim())
-                    .filter(file => file !== "")
-                    .concat(FILES_IGNORED_BY_DEFAULT)
-            );
+            const filesToIgnoreList = [
+                ...new Set(
+                    filesToIgnore
+                        .split(",")
+                        .map(file => file.trim())
+                        .filter(file => file !== "")
+                        .concat(FILES_IGNORED_BY_DEFAULT)
+                ),
+            ];
 
             info(`Generating suggestions using model ${getModelName(modelName, platform)}...`);
             const suggestions = await getSuggestions({
