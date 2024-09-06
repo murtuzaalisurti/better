@@ -492,4 +492,4 @@ async function run() {
     }
 }
 
-// run();
+run();
