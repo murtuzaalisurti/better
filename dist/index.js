@@ -60228,8 +60228,8 @@ async function run() {
             platform === "openai"
                 ? new openai({ apiKey: modelToken })
                 : new sdk({
-                    apiKey: modelToken,
-                });
+                      apiKey: modelToken,
+                  });
 
         if (github.context.payload.pull_request) {
             info("Fetching pull request details...");
@@ -60282,7 +60282,7 @@ async function run() {
                         .map(file => file.trim())
                         .filter(file => file !== "")
                         .concat(FILES_IGNORED_BY_DEFAULT)
-                )
+                ),
             ];
 
             info(`Generating suggestions using model ${getModelName(modelName, platform)}...`);
