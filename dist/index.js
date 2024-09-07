@@ -59931,6 +59931,15 @@ function extractComments() {
         }, []);
 
     /**
+     * @param {rawCommentsPayload} rawComments 
+     * @param {string[]} filesToIgnore 
+     * @returns {rawCommentsPayload}
+     */
+    const filteredRawComments = (rawComments, filesToIgnore) => rawComments.filter(comment => {
+        return !micromatch.isMatch(comment.path, filesToIgnore, { dot: true });
+    });
+
+    /**
      * @param {suggestionsPayload} suggestions
      * @returns {CommentsPayload}
      */
@@ -59948,6 +59957,7 @@ function extractComments() {
 
     return {
         raw: rawComments,
+        filteredRaw: filteredRawComments,
         comments: commentsWithSuggestions,
     };
 }
@@ -60045,7 +60055,6 @@ async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequ
  *  rules: string,
  *  modelName: string,
  *  pullRequestContext: PullRequestContext
- *  filesToIgnore: string[]
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
@@ -60056,17 +60065,13 @@ async function getSuggestions({
     rules,
     modelName,
     pullRequestContext,
-    filesToIgnore,
 }) {
     const { error } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
-    const filteredRawComments = rawComments.filter(comment => {
-        return !micromatch.isMatch(comment.path, filesToIgnore, { dot: true });
-    });
 
     try {
         if (platform === "openai") {
             return await useOpenAI({
-                rawComments: filteredRawComments,
+                rawComments,
                 openAI: platformSDK,
                 rules,
                 modelName,
@@ -60076,7 +60081,7 @@ async function getSuggestions({
 
         if (platform === "anthropic") {
             return await useAnthropic({
-                rawComments: filteredRawComments,
+                rawComments,
                 anthropic: platformSDK,
                 rules,
                 modelName,
@@ -60286,14 +60291,15 @@ async function run() {
                 ),
             ];
 
+            const filteredRawComments = extractComments().filteredRaw(rawComments, filesToIgnoreList);
+
             info(`Generating suggestions using model ${getModelName(modelName, platform)}...`);
             const suggestions = await getSuggestions({
                 platform,
-                rawComments,
+                rawComments: filteredRawComments,
                 platformSDK,
                 rules,
                 modelName,
-                filesToIgnore: filesToIgnoreList,
                 pullRequestContext: {
                     body: pullRequestData.data.body,
                 },
@@ -60305,7 +60311,7 @@ async function run() {
             }
 
             info("Adding review comments...");
-            await addReviewComments(suggestions, octokit, rawComments, getModelName(modelName, platform));
+            await addReviewComments(suggestions, octokit, filteredRawComments, getModelName(modelName, platform));
 
             info("Code review complete!");
         } else {
