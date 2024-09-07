@@ -295,7 +295,6 @@ function filterPositionsNotPresentInRawPayload(rawComments, comments) {
 async function addReviewComments(suggestions, octokit, rawComments, modelName) {
     const comments = filterPositionsNotPresentInRawPayload(rawComments, extractComments().comments(suggestions));
 
-    console.log(JSON.stringify(comments, null, 2));
     await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,

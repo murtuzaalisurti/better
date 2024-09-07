@@ -59931,13 +59931,14 @@ function extractComments() {
         }, []);
 
     /**
-     * @param {rawCommentsPayload} rawComments 
-     * @param {string[]} filesToIgnore 
+     * @param {rawCommentsPayload} rawComments
+     * @param {string[]} filesToIgnore
      * @returns {rawCommentsPayload}
      */
-    const filteredRawComments = (rawComments, filesToIgnore) => rawComments.filter(comment => {
-        return !micromatch.isMatch(comment.path, filesToIgnore, { dot: true });
-    });
+    const filteredRawComments = (rawComments, filesToIgnore) =>
+        rawComments.filter(comment => {
+            return !micromatch.isMatch(comment.path, filesToIgnore, { dot: true });
+        });
 
     /**
      * @param {suggestionsPayload} suggestions
@@ -60058,14 +60059,7 @@ async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequ
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
-async function getSuggestions({
-    platform,
-    rawComments,
-    platformSDK,
-    rules,
-    modelName,
-    pullRequestContext,
-}) {
+async function getSuggestions({ platform, rawComments, platformSDK, rules, modelName, pullRequestContext }) {
     const { error } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
 
     try {
@@ -60121,7 +60115,6 @@ function filterPositionsNotPresentInRawPayload(rawComments, comments) {
 async function addReviewComments(suggestions, octokit, rawComments, modelName) {
     const comments = filterPositionsNotPresentInRawPayload(rawComments, extractComments().comments(suggestions));
 
-    console.log(JSON.stringify(comments, null, 2));
     await octokit.rest.pulls.createReview({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
