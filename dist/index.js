@@ -59802,7 +59802,7 @@ const COMMON_SYSTEM_PROMPT = `
     - Suggestions should be inclusive of the rules (if any) provided by the user.
     - Only make suggestions when they are significant, relevant and add value to the code changes.
     - Don't make suggestions which are obvious for the user to know. For example, if a package is imported in the code, it's obvious that it should have been installed first.
-    - You can also give suggested code changes in markdown format.
+    - Give suggested code changes in markdown format if required.
     - If there are no suggestions, please don't spam with "No suggestions".
     - Rules are not exhaustive, so use you own judgement as well.
     - Rules start with and are separated by --
