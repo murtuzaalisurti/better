@@ -59793,6 +59793,7 @@ const COMMON_SYSTEM_PROMPT = `
     IMPORTANT: 
     - Don't be lazy.
     - If something is deleted (type: "del"), compare it with what's added (type: "add") in place of it. If it's completely different, ignore the deleted part and give suggestions based on the added (type: "add") part.
+    - If it's more appropriate to club the "add" parts together and then give suggestions, then do that. For example, if there are 3 "add" parts such as "function subtract(a, b) {", "return a - b;" and "}", then you can club them together and give suggestions.
     - Only modify/add the "suggestions" property (if required).
     - DO NOT modify the value of any other property. Return them as they are in the input.
     - Make sure the suggestion positions are accurate as they are in the input and suggestions are related to the code changes on those positions (see "content" or "previously" (if it exists) property).
