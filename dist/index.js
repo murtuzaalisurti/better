@@ -59984,9 +59984,9 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
             },
             {
                 role: "user",
-                content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ""}. Here's the diff payload:
-                ${JSON.stringify(rawComments, null, 2)}
-                ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})` : ""}`,
+                content: `I want you to code review a pull request ${rules ? ` by including the following rules: ${rules} \nThe rules provided describe how the code should be` : ""}. Here's the diff payload from the pull request:
+                ${JSON.stringify(rawComments)}
+                ${pullRequestContext.body ? `\nAlso, here's the pull request description on what it's trying to do to give you some more context: ${pullRequestContext.body})` : ""}`,
             },
         ],
         response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
@@ -60031,9 +60031,9 @@ async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequ
         messages: [
             {
                 role: "user",
-                content: `Code review the following PR diff payload${rules ? ` by including the following rules: ${rules}` : ""}. Here's the diff payload:
-                ${JSON.stringify(rawComments, null, 2)}
-                ${pullRequestContext.body ? `\nAlso, here's the PR description on what it's trying to do to give some more context: ${pullRequestContext.body})` : ""}`,
+                content: `I want you to code review a pull request ${rules ? ` by including the following rules: ${rules} \nThe rules provided describe how the code should be` : ""}. Here's the diff payload from the pull request:
+                ${JSON.stringify(rawComments)}
+                ${pullRequestContext.body ? `\nAlso, here's the pull request description on what it's trying to do to give you some more context: ${pullRequestContext.body})` : ""}`,
             },
         ],
     });
