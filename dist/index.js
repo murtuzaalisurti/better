@@ -59812,7 +59812,7 @@ const FILES_IGNORED_BY_DEFAULT = [
     "**/package-lock.json",
     "**/yarn.lock",
     ".cache/**",
-    "**/*.{jpg,jpeg,png,svg,webp,avif,gif,ico,woff,woff2,ttf,otf,}",
+    "**/*.{jpg,jpeg,png,svg,webp,avif,gif,ico,woff,woff2,ttf,otf}",
 ];
 
 
