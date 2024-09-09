@@ -158,4 +158,9 @@ Glob patterns are resolved using [micromatch](https://github.com/micromatch/micr
 
 ---
 
+## Things To Note
+
+- The more the pull request changes are in number, higher will be the tokens sent to the AI model and once you reach the token limit either for the model or for the API (rate limiting), the action will throw an error. So, make sure to upgrade your model or the token limit if you encounter an issue which states *too many tokens* or *token limit reached*. Visit OpenAI's or Anthropic's API documentation for more details.
+- The [system prompt](https://github.com/murtuzaalisurti/better/blob/main/utils/constants.js#L10) is common across all supported AI models.
+
 > Made with ❤️ by [@murtuzaalisurti](https://github.com/murtuzaalisurti).
