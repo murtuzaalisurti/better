@@ -43745,7 +43745,7 @@ var github = __nccwpck_require__(5438);
 // EXTERNAL MODULE: ./node_modules/parse-diff/index.js
 var parse_diff = __nccwpck_require__(4833);
 ;// CONCATENATED MODULE: ./node_modules/openai/version.mjs
-const VERSION = '4.58.0'; // x-release-please-version
+const VERSION = '4.61.0'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_shims/registry.mjs
 let auto = false;
@@ -45526,6 +45526,12 @@ const validatePositiveInteger = (name, n) => {
 const castToError = (err) => {
     if (err instanceof Error)
         return err;
+    if (typeof err === 'object' && err !== null) {
+        try {
+            return new Error(JSON.stringify(err));
+        }
+        catch { }
+    }
     return new Error(err);
 };
 const ensurePresent = (value) => {
@@ -45730,7 +45736,7 @@ class APIError extends error_OpenAIError {
     }
     static generate(status, errorResponse, message, headers) {
         if (!status) {
-            return new APIConnectionError({ cause: castToError(errorResponse) });
+            return new APIConnectionError({ message, cause: castToError(errorResponse) });
         }
         const error = errorResponse?.['error'];
         if (status === 400) {
@@ -47123,227 +47129,245 @@ class ChatCompletionRunner extends AbstractChatCompletionRunner {
 }
 //# sourceMappingURL=ChatCompletionRunner.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/partial-json-parser/parser.mjs
-const tokenize = (input) => {
-    let current = 0;
-    let tokens = [];
-    while (current < input.length) {
-        let char = input[current];
-        if (char === '\\') {
-            current++;
-            continue;
+const STR = 0b000000001;
+const NUM = 0b000000010;
+const ARR = 0b000000100;
+const OBJ = 0b000001000;
+const NULL = 0b000010000;
+const BOOL = 0b000100000;
+const NAN = 0b001000000;
+const INFINITY = 0b010000000;
+const MINUS_INFINITY = 0b100000000;
+const INF = INFINITY | MINUS_INFINITY;
+const SPECIAL = NULL | BOOL | INF | NAN;
+const ATOM = STR | NUM | SPECIAL;
+const COLLECTION = ARR | OBJ;
+const ALL = ATOM | COLLECTION;
+const Allow = {
+    STR,
+    NUM,
+    ARR,
+    OBJ,
+    NULL,
+    BOOL,
+    NAN,
+    INFINITY,
+    MINUS_INFINITY,
+    INF,
+    SPECIAL,
+    ATOM,
+    COLLECTION,
+    ALL,
+};
+// The JSON string segment was unable to be parsed completely
+class PartialJSON extends Error {
+}
+class MalformedJSON extends Error {
+}
+/**
+ * Parse incomplete JSON
+ * @param {string} jsonString Partial JSON to be parsed
+ * @param {number} allowPartial Specify what types are allowed to be partial, see {@link Allow} for details
+ * @returns The parsed JSON
+ * @throws {PartialJSON} If the JSON is incomplete (related to the `allow` parameter)
+ * @throws {MalformedJSON} If the JSON is malformed
+ */
+function parseJSON(jsonString, allowPartial = Allow.ALL) {
+    if (typeof jsonString !== 'string') {
+        throw new TypeError(`expecting str, got ${typeof jsonString}`);
+    }
+    if (!jsonString.trim()) {
+        throw new Error(`${jsonString} is empty`);
+    }
+    return _parseJSON(jsonString.trim(), allowPartial);
+}
+const _parseJSON = (jsonString, allow) => {
+    const length = jsonString.length;
+    let index = 0;
+    const markPartialJSON = (msg) => {
+        throw new PartialJSON(`${msg} at position ${index}`);
+    };
+    const throwMalformedError = (msg) => {
+        throw new MalformedJSON(`${msg} at position ${index}`);
+    };
+    const parseAny = () => {
+        skipBlank();
+        if (index >= length)
+            markPartialJSON('Unexpected end of input');
+        if (jsonString[index] === '"')
+            return parseStr();
+        if (jsonString[index] === '{')
+            return parseObj();
+        if (jsonString[index] === '[')
+            return parseArr();
+        if (jsonString.substring(index, index + 4) === 'null' ||
+            (Allow.NULL & allow && length - index < 4 && 'null'.startsWith(jsonString.substring(index)))) {
+            index += 4;
+            return null;
         }
-        if (char === '{') {
-            tokens.push({
-                type: 'brace',
-                value: '{',
-            });
-            current++;
-            continue;
+        if (jsonString.substring(index, index + 4) === 'true' ||
+            (Allow.BOOL & allow && length - index < 4 && 'true'.startsWith(jsonString.substring(index)))) {
+            index += 4;
+            return true;
         }
-        if (char === '}') {
-            tokens.push({
-                type: 'brace',
-                value: '}',
-            });
-            current++;
-            continue;
+        if (jsonString.substring(index, index + 5) === 'false' ||
+            (Allow.BOOL & allow && length - index < 5 && 'false'.startsWith(jsonString.substring(index)))) {
+            index += 5;
+            return false;
         }
-        if (char === '[') {
-            tokens.push({
-                type: 'paren',
-                value: '[',
-            });
-            current++;
-            continue;
+        if (jsonString.substring(index, index + 8) === 'Infinity' ||
+            (Allow.INFINITY & allow && length - index < 8 && 'Infinity'.startsWith(jsonString.substring(index)))) {
+            index += 8;
+            return Infinity;
         }
-        if (char === ']') {
-            tokens.push({
-                type: 'paren',
-                value: ']',
-            });
-            current++;
-            continue;
+        if (jsonString.substring(index, index + 9) === '-Infinity' ||
+            (Allow.MINUS_INFINITY & allow &&
+                1 < length - index &&
+                length - index < 9 &&
+                '-Infinity'.startsWith(jsonString.substring(index)))) {
+            index += 9;
+            return -Infinity;
         }
-        if (char === ':') {
-            tokens.push({
-                type: 'separator',
-                value: ':',
-            });
-            current++;
-            continue;
+        if (jsonString.substring(index, index + 3) === 'NaN' ||
+            (Allow.NAN & allow && length - index < 3 && 'NaN'.startsWith(jsonString.substring(index)))) {
+            index += 3;
+            return NaN;
         }
-        if (char === ',') {
-            tokens.push({
-                type: 'delimiter',
-                value: ',',
-            });
-            current++;
-            continue;
+        return parseNum();
+    };
+    const parseStr = () => {
+        const start = index;
+        let escape = false;
+        index++; // skip initial quote
+        while (index < length && (jsonString[index] !== '"' || (escape && jsonString[index - 1] === '\\'))) {
+            escape = jsonString[index] === '\\' ? !escape : false;
+            index++;
         }
-        if (char === '"') {
-            let value = '';
-            let danglingQuote = false;
-            char = input[++current];
-            while (char !== '"') {
-                if (current === input.length) {
-                    danglingQuote = true;
-                    break;
+        if (jsonString.charAt(index) == '"') {
+            try {
+                return JSON.parse(jsonString.substring(start, ++index - Number(escape)));
+            }
+            catch (e) {
+                throwMalformedError(String(e));
+            }
+        }
+        else if (Allow.STR & allow) {
+            try {
+                return JSON.parse(jsonString.substring(start, index - Number(escape)) + '"');
+            }
+            catch (e) {
+                // SyntaxError: Invalid escape sequence
+                return JSON.parse(jsonString.substring(start, jsonString.lastIndexOf('\\')) + '"');
+            }
+        }
+        markPartialJSON('Unterminated string literal');
+    };
+    const parseObj = () => {
+        index++; // skip initial brace
+        skipBlank();
+        const obj = {};
+        try {
+            while (jsonString[index] !== '}') {
+                skipBlank();
+                if (index >= length && Allow.OBJ & allow)
+                    return obj;
+                const key = parseStr();
+                skipBlank();
+                index++; // skip colon
+                try {
+                    const value = parseAny();
+                    Object.defineProperty(obj, key, { value, writable: true, enumerable: true, configurable: true });
                 }
-                if (char === '\\') {
-                    current++;
-                    if (current === input.length) {
-                        danglingQuote = true;
-                        break;
+                catch (e) {
+                    if (Allow.OBJ & allow)
+                        return obj;
+                    else
+                        throw e;
+                }
+                skipBlank();
+                if (jsonString[index] === ',')
+                    index++; // skip comma
+            }
+        }
+        catch (e) {
+            if (Allow.OBJ & allow)
+                return obj;
+            else
+                markPartialJSON("Expected '}' at end of object");
+        }
+        index++; // skip final brace
+        return obj;
+    };
+    const parseArr = () => {
+        index++; // skip initial bracket
+        const arr = [];
+        try {
+            while (jsonString[index] !== ']') {
+                arr.push(parseAny());
+                skipBlank();
+                if (jsonString[index] === ',') {
+                    index++; // skip comma
+                }
+            }
+        }
+        catch (e) {
+            if (Allow.ARR & allow) {
+                return arr;
+            }
+            markPartialJSON("Expected ']' at end of array");
+        }
+        index++; // skip final bracket
+        return arr;
+    };
+    const parseNum = () => {
+        if (index === 0) {
+            if (jsonString === '-' && Allow.NUM & allow)
+                markPartialJSON("Not sure what '-' is");
+            try {
+                return JSON.parse(jsonString);
+            }
+            catch (e) {
+                if (Allow.NUM & allow) {
+                    try {
+                        if ('.' === jsonString[jsonString.length - 1])
+                            return JSON.parse(jsonString.substring(0, jsonString.lastIndexOf('.')));
+                        return JSON.parse(jsonString.substring(0, jsonString.lastIndexOf('e')));
                     }
-                    value += char + input[current];
-                    char = input[++current];
+                    catch (e) { }
                 }
-                else {
-                    value += char;
-                    char = input[++current];
-                }
-            }
-            char = input[++current];
-            if (!danglingQuote) {
-                tokens.push({
-                    type: 'string',
-                    value,
-                });
-            }
-            continue;
-        }
-        let WHITESPACE = /\s/;
-        if (char && WHITESPACE.test(char)) {
-            current++;
-            continue;
-        }
-        let NUMBERS = /[0-9]/;
-        if ((char && NUMBERS.test(char)) || char === '-' || char === '.') {
-            let value = '';
-            if (char === '-') {
-                value += char;
-                char = input[++current];
-            }
-            while ((char && NUMBERS.test(char)) || char === '.') {
-                value += char;
-                char = input[++current];
-            }
-            tokens.push({
-                type: 'number',
-                value,
-            });
-            continue;
-        }
-        let LETTERS = /[a-z]/i;
-        if (char && LETTERS.test(char)) {
-            let value = '';
-            while (char && LETTERS.test(char)) {
-                if (current === input.length) {
-                    break;
-                }
-                value += char;
-                char = input[++current];
-            }
-            if (value == 'true' || value == 'false' || value === 'null') {
-                tokens.push({
-                    type: 'name',
-                    value,
-                });
-            }
-            else {
-                // unknown token, e.g. `nul` which isn't quite `null`
-                current++;
-                continue;
-            }
-            continue;
-        }
-        current++;
-    }
-    return tokens;
-}, strip = (tokens) => {
-    if (tokens.length === 0) {
-        return tokens;
-    }
-    let lastToken = tokens[tokens.length - 1];
-    switch (lastToken.type) {
-        case 'separator':
-            tokens = tokens.slice(0, tokens.length - 1);
-            return strip(tokens);
-            break;
-        case 'number':
-            let lastCharacterOfLastToken = lastToken.value[lastToken.value.length - 1];
-            if (lastCharacterOfLastToken === '.' || lastCharacterOfLastToken === '-') {
-                tokens = tokens.slice(0, tokens.length - 1);
-                return strip(tokens);
-            }
-        case 'string':
-            let tokenBeforeTheLastToken = tokens[tokens.length - 2];
-            if (tokenBeforeTheLastToken?.type === 'delimiter') {
-                tokens = tokens.slice(0, tokens.length - 1);
-                return strip(tokens);
-            }
-            else if (tokenBeforeTheLastToken?.type === 'brace' && tokenBeforeTheLastToken.value === '{') {
-                tokens = tokens.slice(0, tokens.length - 1);
-                return strip(tokens);
-            }
-            break;
-        case 'delimiter':
-            tokens = tokens.slice(0, tokens.length - 1);
-            return strip(tokens);
-            break;
-    }
-    return tokens;
-}, unstrip = (tokens) => {
-    let tail = [];
-    tokens.map((token) => {
-        if (token.type === 'brace') {
-            if (token.value === '{') {
-                tail.push('}');
-            }
-            else {
-                tail.splice(tail.lastIndexOf('}'), 1);
+                throwMalformedError(String(e));
             }
         }
-        if (token.type === 'paren') {
-            if (token.value === '[') {
-                tail.push(']');
+        const start = index;
+        if (jsonString[index] === '-')
+            index++;
+        while (jsonString[index] && !',]}'.includes(jsonString[index]))
+            index++;
+        if (index == length && !(Allow.NUM & allow))
+            markPartialJSON('Unterminated number literal');
+        try {
+            return JSON.parse(jsonString.substring(start, index));
+        }
+        catch (e) {
+            if (jsonString.substring(start, index) === '-' && Allow.NUM & allow)
+                markPartialJSON("Not sure what '-' is");
+            try {
+                return JSON.parse(jsonString.substring(start, jsonString.lastIndexOf('e')));
             }
-            else {
-                tail.splice(tail.lastIndexOf(']'), 1);
+            catch (e) {
+                throwMalformedError(String(e));
             }
         }
-    });
-    if (tail.length > 0) {
-        tail.reverse().map((item) => {
-            if (item === '}') {
-                tokens.push({
-                    type: 'brace',
-                    value: '}',
-                });
-            }
-            else if (item === ']') {
-                tokens.push({
-                    type: 'paren',
-                    value: ']',
-                });
-            }
-        });
-    }
-    return tokens;
-}, generate = (tokens) => {
-    let output = '';
-    tokens.map((token) => {
-        switch (token.type) {
-            case 'string':
-                output += '"' + token.value + '"';
-                break;
-            default:
-                output += token.value;
-                break;
+    };
+    const skipBlank = () => {
+        while (index < length && ' \n\r\t'.includes(jsonString[index])) {
+            index++;
         }
-    });
-    return output;
-}, partialParse = (input) => JSON.parse(generate(unstrip(strip(tokenize(input)))));
+    };
+    return parseAny();
+};
+// using this function with malformed JSON is undefined behavior
+const partialParse = (input) => parseJSON(input, Allow.ALL ^ Allow.NUM);
 
 //# sourceMappingURL=parser.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/lib/ChatCompletionStream.mjs
@@ -47889,16 +47913,17 @@ class ChatCompletionStreamingRunner extends ChatCompletionStream {
 
 
 class chat_completions_Completions extends APIResource {
-    async parse(body, options) {
+    parse(body, options) {
         validateInputTools(body.tools);
-        const completion = await this._client.chat.completions.create(body, {
+        return this._client.chat.completions
+            .create(body, {
             ...options,
             headers: {
                 ...options?.headers,
                 'X-Stainless-Helper-Method': 'beta.chat.completions.parse',
             },
-        });
-        return parseChatCompletion(completion, body);
+        })
+            ._thenUnwrap((completion) => parseChatCompletion(completion, body));
     }
     runFunctions(body, options) {
         if (body.stream) {
@@ -49461,7 +49486,7 @@ class AzureOpenAI extends (/* unused pure expression or super */ null && (OpenAI
      * @param {string | undefined} [opts.apiKey=process.env['AZURE_OPENAI_API_KEY'] ?? undefined]
      * @param {string | undefined} opts.deployment - A model deployment, if given, sets the base client URL to include `/deployments/{deployment}`.
      * @param {string | null | undefined} [opts.organization=process.env['OPENAI_ORG_ID'] ?? null]
-     * @param {string} [opts.baseURL=process.env['OPENAI_BASE_URL']] - Sets the base URL for the API.
+     * @param {string} [opts.baseURL=process.env['OPENAI_BASE_URL']] - Sets the base URL for the API, e.g. `https://example-resource.azure.openai.com/openai/`.
      * @param {number} [opts.timeout=10 minutes] - The maximum amount of time (in milliseconds) the client will wait for a response before timing out.
      * @param {number} [opts.httpAgent] - An HTTP agent used to manage HTTP(s) connections.
      * @param {Core.Fetch} [opts.fetch] - Specify a custom `fetch` function implementation.
@@ -49574,7 +49599,7 @@ const API_KEY_SENTINEL = '<Missing Key>';
 /* harmony default export */ const openai = (OpenAI);
 //# sourceMappingURL=index.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/version.mjs
-const version_VERSION = '0.27.2'; // x-release-please-version
+const version_VERSION = '0.27.3'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/_shims/registry.mjs
 let registry_auto = false;
@@ -49742,10 +49767,7 @@ class streaming_Stream {
                         continue;
                     }
                     if (sse.event === 'error') {
-                        const errText = sse.data;
-                        const errJSON = core_safeJSON(errText);
-                        const errMessage = errJSON ? undefined : errText;
-                        throw error_APIError.generate(undefined, errJSON, errMessage, core_createResponseHeaders(response.headers));
+                        throw error_APIError.generate(undefined, `SSE Error: ${sse.data}`, sse.data, core_createResponseHeaders(response.headers));
                     }
                 }
                 done = true;
@@ -50156,8 +50178,10 @@ const uploads_isUploadable = (value) => {
 async function uploads_toFile(value, name, options) {
     // If it's a promise, resolve it.
     value = await value;
-    // Use the file's options if there isn't one provided
-    options ?? (options = sdk_uploads_isFileLike(value) ? { lastModified: value.lastModified, type: value.type } : {});
+    // If we've been given a `File` we don't need to do anything
+    if (sdk_uploads_isFileLike(value)) {
+        return value;
+    }
     if (uploads_isResponseLike(value)) {
         const blob = await value.blob();
         name || (name = new URL(value.url).pathname.split(/[\\/]/).pop() ?? 'unknown_file');
@@ -50169,7 +50193,7 @@ async function uploads_toFile(value, name, options) {
     }
     const bits = await uploads_getBytes(value);
     name || (name = uploads_getName(value) ?? 'unknown_file');
-    if (!options.type) {
+    if (!options?.type) {
         const type = bits[0]?.type;
         if (typeof type === 'string') {
             options = { ...options, type };
@@ -51170,7 +51194,7 @@ class error_APIError extends error_AnthropicError {
     }
     static generate(status, errorResponse, message, headers) {
         if (!status) {
-            return new error_APIConnectionError({ cause: core_castToError(errorResponse) });
+            return new error_APIConnectionError({ message, cause: core_castToError(errorResponse) });
         }
         const error = errorResponse;
         if (status === 400) {
@@ -51291,7 +51315,7 @@ class resources_completions_Completions extends resource_APIResource {
 })(resources_completions_Completions || (resources_completions_Completions = {}));
 //# sourceMappingURL=completions.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs
-const parser_tokenize = (input) => {
+const tokenize = (input) => {
     let current = 0;
     let tokens = [];
     while (current < input.length) {
@@ -51428,7 +51452,7 @@ const parser_tokenize = (input) => {
         current++;
     }
     return tokens;
-}, parser_strip = (tokens) => {
+}, strip = (tokens) => {
     if (tokens.length === 0) {
         return tokens;
     }
@@ -51436,32 +51460,32 @@ const parser_tokenize = (input) => {
     switch (lastToken.type) {
         case 'separator':
             tokens = tokens.slice(0, tokens.length - 1);
-            return parser_strip(tokens);
+            return strip(tokens);
             break;
         case 'number':
             let lastCharacterOfLastToken = lastToken.value[lastToken.value.length - 1];
             if (lastCharacterOfLastToken === '.' || lastCharacterOfLastToken === '-') {
                 tokens = tokens.slice(0, tokens.length - 1);
-                return parser_strip(tokens);
+                return strip(tokens);
             }
         case 'string':
             let tokenBeforeTheLastToken = tokens[tokens.length - 2];
             if (tokenBeforeTheLastToken?.type === 'delimiter') {
                 tokens = tokens.slice(0, tokens.length - 1);
-                return parser_strip(tokens);
+                return strip(tokens);
             }
             else if (tokenBeforeTheLastToken?.type === 'brace' && tokenBeforeTheLastToken.value === '{') {
                 tokens = tokens.slice(0, tokens.length - 1);
-                return parser_strip(tokens);
+                return strip(tokens);
             }
             break;
         case 'delimiter':
             tokens = tokens.slice(0, tokens.length - 1);
-            return parser_strip(tokens);
+            return strip(tokens);
             break;
     }
     return tokens;
-}, parser_unstrip = (tokens) => {
+}, unstrip = (tokens) => {
     let tail = [];
     tokens.map((token) => {
         if (token.type === 'brace') {
@@ -51498,7 +51522,7 @@ const parser_tokenize = (input) => {
         });
     }
     return tokens;
-}, parser_generate = (tokens) => {
+}, generate = (tokens) => {
     let output = '';
     tokens.map((token) => {
         switch (token.type) {
@@ -51511,7 +51535,7 @@ const parser_tokenize = (input) => {
         }
     });
     return output;
-}, parser_partialParse = (input) => JSON.parse(parser_generate(parser_unstrip(parser_strip(parser_tokenize(input)))));
+}, parser_partialParse = (input) => JSON.parse(generate(unstrip(strip(tokenize(input)))));
 
 //# sourceMappingURL=parser.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/lib/MessageStream.mjs
@@ -56912,7 +56936,7 @@ function parseArrayDef(def, refs) {
         type: 'array',
     };
     if (def.type?._def?.typeName !== ZodFirstPartyTypeKind.ZodAny) {
-        res.items = parseDef_parseDef(def.type._def, {
+        res.items = parseDef(def.type._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'items'],
         });
@@ -56991,13 +57015,13 @@ function parseBooleanDef() {
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/branded.mjs
 
 function parseBrandedDef(_def, refs) {
-    return parseDef_parseDef(_def.type._def, refs);
+    return parseDef(_def.type._def, refs);
 }
 //# sourceMappingURL=branded.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/catch.mjs
 
 const parseCatchDef = (def, refs) => {
-    return parseDef_parseDef(def.innerType._def, refs);
+    return parseDef(def.innerType._def, refs);
 };
 //# sourceMappingURL=catch.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/date.mjs
@@ -57052,15 +57076,15 @@ const integerDateParser = (def, refs) => {
 
 function parseDefaultDef(_def, refs) {
     return {
-        ...parseDef_parseDef(_def.innerType._def, refs),
+        ...parseDef(_def.innerType._def, refs),
         default: _def.defaultValue(),
     };
 }
 //# sourceMappingURL=default.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/effects.mjs
 
-function parseEffectsDef(_def, refs) {
-    return refs.effectStrategy === 'input' ? parseDef_parseDef(_def.schema._def, refs) : {};
+function parseEffectsDef(_def, refs, forceResolution) {
+    return refs.effectStrategy === 'input' ? parseDef(_def.schema._def, refs, forceResolution) : {};
 }
 //# sourceMappingURL=effects.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/enum.mjs
@@ -57080,11 +57104,11 @@ const isJsonSchema7AllOfType = (type) => {
 };
 function parseIntersectionDef(def, refs) {
     const allOf = [
-        parseDef_parseDef(def.left._def, {
+        parseDef(def.left._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'allOf', '0'],
         }),
-        parseDef_parseDef(def.right._def, {
+        parseDef(def.right._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'allOf', '1'],
         }),
@@ -57469,7 +57493,7 @@ function parseRecordDef(def, refs) {
             required: def.keyType._def.values,
             properties: def.keyType._def.values.reduce((acc, key) => ({
                 ...acc,
-                [key]: parseDef_parseDef(def.valueType._def, {
+                [key]: parseDef(def.valueType._def, {
                     ...refs,
                     currentPath: [...refs.currentPath, 'properties', key],
                 }) ?? {},
@@ -57479,7 +57503,7 @@ function parseRecordDef(def, refs) {
     }
     const schema = {
         type: 'object',
-        additionalProperties: parseDef_parseDef(def.valueType._def, {
+        additionalProperties: parseDef(def.valueType._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'additionalProperties'],
         }) ?? {},
@@ -57512,11 +57536,11 @@ function parseMapDef(def, refs) {
     if (refs.mapStrategy === 'record') {
         return parseRecordDef(def, refs);
     }
-    const keys = parseDef_parseDef(def.keyType._def, {
+    const keys = parseDef(def.keyType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'items', 'items', '0'],
     }) || {};
-    const values = parseDef_parseDef(def.valueType._def, {
+    const values = parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'items', 'items', '1'],
     }) || {};
@@ -57635,7 +57659,7 @@ function parseUnionDef(def, refs) {
 }
 const asAnyOf = (def, refs) => {
     const anyOf = (def.options instanceof Map ? Array.from(def.options.values()) : def.options)
-        .map((x, i) => parseDef_parseDef(x._def, {
+        .map((x, i) => parseDef(x._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'anyOf', `${i}`],
     }))
@@ -57660,7 +57684,7 @@ function parseNullableDef(def, refs) {
         };
     }
     if (refs.target === 'openApi3') {
-        const base = parseDef_parseDef(def.innerType._def, {
+        const base = parseDef(def.innerType._def, {
             ...refs,
             currentPath: [...refs.currentPath],
         });
@@ -57668,7 +57692,7 @@ function parseNullableDef(def, refs) {
             return { allOf: [base], nullable: true };
         return base && { ...base, nullable: true };
     }
-    const base = parseDef_parseDef(def.innerType._def, {
+    const base = parseDef(def.innerType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'anyOf', '0'],
     });
@@ -57735,7 +57759,7 @@ function decideAdditionalProperties(def, refs) {
     if (refs.removeAdditionalStrategy === 'strict') {
         return def.catchall._def.typeName === 'ZodNever' ?
             def.unknownKeys !== 'strict'
-            : parseDef_parseDef(def.catchall._def, {
+            : parseDef(def.catchall._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'additionalProperties'],
             }) ?? true;
@@ -57743,7 +57767,7 @@ function decideAdditionalProperties(def, refs) {
     else {
         return def.catchall._def.typeName === 'ZodNever' ?
             def.unknownKeys === 'passthrough'
-            : parseDef_parseDef(def.catchall._def, {
+            : parseDef(def.catchall._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'additionalProperties'],
             }) ?? true;
@@ -57755,7 +57779,7 @@ function parseObjectDef(def, refs) {
         ...Object.entries(def.shape()).reduce((acc, [propName, propDef]) => {
             if (propDef === undefined || propDef._def === undefined)
                 return acc;
-            const parsedDef = parseDef_parseDef(propDef._def, {
+            const parsedDef = parseDef(propDef._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'properties', propName],
                 propertyPath: [...refs.currentPath, 'properties', propName],
@@ -57781,9 +57805,9 @@ function parseObjectDef(def, refs) {
 
 const parseOptionalDef = (def, refs) => {
     if (refs.currentPath.toString() === refs.propertyPath?.toString()) {
-        return parseDef_parseDef(def.innerType._def, refs);
+        return parseDef(def.innerType._def, refs);
     }
-    const innerSchema = parseDef_parseDef(def.innerType._def, {
+    const innerSchema = parseDef(def.innerType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'anyOf', '1'],
     });
@@ -57803,16 +57827,16 @@ const parseOptionalDef = (def, refs) => {
 
 const parsePipelineDef = (def, refs) => {
     if (refs.pipeStrategy === 'input') {
-        return parseDef_parseDef(def.in._def, refs);
+        return parseDef(def.in._def, refs);
     }
     else if (refs.pipeStrategy === 'output') {
-        return parseDef_parseDef(def.out._def, refs);
+        return parseDef(def.out._def, refs);
     }
-    const a = parseDef_parseDef(def.in._def, {
+    const a = parseDef(def.in._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'allOf', '0'],
     });
-    const b = parseDef_parseDef(def.out._def, {
+    const b = parseDef(def.out._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'allOf', a ? '1' : '0'],
     });
@@ -57824,14 +57848,14 @@ const parsePipelineDef = (def, refs) => {
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/promise.mjs
 
 function parsePromiseDef(def, refs) {
-    return parseDef_parseDef(def.type._def, refs);
+    return parseDef(def.type._def, refs);
 }
 //# sourceMappingURL=promise.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/set.mjs
 
 
 function parseSetDef(def, refs) {
-    const items = parseDef_parseDef(def.valueType._def, {
+    const items = parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'items'],
     });
@@ -57857,12 +57881,12 @@ function parseTupleDef(def, refs) {
             type: 'array',
             minItems: def.items.length,
             items: def.items
-                .map((x, i) => parseDef_parseDef(x._def, {
+                .map((x, i) => parseDef(x._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'items', `${i}`],
             }))
                 .reduce((acc, x) => (x === undefined ? acc : [...acc, x]), []),
-            additionalItems: parseDef_parseDef(def.rest._def, {
+            additionalItems: parseDef(def.rest._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'additionalItems'],
             }),
@@ -57874,7 +57898,7 @@ function parseTupleDef(def, refs) {
             minItems: def.items.length,
             maxItems: def.items.length,
             items: def.items
-                .map((x, i) => parseDef_parseDef(x._def, {
+                .map((x, i) => parseDef(x._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'items', `${i}`],
             }))
@@ -57898,7 +57922,7 @@ function parseUnknownDef() {
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/readonly.mjs
 
 const parseReadonlyDef = (def, refs) => {
-    return parseDef_parseDef(def.innerType._def, refs);
+    return parseDef(def.innerType._def, refs);
 };
 //# sourceMappingURL=readonly.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/Options.mjs
@@ -57973,7 +57997,7 @@ const getDefaultOptions = (options) => {
 
 
 
-function parseDef_parseDef(def, refs, forceResolution = false) {
+function parseDef(def, refs, forceResolution = false) {
     const seenItem = refs.seen.get(def);
     if (refs.override) {
         const overrideResult = refs.override?.(def, refs, seenItem, forceResolution);
@@ -57992,7 +58016,7 @@ function parseDef_parseDef(def, refs, forceResolution = false) {
     }
     const newItem = { def, path: refs.currentPath, jsonSchema: undefined };
     refs.seen.set(def, newItem);
-    const jsonSchema = selectParser(def, def.typeName, refs);
+    const jsonSchema = selectParser(def, def.typeName, refs, forceResolution);
     if (jsonSchema) {
         addMeta(def, refs, jsonSchema);
     }
@@ -58040,7 +58064,7 @@ const getRelativePath = (pathA, pathB) => {
     }
     return [(pathA.length - i).toString(), ...pathB.slice(i)].join('/');
 };
-const selectParser = (def, typeName, refs) => {
+const selectParser = (def, typeName, refs, forceResolution) => {
     switch (typeName) {
         case ZodFirstPartyTypeKind.ZodString:
             return parseStringDef(def, refs);
@@ -58084,14 +58108,14 @@ const selectParser = (def, typeName, refs) => {
         case ZodFirstPartyTypeKind.ZodSet:
             return parseSetDef(def, refs);
         case ZodFirstPartyTypeKind.ZodLazy:
-            return parseDef_parseDef(def.getter()._def, refs);
+            return parseDef(def.getter()._def, refs);
         case ZodFirstPartyTypeKind.ZodPromise:
             return parsePromiseDef(def, refs);
         case ZodFirstPartyTypeKind.ZodNaN:
         case ZodFirstPartyTypeKind.ZodNever:
             return parseNeverDef();
         case ZodFirstPartyTypeKind.ZodEffects:
-            return parseEffectsDef(def, refs);
+            return parseEffectsDef(def, refs, forceResolution);
         case ZodFirstPartyTypeKind.ZodAny:
             return parseAnyDef();
         case ZodFirstPartyTypeKind.ZodUnknown:
@@ -58170,7 +58194,7 @@ const zodToJsonSchema_zodToJsonSchema = (schema, options) => {
     const name = typeof options === 'string' ? options
         : options?.nameStrategy === 'title' ? undefined
             : options?.name;
-    const main = parseDef_parseDef(schema._def, name === undefined ? refs : ({
+    const main = parseDef(schema._def, name === undefined ? refs : ({
         ...refs,
         currentPath: [...refs.basePath, refs.definitionPath, name],
     }), false) ?? {};
@@ -58197,7 +58221,7 @@ const zodToJsonSchema_zodToJsonSchema = (schema, options) => {
                 break;
             for (const [key, schema] of newDefinitions) {
                 definitions[key] =
-                    parseDef_parseDef(zodDef(schema), { ...refs, currentPath: [...refs.basePath, refs.definitionPath, key] }, true) ?? {};
+                    parseDef(zodDef(schema), { ...refs, currentPath: [...refs.basePath, refs.definitionPath, key] }, true) ?? {};
                 processedDefinitions.add(key);
             }
         }
@@ -58408,7 +58432,7 @@ function array_parseArrayDef(def, refs) {
         type: "array",
     };
     if (def.type?._def?.typeName !== ZodFirstPartyTypeKind.ZodAny) {
-        res.items = esm_parseDef_parseDef(def.type._def, {
+        res.items = parseDef_parseDef(def.type._def, {
             ...refs,
             currentPath: [...refs.currentPath, "items"],
         });
@@ -58487,13 +58511,13 @@ function boolean_parseBooleanDef() {
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/branded.js
 
 function branded_parseBrandedDef(_def, refs) {
-    return esm_parseDef_parseDef(_def.type._def, refs);
+    return parseDef_parseDef(_def.type._def, refs);
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/catch.js
 
 const catch_parseCatchDef = (def, refs) => {
-    return esm_parseDef_parseDef(def.innerType._def, refs);
+    return parseDef_parseDef(def.innerType._def, refs);
 };
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/date.js
@@ -58548,7 +58572,7 @@ const date_integerDateParser = (def, refs) => {
 
 function default_parseDefaultDef(_def, refs) {
     return {
-        ...esm_parseDef_parseDef(_def.innerType._def, refs),
+        ...parseDef_parseDef(_def.innerType._def, refs),
         default: _def.defaultValue(),
     };
 }
@@ -58557,7 +58581,7 @@ function default_parseDefaultDef(_def, refs) {
 
 function effects_parseEffectsDef(_def, refs) {
     return refs.effectStrategy === "input"
-        ? esm_parseDef_parseDef(_def.schema._def, refs)
+        ? parseDef_parseDef(_def.schema._def, refs)
         : {};
 }
 
@@ -58578,11 +58602,11 @@ const intersection_isJsonSchema7AllOfType = (type) => {
 };
 function intersection_parseIntersectionDef(def, refs) {
     const allOf = [
-        esm_parseDef_parseDef(def.left._def, {
+        parseDef_parseDef(def.left._def, {
             ...refs,
             currentPath: [...refs.currentPath, "allOf", "0"],
         }),
-        esm_parseDef_parseDef(def.right._def, {
+        parseDef_parseDef(def.right._def, {
             ...refs,
             currentPath: [...refs.currentPath, "allOf", "1"],
         }),
@@ -58819,6 +58843,7 @@ function string_parseStringDef(def, refs) {
                 case "trim":
                     break;
                 default:
+                    /* c8 ignore next */
                     ((_) => { })(check);
             }
         }
@@ -58983,7 +59008,7 @@ function record_parseRecordDef(def, refs) {
             required: def.keyType._def.values,
             properties: def.keyType._def.values.reduce((acc, key) => ({
                 ...acc,
-                [key]: esm_parseDef_parseDef(def.valueType._def, {
+                [key]: parseDef_parseDef(def.valueType._def, {
                     ...refs,
                     currentPath: [...refs.currentPath, "properties", key],
                 }) ?? {},
@@ -58993,7 +59018,7 @@ function record_parseRecordDef(def, refs) {
     }
     const schema = {
         type: "object",
-        additionalProperties: esm_parseDef_parseDef(def.valueType._def, {
+        additionalProperties: parseDef_parseDef(def.valueType._def, {
             ...refs,
             currentPath: [...refs.currentPath, "additionalProperties"],
         }) ?? {},
@@ -59027,11 +59052,11 @@ function map_parseMapDef(def, refs) {
     if (refs.mapStrategy === "record") {
         return record_parseRecordDef(def, refs);
     }
-    const keys = esm_parseDef_parseDef(def.keyType._def, {
+    const keys = parseDef_parseDef(def.keyType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "items", "items", "0"],
     }) || {};
-    const values = esm_parseDef_parseDef(def.valueType._def, {
+    const values = parseDef_parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "items", "items", "1"],
     }) || {};
@@ -59156,7 +59181,7 @@ const union_asAnyOf = (def, refs) => {
     const anyOf = (def.options instanceof Map
         ? Array.from(def.options.values())
         : def.options)
-        .map((x, i) => esm_parseDef_parseDef(x._def, {
+        .map((x, i) => parseDef_parseDef(x._def, {
         ...refs,
         currentPath: [...refs.currentPath, "anyOf", `${i}`],
     }))
@@ -59186,7 +59211,7 @@ function nullable_parseNullableDef(def, refs) {
         };
     }
     if (refs.target === "openApi3") {
-        const base = esm_parseDef_parseDef(def.innerType._def, {
+        const base = parseDef_parseDef(def.innerType._def, {
             ...refs,
             currentPath: [...refs.currentPath],
         });
@@ -59194,7 +59219,7 @@ function nullable_parseNullableDef(def, refs) {
             return { allOf: [base], nullable: true };
         return base && { ...base, nullable: true };
     }
-    const base = esm_parseDef_parseDef(def.innerType._def, {
+    const base = parseDef_parseDef(def.innerType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "anyOf", "0"],
     });
@@ -59261,7 +59286,7 @@ function object_decideAdditionalProperties(def, refs) {
     if (refs.removeAdditionalStrategy === "strict") {
         return def.catchall._def.typeName === "ZodNever"
             ? def.unknownKeys !== "strict"
-            : esm_parseDef_parseDef(def.catchall._def, {
+            : parseDef_parseDef(def.catchall._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, "additionalProperties"],
             }) ?? true;
@@ -59269,64 +59294,11 @@ function object_decideAdditionalProperties(def, refs) {
     else {
         return def.catchall._def.typeName === "ZodNever"
             ? def.unknownKeys === "passthrough"
-            : esm_parseDef_parseDef(def.catchall._def, {
+            : parseDef_parseDef(def.catchall._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, "additionalProperties"],
             }) ?? true;
     }
-}
-;
-function parseObjectDefX(def, refs) {
-    Object.keys(def.shape()).reduce((schema, key) => {
-        let prop = def.shape()[key];
-        const isOptional = prop.isOptional();
-        if (!isOptional) {
-            prop = { ...prop._def.innerSchema };
-        }
-        const propSchema = parseDef(prop._def, {
-            ...refs,
-            currentPath: [...refs.currentPath, "properties", key],
-            propertyPath: [...refs.currentPath, "properties", key],
-        });
-        if (propSchema !== undefined) {
-            schema.properties[key] = propSchema;
-            if (!isOptional) {
-                if (!schema.required) {
-                    schema.required = [];
-                }
-                schema.required.push(key);
-            }
-        }
-        return schema;
-    }, {
-        type: "object",
-        properties: {},
-        additionalProperties: object_decideAdditionalProperties(def, refs),
-    });
-    const result = {
-        type: "object",
-        ...Object.entries(def.shape()).reduce((acc, [propName, propDef]) => {
-            if (propDef === undefined || propDef._def === undefined)
-                return acc;
-            const parsedDef = parseDef(propDef._def, {
-                ...refs,
-                currentPath: [...refs.currentPath, "properties", propName],
-                propertyPath: [...refs.currentPath, "properties", propName],
-            });
-            if (parsedDef === undefined)
-                return acc;
-            return {
-                properties: { ...acc.properties, [propName]: parsedDef },
-                required: propDef.isOptional()
-                    ? acc.required
-                    : [...acc.required, propName],
-            };
-        }, { properties: {}, required: [] }),
-        additionalProperties: object_decideAdditionalProperties(def, refs),
-    };
-    if (!result.required.length)
-        delete result.required;
-    return result;
 }
 function object_parseObjectDef(def, refs) {
     const result = {
@@ -59334,7 +59306,7 @@ function object_parseObjectDef(def, refs) {
         ...Object.entries(def.shape()).reduce((acc, [propName, propDef]) => {
             if (propDef === undefined || propDef._def === undefined)
                 return acc;
-            const parsedDef = esm_parseDef_parseDef(propDef._def, {
+            const parsedDef = parseDef_parseDef(propDef._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, "properties", propName],
                 propertyPath: [...refs.currentPath, "properties", propName],
@@ -59359,9 +59331,9 @@ function object_parseObjectDef(def, refs) {
 
 const optional_parseOptionalDef = (def, refs) => {
     if (refs.currentPath.toString() === refs.propertyPath?.toString()) {
-        return esm_parseDef_parseDef(def.innerType._def, refs);
+        return parseDef_parseDef(def.innerType._def, refs);
     }
-    const innerSchema = esm_parseDef_parseDef(def.innerType._def, {
+    const innerSchema = parseDef_parseDef(def.innerType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "anyOf", "1"],
     });
@@ -59381,16 +59353,16 @@ const optional_parseOptionalDef = (def, refs) => {
 
 const pipeline_parsePipelineDef = (def, refs) => {
     if (refs.pipeStrategy === "input") {
-        return esm_parseDef_parseDef(def.in._def, refs);
+        return parseDef_parseDef(def.in._def, refs);
     }
     else if (refs.pipeStrategy === "output") {
-        return esm_parseDef_parseDef(def.out._def, refs);
+        return parseDef_parseDef(def.out._def, refs);
     }
-    const a = esm_parseDef_parseDef(def.in._def, {
+    const a = parseDef_parseDef(def.in._def, {
         ...refs,
         currentPath: [...refs.currentPath, "allOf", "0"],
     });
-    const b = esm_parseDef_parseDef(def.out._def, {
+    const b = parseDef_parseDef(def.out._def, {
         ...refs,
         currentPath: [...refs.currentPath, "allOf", a ? "1" : "0"],
     });
@@ -59402,14 +59374,14 @@ const pipeline_parsePipelineDef = (def, refs) => {
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/promise.js
 
 function promise_parsePromiseDef(def, refs) {
-    return esm_parseDef_parseDef(def.type._def, refs);
+    return parseDef_parseDef(def.type._def, refs);
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/set.js
 
 
 function set_parseSetDef(def, refs) {
-    const items = esm_parseDef_parseDef(def.valueType._def, {
+    const items = parseDef_parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "items"],
     });
@@ -59435,12 +59407,12 @@ function tuple_parseTupleDef(def, refs) {
             type: "array",
             minItems: def.items.length,
             items: def.items
-                .map((x, i) => esm_parseDef_parseDef(x._def, {
+                .map((x, i) => parseDef_parseDef(x._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, "items", `${i}`],
             }))
                 .reduce((acc, x) => (x === undefined ? acc : [...acc, x]), []),
-            additionalItems: esm_parseDef_parseDef(def.rest._def, {
+            additionalItems: parseDef_parseDef(def.rest._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, "additionalItems"],
             }),
@@ -59452,7 +59424,7 @@ function tuple_parseTupleDef(def, refs) {
             minItems: def.items.length,
             maxItems: def.items.length,
             items: def.items
-                .map((x, i) => esm_parseDef_parseDef(x._def, {
+                .map((x, i) => parseDef_parseDef(x._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, "items", `${i}`],
             }))
@@ -59476,7 +59448,7 @@ function unknown_parseUnknownDef() {
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/readonly.js
 
 const readonly_parseReadonlyDef = (def, refs) => {
-    return esm_parseDef_parseDef(def.innerType._def, refs);
+    return parseDef_parseDef(def.innerType._def, refs);
 };
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parseDef.js
@@ -59512,7 +59484,7 @@ const readonly_parseReadonlyDef = (def, refs) => {
 
 
 
-function esm_parseDef_parseDef(def, refs, forceResolution = false) {
+function parseDef_parseDef(def, refs, forceResolution = false) {
     const seenItem = refs.seen.get(def);
     if (refs.override) {
         const overrideResult = refs.override?.(def, refs, seenItem, forceResolution);
@@ -59604,7 +59576,7 @@ const parseDef_selectParser = (def, typeName, refs) => {
         case ZodFirstPartyTypeKind.ZodSet:
             return set_parseSetDef(def, refs);
         case ZodFirstPartyTypeKind.ZodLazy:
-            return esm_parseDef_parseDef(def.getter()._def, refs);
+            return parseDef_parseDef(def.getter()._def, refs);
         case ZodFirstPartyTypeKind.ZodPromise:
             return promise_parsePromiseDef(def, refs);
         case ZodFirstPartyTypeKind.ZodNaN:
@@ -59631,6 +59603,7 @@ const parseDef_selectParser = (def, typeName, refs) => {
         case ZodFirstPartyTypeKind.ZodSymbol:
             return undefined;
         default:
+            /* c8 ignore next */
             return ((_) => undefined)(typeName);
     }
 };
@@ -59652,7 +59625,7 @@ const esm_zodToJsonSchema_zodToJsonSchema = (schema, options) => {
     const definitions = typeof options === "object" && options.definitions
         ? Object.entries(options.definitions).reduce((acc, [name, schema]) => ({
             ...acc,
-            [name]: esm_parseDef_parseDef(schema._def, {
+            [name]: parseDef_parseDef(schema._def, {
                 ...refs,
                 currentPath: [...refs.basePath, refs.definitionPath, name],
             }, true) ?? {},
@@ -59663,7 +59636,7 @@ const esm_zodToJsonSchema_zodToJsonSchema = (schema, options) => {
         : options?.nameStrategy === "title"
             ? undefined
             : options?.name;
-    const main = esm_parseDef_parseDef(schema._def, name === undefined
+    const main = parseDef_parseDef(schema._def, name === undefined
         ? refs
         : {
             ...refs,
