@@ -60067,6 +60067,7 @@ async function getSuggestions({ platform, rawComments, platformSDK, rules, model
             error(`Could not generate suggestions: ${err.message}`);
             core.setFailed(`Could not generate suggestions: ${err.message}`);
         }
+        return null;
     }
 }
 
@@ -60273,7 +60274,12 @@ async function run() {
                 },
             });
 
-            if (suggestions?.commentsToAdd.length === 0) {
+            if (!suggestions) {
+                warning("Could not generate suggestions. Refer to the error log for more information and try again.");
+                return;
+            }
+
+            if (suggestions.commentsToAdd.length === 0) {
                 info("No suggestions found. Code review complete. All good!");
                 return;
             }
