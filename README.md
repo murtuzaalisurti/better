@@ -38,7 +38,7 @@ jobs:
         steps:
             - name: step-name
               id: step-id
-              uses: murtuzaalisurti/better@v1 # this is the ref of the github action - https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_iduses
+              uses: murtuzaalisurti/better@v2 # this is the ref of the github action - https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_iduses
               with:
                 repo-token: ${{ secrets.GITHUB_TOKEN }} # this is auto generated
                 ai-model-api-key: ${{ secrets.MODEL_API_KEY }} # make sure to set this in your repository secrets - /settings/secrets/actions (Settings > Secrets and Variables > Actions > Secrets Tab)
