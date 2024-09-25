@@ -58053,16 +58053,22 @@ function filterPositionsNotPresentInRawPayload(rawComments, comments) {
  * @param {string} modelName
  */
 async function addReviewComments(suggestions, octokit, rawComments, modelName) {
+    const { info } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
     const comments = filterPositionsNotPresentInRawPayload(rawComments, extractComments().comments(suggestions));
 
-    await octokit.rest.pulls.createReview({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        pull_number: github.context.payload.pull_request.number,
-        body: `Code Review by ${modelName}`,
-        event: "COMMENT",
-        comments,
-    });
+    try {
+        await octokit.rest.pulls.createReview({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            pull_number: github.context.payload.pull_request.number,
+            body: `Code Review by ${modelName}`,
+            event: "COMMENT",
+            comments,
+        });
+    } catch (error) {
+        info(`Failed to add review comments: ${JSON.stringify(comments, null, 2)}`);
+        throw error;
+    }
 }
 
 /**
@@ -58223,7 +58229,6 @@ async function run() {
                         .concat(FILES_IGNORED_BY_DEFAULT)
                 ),
             ];
-            console.log(JSON.stringify(filesToIgnoreList, null, 2));
 
             const filteredRawComments = extractComments().filteredRaw(rawComments, filesToIgnoreList);
 
