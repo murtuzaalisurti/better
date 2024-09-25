@@ -44,7 +44,7 @@ jobs:
                 ai-model-api-key: ${{ secrets.MODEL_API_KEY }} # make sure to set this in your repository secrets - /settings/secrets/actions (Settings > Secrets and Variables > Actions > Secrets Tab)
                 platform: 'openai'
                 delete-existing-review-by-bot: true #default is true
-                filesToIgnore: '**/*.env, .husky/**' # uses glob patterns (micromatch - https://github.com/micromatch/micromatch)
+                filesToIgnore: '**/*.env; .husky/**; .cache/**' # uses glob patterns (micromatch - https://github.com/micromatch/micromatch)
                 rules: |- # Rules to consider for code review
                     -- It must follow industry standard best practices
                     -- It should be idiomatic
@@ -144,13 +144,13 @@ The rules to consider for code review. It is a multiline text field. Each rule s
 
 ### 7. `filesToIgnore` (Optional)
 
-List of files to ignore. It is a comma(`,`) separated list of glob patterns. The default list of ignored files is:
+List of files to ignore. It is a semicolon(`;`) separated list of glob patterns. The default list of ignored files is:
 
 ```text
-**/node_modules/**,
-**/package-lock.json,
-**/yarn.lock,
-.cache/**,
+**/node_modules/**
+**/package-lock.json
+**/yarn.lock
+.cache/**
 **/*.{jpg,jpeg,png,svg,webp,avif,gif,ico,woff,woff2,ttf,otf}
 ```
 
