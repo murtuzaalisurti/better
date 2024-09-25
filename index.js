@@ -464,6 +464,7 @@ async function run() {
                         .concat(FILES_IGNORED_BY_DEFAULT)
                 ),
             ];
+            console.log(JSON.stringify(filesToIgnoreList, null, 2));
 
             const filteredRawComments = extractComments().filteredRaw(rawComments, filesToIgnoreList);
 
