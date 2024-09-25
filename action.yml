@@ -21,7 +21,7 @@ inputs:
     rules:
         description: "The rules to consider for code review"
     filesToIgnore:
-        description: "List of files to ignore"
+        description: "List of files to ignore - a semicolon(;) separated list of glob patterns"
 runs:
     using: "node20"
     main: "dist/index.js"

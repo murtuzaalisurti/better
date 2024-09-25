@@ -58204,7 +58204,7 @@ async function run() {
             const filesToIgnoreList = [
                 ...new Set(
                     filesToIgnore
-                        .split(",")
+                        .split(";")
                         .map(file => file.trim())
                         .filter(file => file !== "")
                         .concat(FILES_IGNORED_BY_DEFAULT)
