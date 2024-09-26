@@ -41185,7 +41185,7 @@ var github = __nccwpck_require__(3228);
 // EXTERNAL MODULE: ./node_modules/parse-diff/index.js
 var parse_diff = __nccwpck_require__(2673);
 ;// CONCATENATED MODULE: ./node_modules/openai/version.mjs
-const VERSION = '4.64.0'; // x-release-please-version
+const VERSION = '4.65.0'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_shims/registry.mjs
 let auto = false;
@@ -44121,7 +44121,8 @@ class Audio extends APIResource {
 
 class Moderations extends APIResource {
     /**
-     * Classifies if text is potentially harmful.
+     * Classifies if text and/or image inputs are potentially harmful. Learn more in
+     * the [moderation guide](https://platform.openai.com/docs/guides/moderation).
      */
     create(body, options) {
         return this._client.post('/moderations', { body, ...options });
