@@ -57911,8 +57911,8 @@ function extractComments() {
  */
 function getUserPrompt(rules, rawComments, pullRequestContext) {
     return `I want you to code review a pull request ${rules ? ` by including the following rules: ${rules} \nThe rules provided describe how the code should be` : ""}. Here's the diff payload from the pull request:
-                ${JSON.stringify(rawComments)}
-                ${pullRequestContext.body ? `\nAlso, here's the pull request description on what it's trying to do to give you some more context: ${pullRequestContext.body})` : ""}`;
+            ${JSON.stringify(rawComments)}
+            ${pullRequestContext.body ? `\nAlso, here's the pull request description on what it's trying to do to give you some more context (keep in mind that the description is not always accurate and can be incorrect, so compare the code changes in the diff to the description): ${pullRequestContext.body})` : ""}`;
 }
 
 /**
