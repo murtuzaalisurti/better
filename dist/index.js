@@ -57904,6 +57904,18 @@ function extractComments() {
 }
 
 /**
+ * @param {string} rules
+ * @param {rawCommentsPayload} rawComments
+ * @param {PullRequestContext} pullRequestContext
+ * @returns {string}
+ */
+function getUserPrompt(rules, rawComments, pullRequestContext) {
+    return `I want you to code review a pull request ${rules ? ` by including the following rules: ${rules} \nThe rules provided describe how the code should be` : ""}. Here's the diff payload from the pull request:
+                ${JSON.stringify(rawComments)}
+                ${pullRequestContext.body ? `\nAlso, here's the pull request description on what it's trying to do to give you some more context: ${pullRequestContext.body})` : ""}`;
+}
+
+/**
  * @param {{
  *  rawComments: rawCommentsPayload,
  *  openAI: OpenAI,
@@ -57923,9 +57935,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
             },
             {
                 role: "user",
-                content: `I want you to code review a pull request ${rules ? ` by including the following rules: ${rules} \nThe rules provided describe how the code should be` : ""}. Here's the diff payload from the pull request:
-                ${JSON.stringify(rawComments)}
-                ${pullRequestContext.body ? `\nAlso, here's the pull request description on what it's trying to do to give you some more context: ${pullRequestContext.body})` : ""}`,
+                content: getUserPrompt(rules, rawComments, pullRequestContext),
             },
         ],
         response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
@@ -57970,9 +57980,7 @@ async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequ
         messages: [
             {
                 role: "user",
-                content: `I want you to code review a pull request ${rules ? ` by including the following rules: ${rules} \nThe rules provided describe how the code should be` : ""}. Here's the diff payload from the pull request:
-                ${JSON.stringify(rawComments)}
-                ${pullRequestContext.body ? `\nAlso, here's the pull request description on what it's trying to do to give you some more context: ${pullRequestContext.body})` : ""}`,
+                content: getUserPrompt(rules, rawComments, pullRequestContext),
             },
         ],
     });
