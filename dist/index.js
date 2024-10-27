@@ -41915,7 +41915,7 @@ var github = __nccwpck_require__(3228);
 // EXTERNAL MODULE: ./node_modules/parse-diff/index.js
 var parse_diff = __nccwpck_require__(2673);
 ;// CONCATENATED MODULE: ./node_modules/openai/version.mjs
-const VERSION = '4.67.1'; // x-release-please-version
+const VERSION = '4.68.4'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_shims/registry.mjs
 let auto = false;
@@ -42415,7 +42415,93 @@ function getRuntime() {
 if (!kind) setShims(getRuntime(), { auto: true });
 
 
+;// CONCATENATED MODULE: ./node_modules/openai/internal/decoders/line.mjs
+
+/**
+ * A re-implementation of httpx's `LineDecoder` in Python that handles incrementally
+ * reading lines from text.
+ *
+ * https://github.com/encode/httpx/blob/920333ea98118e9cf617f246905d7b202510941c/httpx/_decoders.py#L258
+ */
+class line_LineDecoder {
+    constructor() {
+        this.buffer = [];
+        this.trailingCR = false;
+    }
+    decode(chunk) {
+        let text = this.decodeText(chunk);
+        if (this.trailingCR) {
+            text = '\r' + text;
+            this.trailingCR = false;
+        }
+        if (text.endsWith('\r')) {
+            this.trailingCR = true;
+            text = text.slice(0, -1);
+        }
+        if (!text) {
+            return [];
+        }
+        const trailingNewline = line_LineDecoder.NEWLINE_CHARS.has(text[text.length - 1] || '');
+        let lines = text.split(line_LineDecoder.NEWLINE_REGEXP);
+        // if there is a trailing new line then the last entry will be an empty
+        // string which we don't care about
+        if (trailingNewline) {
+            lines.pop();
+        }
+        if (lines.length === 1 && !trailingNewline) {
+            this.buffer.push(lines[0]);
+            return [];
+        }
+        if (this.buffer.length > 0) {
+            lines = [this.buffer.join('') + lines[0], ...lines.slice(1)];
+            this.buffer = [];
+        }
+        if (!trailingNewline) {
+            this.buffer = [lines.pop() || ''];
+        }
+        return lines;
+    }
+    decodeText(bytes) {
+        if (bytes == null)
+            return '';
+        if (typeof bytes === 'string')
+            return bytes;
+        // Node:
+        if (typeof Buffer !== 'undefined') {
+            if (bytes instanceof Buffer) {
+                return bytes.toString();
+            }
+            if (bytes instanceof Uint8Array) {
+                return Buffer.from(bytes).toString();
+            }
+            throw new error_OpenAIError(`Unexpected: received non-Uint8Array (${bytes.constructor.name}) stream chunk in an environment with a global "Buffer" defined, which this library assumes to be Node. Please report this error.`);
+        }
+        // Browser
+        if (typeof TextDecoder !== 'undefined') {
+            if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer) {
+                this.textDecoder ?? (this.textDecoder = new TextDecoder('utf8'));
+                return this.textDecoder.decode(bytes);
+            }
+            throw new error_OpenAIError(`Unexpected: received non-Uint8Array/ArrayBuffer (${bytes.constructor.name}) in a web platform. Please report this error.`);
+        }
+        throw new error_OpenAIError(`Unexpected: neither Buffer nor TextDecoder are available as globals. Please report this error.`);
+    }
+    flush() {
+        if (!this.buffer.length && !this.trailingCR) {
+            return [];
+        }
+        const lines = [this.buffer.join('')];
+        this.buffer = [];
+        this.trailingCR = false;
+        return lines;
+    }
+}
+// prettier-ignore
+line_LineDecoder.NEWLINE_CHARS = new Set(['\n', '\r']);
+line_LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r]/g;
+//# sourceMappingURL=line.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/streaming.mjs
+
 
 
 
@@ -42495,7 +42581,7 @@ class Stream {
     static fromReadableStream(readableStream, controller) {
         let consumed = false;
         async function* iterLines() {
-            const lineDecoder = new LineDecoder();
+            const lineDecoder = new line_LineDecoder();
             const iter = readableStreamAsyncIterable(readableStream);
             for await (const chunk of iter) {
                 for (const line of lineDecoder.decode(chunk)) {
@@ -42600,7 +42686,7 @@ async function* _iterSSEMessages(response, controller) {
         throw new error_OpenAIError(`Attempted to iterate over a response with no body`);
     }
     const sseDecoder = new SSEDecoder();
-    const lineDecoder = new LineDecoder();
+    const lineDecoder = new line_LineDecoder();
     const iter = readableStreamAsyncIterable(response.body);
     for await (const sseChunk of iterSSEChunks(iter)) {
         for (const line of lineDecoder.decode(sseChunk)) {
@@ -42709,88 +42795,6 @@ class SSEDecoder {
         return null;
     }
 }
-/**
- * A re-implementation of httpx's `LineDecoder` in Python that handles incrementally
- * reading lines from text.
- *
- * https://github.com/encode/httpx/blob/920333ea98118e9cf617f246905d7b202510941c/httpx/_decoders.py#L258
- */
-class LineDecoder {
-    constructor() {
-        this.buffer = [];
-        this.trailingCR = false;
-    }
-    decode(chunk) {
-        let text = this.decodeText(chunk);
-        if (this.trailingCR) {
-            text = '\r' + text;
-            this.trailingCR = false;
-        }
-        if (text.endsWith('\r')) {
-            this.trailingCR = true;
-            text = text.slice(0, -1);
-        }
-        if (!text) {
-            return [];
-        }
-        const trailingNewline = LineDecoder.NEWLINE_CHARS.has(text[text.length - 1] || '');
-        let lines = text.split(LineDecoder.NEWLINE_REGEXP);
-        // if there is a trailing new line then the last entry will be an empty
-        // string which we don't care about
-        if (trailingNewline) {
-            lines.pop();
-        }
-        if (lines.length === 1 && !trailingNewline) {
-            this.buffer.push(lines[0]);
-            return [];
-        }
-        if (this.buffer.length > 0) {
-            lines = [this.buffer.join('') + lines[0], ...lines.slice(1)];
-            this.buffer = [];
-        }
-        if (!trailingNewline) {
-            this.buffer = [lines.pop() || ''];
-        }
-        return lines;
-    }
-    decodeText(bytes) {
-        if (bytes == null)
-            return '';
-        if (typeof bytes === 'string')
-            return bytes;
-        // Node:
-        if (typeof Buffer !== 'undefined') {
-            if (bytes instanceof Buffer) {
-                return bytes.toString();
-            }
-            if (bytes instanceof Uint8Array) {
-                return Buffer.from(bytes).toString();
-            }
-            throw new error_OpenAIError(`Unexpected: received non-Uint8Array (${bytes.constructor.name}) stream chunk in an environment with a global "Buffer" defined, which this library assumes to be Node. Please report this error.`);
-        }
-        // Browser
-        if (typeof TextDecoder !== 'undefined') {
-            if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer) {
-                this.textDecoder ?? (this.textDecoder = new TextDecoder('utf8'));
-                return this.textDecoder.decode(bytes);
-            }
-            throw new error_OpenAIError(`Unexpected: received non-Uint8Array/ArrayBuffer (${bytes.constructor.name}) in a web platform. Please report this error.`);
-        }
-        throw new error_OpenAIError(`Unexpected: neither Buffer nor TextDecoder are available as globals. Please report this error.`);
-    }
-    flush() {
-        if (!this.buffer.length && !this.trailingCR) {
-            return [];
-        }
-        const lines = [this.buffer.join('')];
-        this.buffer = [];
-        this.trailingCR = false;
-        return lines;
-    }
-}
-// prettier-ignore
-LineDecoder.NEWLINE_CHARS = new Set(['\n', '\r']);
-LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r]/g;
 /** This is an internal helper function that's just used for testing */
 function _decodeChunks(chunks) {
     const decoder = new LineDecoder();
@@ -43075,7 +43079,7 @@ class APIPromise extends Promise {
         this.parseResponse = parseResponse;
     }
     _thenUnwrap(transform) {
-        return new APIPromise(this.responsePromise, async (props) => _addRequestID(transform(await this.parseResponse(props)), props.response));
+        return new APIPromise(this.responsePromise, async (props) => _addRequestID(transform(await this.parseResponse(props), props), props.response));
     }
     /**
      * Gets the raw `Response` instance instead of parsing the response
@@ -43259,9 +43263,11 @@ class APIClient {
         if (isMultipartBody(options.body) && kind !== 'node') {
             delete reqHeaders['content-type'];
         }
-        // Don't set the retry count header if it was already set or removed by the caller. We check `headers`,
-        // which can contain nulls, instead of `reqHeaders` to account for the removal case.
-        if (getHeader(headers, 'x-stainless-retry-count') === undefined) {
+        // Don't set the retry count header if it was already set or removed through default headers or by the
+        // caller. We check `defaultHeaders` and `headers`, which can contain nulls, instead of `reqHeaders` to
+        // account for the removal case.
+        if (getHeader(defaultHeaders, 'x-stainless-retry-count') === undefined &&
+            getHeader(headers, 'x-stainless-retry-count') === undefined) {
             reqHeaders['x-stainless-retry-count'] = String(retryCount);
         }
         this.validateHeaders(reqHeaders, headers);
@@ -45726,6 +45732,7 @@ _AbstractChatCompletionRunner_instances = new WeakSet(), _AbstractChatCompletion
         const message = this.messages[i];
         if (isAssistantMessage(message)) {
             const { function_call, ...rest } = message;
+            // TODO: support audio here
             const ret = {
                 ...rest,
                 content: message.content ?? null,
@@ -48290,7 +48297,7 @@ const API_KEY_SENTINEL = '<Missing Key>';
 /* harmony default export */ const openai = (OpenAI);
 //# sourceMappingURL=index.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/version.mjs
-const version_VERSION = '0.28.0'; // x-release-please-version
+const version_VERSION = '0.30.1'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/_shims/registry.mjs
 let registry_auto = false;
@@ -48409,7 +48416,93 @@ function node_runtime_getRuntime() {
 if (!registry_kind) registry_setShims(node_runtime_getRuntime(), { auto: true });
 
 
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs
+
+/**
+ * A re-implementation of httpx's `LineDecoder` in Python that handles incrementally
+ * reading lines from text.
+ *
+ * https://github.com/encode/httpx/blob/920333ea98118e9cf617f246905d7b202510941c/httpx/_decoders.py#L258
+ */
+class decoders_line_LineDecoder {
+    constructor() {
+        this.buffer = [];
+        this.trailingCR = false;
+    }
+    decode(chunk) {
+        let text = this.decodeText(chunk);
+        if (this.trailingCR) {
+            text = '\r' + text;
+            this.trailingCR = false;
+        }
+        if (text.endsWith('\r')) {
+            this.trailingCR = true;
+            text = text.slice(0, -1);
+        }
+        if (!text) {
+            return [];
+        }
+        const trailingNewline = decoders_line_LineDecoder.NEWLINE_CHARS.has(text[text.length - 1] || '');
+        let lines = text.split(decoders_line_LineDecoder.NEWLINE_REGEXP);
+        // if there is a trailing new line then the last entry will be an empty
+        // string which we don't care about
+        if (trailingNewline) {
+            lines.pop();
+        }
+        if (lines.length === 1 && !trailingNewline) {
+            this.buffer.push(lines[0]);
+            return [];
+        }
+        if (this.buffer.length > 0) {
+            lines = [this.buffer.join('') + lines[0], ...lines.slice(1)];
+            this.buffer = [];
+        }
+        if (!trailingNewline) {
+            this.buffer = [lines.pop() || ''];
+        }
+        return lines;
+    }
+    decodeText(bytes) {
+        if (bytes == null)
+            return '';
+        if (typeof bytes === 'string')
+            return bytes;
+        // Node:
+        if (typeof Buffer !== 'undefined') {
+            if (bytes instanceof Buffer) {
+                return bytes.toString();
+            }
+            if (bytes instanceof Uint8Array) {
+                return Buffer.from(bytes).toString();
+            }
+            throw new error_AnthropicError(`Unexpected: received non-Uint8Array (${bytes.constructor.name}) stream chunk in an environment with a global "Buffer" defined, which this library assumes to be Node. Please report this error.`);
+        }
+        // Browser
+        if (typeof TextDecoder !== 'undefined') {
+            if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer) {
+                this.textDecoder ?? (this.textDecoder = new TextDecoder('utf8'));
+                return this.textDecoder.decode(bytes);
+            }
+            throw new error_AnthropicError(`Unexpected: received non-Uint8Array/ArrayBuffer (${bytes.constructor.name}) in a web platform. Please report this error.`);
+        }
+        throw new error_AnthropicError(`Unexpected: neither Buffer nor TextDecoder are available as globals. Please report this error.`);
+    }
+    flush() {
+        if (!this.buffer.length && !this.trailingCR) {
+            return [];
+        }
+        const lines = [this.buffer.join('')];
+        this.buffer = [];
+        this.trailingCR = false;
+        return lines;
+    }
+}
+// prettier-ignore
+decoders_line_LineDecoder.NEWLINE_CHARS = new Set(['\n', '\r']);
+decoders_line_LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r]/g;
+//# sourceMappingURL=line.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/streaming.mjs
+
 
 
 
@@ -48484,7 +48577,7 @@ class streaming_Stream {
     static fromReadableStream(readableStream, controller) {
         let consumed = false;
         async function* iterLines() {
-            const lineDecoder = new streaming_LineDecoder();
+            const lineDecoder = new decoders_line_LineDecoder();
             const iter = streaming_readableStreamAsyncIterable(readableStream);
             for await (const chunk of iter) {
                 for (const line of lineDecoder.decode(chunk)) {
@@ -48589,7 +48682,7 @@ async function* streaming_iterSSEMessages(response, controller) {
         throw new error_AnthropicError(`Attempted to iterate over a response with no body`);
     }
     const sseDecoder = new streaming_SSEDecoder();
-    const lineDecoder = new streaming_LineDecoder();
+    const lineDecoder = new decoders_line_LineDecoder();
     const iter = streaming_readableStreamAsyncIterable(response.body);
     for await (const sseChunk of streaming_iterSSEChunks(iter)) {
         for (const line of lineDecoder.decode(sseChunk)) {
@@ -48698,91 +48791,9 @@ class streaming_SSEDecoder {
         return null;
     }
 }
-/**
- * A re-implementation of httpx's `LineDecoder` in Python that handles incrementally
- * reading lines from text.
- *
- * https://github.com/encode/httpx/blob/920333ea98118e9cf617f246905d7b202510941c/httpx/_decoders.py#L258
- */
-class streaming_LineDecoder {
-    constructor() {
-        this.buffer = [];
-        this.trailingCR = false;
-    }
-    decode(chunk) {
-        let text = this.decodeText(chunk);
-        if (this.trailingCR) {
-            text = '\r' + text;
-            this.trailingCR = false;
-        }
-        if (text.endsWith('\r')) {
-            this.trailingCR = true;
-            text = text.slice(0, -1);
-        }
-        if (!text) {
-            return [];
-        }
-        const trailingNewline = streaming_LineDecoder.NEWLINE_CHARS.has(text[text.length - 1] || '');
-        let lines = text.split(streaming_LineDecoder.NEWLINE_REGEXP);
-        // if there is a trailing new line then the last entry will be an empty
-        // string which we don't care about
-        if (trailingNewline) {
-            lines.pop();
-        }
-        if (lines.length === 1 && !trailingNewline) {
-            this.buffer.push(lines[0]);
-            return [];
-        }
-        if (this.buffer.length > 0) {
-            lines = [this.buffer.join('') + lines[0], ...lines.slice(1)];
-            this.buffer = [];
-        }
-        if (!trailingNewline) {
-            this.buffer = [lines.pop() || ''];
-        }
-        return lines;
-    }
-    decodeText(bytes) {
-        if (bytes == null)
-            return '';
-        if (typeof bytes === 'string')
-            return bytes;
-        // Node:
-        if (typeof Buffer !== 'undefined') {
-            if (bytes instanceof Buffer) {
-                return bytes.toString();
-            }
-            if (bytes instanceof Uint8Array) {
-                return Buffer.from(bytes).toString();
-            }
-            throw new error_AnthropicError(`Unexpected: received non-Uint8Array (${bytes.constructor.name}) stream chunk in an environment with a global "Buffer" defined, which this library assumes to be Node. Please report this error.`);
-        }
-        // Browser
-        if (typeof TextDecoder !== 'undefined') {
-            if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer) {
-                this.textDecoder ?? (this.textDecoder = new TextDecoder('utf8'));
-                return this.textDecoder.decode(bytes);
-            }
-            throw new error_AnthropicError(`Unexpected: received non-Uint8Array/ArrayBuffer (${bytes.constructor.name}) in a web platform. Please report this error.`);
-        }
-        throw new error_AnthropicError(`Unexpected: neither Buffer nor TextDecoder are available as globals. Please report this error.`);
-    }
-    flush() {
-        if (!this.buffer.length && !this.trailingCR) {
-            return [];
-        }
-        const lines = [this.buffer.join('')];
-        this.buffer = [];
-        this.trailingCR = false;
-        return lines;
-    }
-}
-// prettier-ignore
-streaming_LineDecoder.NEWLINE_CHARS = new Set(['\n', '\r']);
-streaming_LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r]/g;
 /** This is an internal helper function that's just used for testing */
 function streaming_decodeChunks(chunks) {
-    const decoder = new streaming_LineDecoder();
+    const decoder = new LineDecoder();
     const lines = [];
     for (const chunk of chunks) {
         lines.push(...decoder.decode(chunk));
@@ -49055,7 +49066,7 @@ class core_APIPromise extends Promise {
         this.parseResponse = parseResponse;
     }
     _thenUnwrap(transform) {
-        return new core_APIPromise(this.responsePromise, async (props) => transform(await this.parseResponse(props)));
+        return new core_APIPromise(this.responsePromise, async (props) => transform(await this.parseResponse(props), props));
     }
     /**
      * Gets the raw `Response` instance instead of parsing the response
@@ -49237,9 +49248,11 @@ class core_APIClient {
         if (uploads_isMultipartBody(options.body) && registry_kind !== 'node') {
             delete reqHeaders['content-type'];
         }
-        // Don't set the retry count header if it was already set or removed by the caller. We check `headers`,
-        // which can contain nulls, instead of `reqHeaders` to account for the removal case.
-        if (core_getHeader(headers, 'x-stainless-retry-count') === undefined) {
+        // Don't set the retry count header if it was already set or removed through default headers or by the
+        // caller. We check `defaultHeaders` and `headers`, which can contain nulls, instead of `reqHeaders` to
+        // account for the removal case.
+        if (core_getHeader(defaultHeaders, 'x-stainless-retry-count') === undefined &&
+            core_getHeader(headers, 'x-stainless-retry-count') === undefined) {
             reqHeaders['x-stainless-retry-count'] = String(retryCount);
         }
         this.validateHeaders(reqHeaders, headers);
@@ -50000,6 +50013,57 @@ class error_RateLimitError extends error_APIError {
 class error_InternalServerError extends error_APIError {
 }
 //# sourceMappingURL=error.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/pagination.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+class pagination_Page extends core_AbstractPage {
+    constructor(client, response, body, options) {
+        super(client, response, body, options);
+        this.data = body.data || [];
+        this.has_more = body.has_more || false;
+        this.first_id = body.first_id || null;
+        this.last_id = body.last_id || null;
+    }
+    getPaginatedItems() {
+        return this.data ?? [];
+    }
+    // @deprecated Please use `nextPageInfo()` instead
+    nextPageParams() {
+        const info = this.nextPageInfo();
+        if (!info)
+            return null;
+        if ('params' in info)
+            return info.params;
+        const params = Object.fromEntries(info.url.searchParams);
+        if (!Object.keys(params).length)
+            return null;
+        return params;
+    }
+    nextPageInfo() {
+        if (this.options.query?.['before_id']) {
+            // in reverse
+            const firstId = this.first_id;
+            if (!firstId) {
+                return null;
+            }
+            return {
+                params: {
+                    before_id: firstId,
+                },
+            };
+        }
+        const cursor = this.last_id;
+        if (!cursor) {
+            return null;
+        }
+        return {
+            params: {
+                after_id: cursor,
+            },
+        };
+    }
+}
+//# sourceMappingURL=pagination.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resource.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 class resource_APIResource {
@@ -50738,6 +50802,160 @@ const DEPRECATED_MODELS = {
 (function (Messages) {
 })(messages_Messages || (messages_Messages = {}));
 //# sourceMappingURL=messages.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs
+
+
+
+class JSONLDecoder {
+    constructor(iterator, controller) {
+        this.iterator = iterator;
+        this.controller = controller;
+    }
+    async *decoder() {
+        const lineDecoder = new decoders_line_LineDecoder();
+        for await (const chunk of this.iterator) {
+            for (const line of lineDecoder.decode(chunk)) {
+                yield JSON.parse(line);
+            }
+        }
+        for (const line of lineDecoder.flush()) {
+            yield JSON.parse(line);
+        }
+    }
+    [Symbol.asyncIterator]() {
+        return this.decoder();
+    }
+    static fromResponse(response, controller) {
+        if (!response.body) {
+            controller.abort();
+            throw new error_AnthropicError(`Attempted to iterate over a response with no body`);
+        }
+        return new JSONLDecoder(streaming_readableStreamAsyncIterable(response.body), controller);
+    }
+}
+//# sourceMappingURL=jsonl.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+
+
+
+
+
+class batches_Batches extends resource_APIResource {
+    /**
+     * Send a batch of Message creation requests.
+     *
+     * The Message Batches API can be used to process multiple Messages API requests at
+     * once. Once a Message Batch is created, it begins processing immediately. Batches
+     * can take up to 24 hours to complete.
+     */
+    create(params, options) {
+        const { betas, ...body } = params;
+        return this._client.post('/v1/messages/batches?beta=true', {
+            body,
+            ...options,
+            headers: {
+                'anthropic-beta': [...(betas ?? []), 'message-batches-2024-09-24'].toString(),
+                ...options?.headers,
+            },
+        });
+    }
+    retrieve(messageBatchId, params = {}, options) {
+        if (core_isRequestOptions(params)) {
+            return this.retrieve(messageBatchId, {}, params);
+        }
+        const { betas } = params;
+        return this._client.get(`/v1/messages/batches/${messageBatchId}?beta=true`, {
+            ...options,
+            headers: {
+                'anthropic-beta': [...(betas ?? []), 'message-batches-2024-09-24'].toString(),
+                ...options?.headers,
+            },
+        });
+    }
+    list(params = {}, options) {
+        if (core_isRequestOptions(params)) {
+            return this.list({}, params);
+        }
+        const { betas, ...query } = params;
+        return this._client.getAPIList('/v1/messages/batches?beta=true', BetaMessageBatchesPage, {
+            query,
+            ...options,
+            headers: {
+                'anthropic-beta': [...(betas ?? []), 'message-batches-2024-09-24'].toString(),
+                ...options?.headers,
+            },
+        });
+    }
+    cancel(messageBatchId, params = {}, options) {
+        if (core_isRequestOptions(params)) {
+            return this.cancel(messageBatchId, {}, params);
+        }
+        const { betas } = params;
+        return this._client.post(`/v1/messages/batches/${messageBatchId}/cancel?beta=true`, {
+            ...options,
+            headers: {
+                'anthropic-beta': [...(betas ?? []), 'message-batches-2024-09-24'].toString(),
+                ...options?.headers,
+            },
+        });
+    }
+    async results(messageBatchId, params = {}, options) {
+        if (core_isRequestOptions(params)) {
+            return this.results(messageBatchId, {}, params);
+        }
+        const batch = await this.retrieve(messageBatchId);
+        if (!batch.results_url) {
+            throw new error_AnthropicError(`No batch \`results_url\`; Has it finished processing? ${batch.processing_status} - ${batch.id}`);
+        }
+        const { betas } = params;
+        return this._client
+            .get(batch.results_url, {
+            ...options,
+            headers: {
+                'anthropic-beta': [...(betas ?? []), 'message-batches-2024-09-24'].toString(),
+                ...options?.headers,
+            },
+            __binaryResponse: true,
+        })
+            ._thenUnwrap((_, props) => JSONLDecoder.fromResponse(props.response, props.controller));
+    }
+}
+class BetaMessageBatchesPage extends pagination_Page {
+}
+(function (Batches) {
+    Batches.BetaMessageBatchesPage = BetaMessageBatchesPage;
+})(batches_Batches || (batches_Batches = {}));
+//# sourceMappingURL=batches.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+
+class messages_messages_Messages extends resource_APIResource {
+    constructor() {
+        super(...arguments);
+        this.batches = new batches_Batches(this._client);
+    }
+    create(params, options) {
+        const { betas, ...body } = params;
+        return this._client.post('/v1/messages?beta=true', {
+            body,
+            timeout: this._client._options.timeout ?? 600000,
+            ...options,
+            headers: {
+                ...(betas?.toString() != null ? { 'anthropic-beta': betas?.toString() } : undefined),
+                ...options?.headers,
+            },
+            stream: params.stream ?? false,
+        });
+    }
+}
+(function (Messages) {
+    Messages.Batches = batches_Batches;
+    Messages.BetaMessageBatchesPage = BetaMessageBatchesPage;
+})(messages_messages_Messages || (messages_messages_Messages = {}));
+//# sourceMappingURL=messages.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/lib/PromptCachingBetaMessageStream.mjs
 var PromptCachingBetaMessageStream_classPrivateFieldSet = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
@@ -51199,13 +51417,17 @@ class PromptCachingBetaMessageStream {
 
 
 class prompt_caching_messages_Messages extends resource_APIResource {
-    create(body, options) {
+    create(params, options) {
+        const { betas, ...body } = params;
         return this._client.post('/v1/messages?beta=prompt_caching', {
             body,
             timeout: this._client._options.timeout ?? 600000,
             ...options,
-            headers: { 'anthropic-beta': 'prompt-caching-2024-07-31', ...options?.headers },
-            stream: body.stream ?? false,
+            headers: {
+                'anthropic-beta': [...(betas ?? []), 'prompt-caching-2024-07-31'].toString(),
+                ...options?.headers,
+            },
+            stream: params.stream ?? false,
         });
     }
     /**
@@ -51236,19 +51458,23 @@ class PromptCaching extends resource_APIResource {
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 
+
 class beta_Beta extends resource_APIResource {
     constructor() {
         super(...arguments);
+        this.messages = new messages_messages_Messages(this._client);
         this.promptCaching = new PromptCaching(this._client);
     }
 }
 (function (Beta) {
+    Beta.Messages = messages_messages_Messages;
     Beta.PromptCaching = PromptCaching;
 })(beta_Beta || (beta_Beta = {}));
 //# sourceMappingURL=beta.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/index.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 var sdk_a;
+
 
 
 
@@ -51372,6 +51598,7 @@ const { /* AnthropicError */ "pJ": sdk_AnthropicError, /* APIError */ "LG": sdk_
 var sdk_toFile = uploads_toFile;
 var sdk_fileFromPath = registry_fileFromPath;
 (function (Anthropic) {
+    Anthropic.Page = pagination_Page;
     Anthropic.Completions = resources_completions_Completions;
     Anthropic.Messages = messages_Messages;
     Anthropic.Beta = beta_Beta;
@@ -57141,7 +57368,7 @@ function array_parseArrayDef(def, refs) {
     const res = {
         type: "array",
     };
-    if (def.type?._def?.typeName !== ZodFirstPartyTypeKind.ZodAny) {
+    if (def.type?._def && def.type?._def?.typeName !== ZodFirstPartyTypeKind.ZodAny) {
         res.items = parseDef_parseDef(def.type._def, {
             ...refs,
             currentPath: [...refs.currentPath, "items"],
@@ -57710,6 +57937,7 @@ const string_processRegExp = (regexOrFunction, refs) => {
 
 
 
+
 function record_parseRecordDef(def, refs) {
     if (refs.target === "openApi3" &&
         def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodEnum) {
@@ -57738,7 +57966,7 @@ function record_parseRecordDef(def, refs) {
     }
     if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodString &&
         def.keyType._def.checks?.length) {
-        const keyType = Object.entries(string_parseStringDef(def.keyType._def, refs)).reduce((acc, [key, value]) => (key === "type" ? acc : { ...acc, [key]: value }), {});
+        const { type, ...keyType } = string_parseStringDef(def.keyType._def, refs);
         return {
             ...schema,
             propertyNames: keyType,
@@ -57750,6 +57978,15 @@ function record_parseRecordDef(def, refs) {
             propertyNames: {
                 enum: def.keyType._def.values,
             },
+        };
+    }
+    else if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodBranded &&
+        def.keyType._def.type._def.typeName === ZodFirstPartyTypeKind.ZodString &&
+        def.keyType._def.type._def.checks?.length) {
+        const { type, ...keyType } = branded_parseBrandedDef(def.keyType._def, refs);
+        return {
+            ...schema,
+            propertyNames: keyType,
         };
     }
     return schema;
