@@ -2,6 +2,8 @@
 
 A code reviewer github action powered by AI, ready to be used in your workflow.
 
+[![https://www.producthunt.com/posts/better-code-reviewer-powered-by-ai?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-better&#0045;code&#0045;reviewer&#0045;powered&#0045;by&#0045;ai](https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=557082&theme=dark)](https://www.producthunt.com/posts/better-code-reviewer-powered-by-ai?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-better&#0045;code&#0045;reviewer&#0045;powered&#0045;by&#0045;ai)
+
 ## Why use it?
 
 - Standardize your code review process
