@@ -41787,17 +41787,6 @@ module.exports = /*#__PURE__*/JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45
 /******/ 	__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
 /******/ })();
 /******/ 
-/******/ /* webpack/runtime/make namespace object */
-/******/ (() => {
-/******/ 	// define __esModule on exports
-/******/ 	__nccwpck_require__.r = (exports) => {
-/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
-/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-/******/ 		}
-/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
-/******/ 	};
-/******/ })();
-/******/ 
 /******/ /* webpack/runtime/compat */
 /******/ 
 /******/ if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
@@ -41868,54 +41857,518 @@ module.exports = /*#__PURE__*/JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45
 /************************************************************************/
 var __webpack_exports__ = {};
 
-// NAMESPACE OBJECT: ./node_modules/openai/error.mjs
-var error_namespaceObject = {};
-__nccwpck_require__.r(error_namespaceObject);
-__nccwpck_require__.d(error_namespaceObject, {
-  xX: () => (APIConnectionError),
-  qA: () => (APIConnectionTimeoutError),
-  LG: () => (APIError),
-  cH: () => (APIUserAbortError),
-  v3: () => (AuthenticationError),
-  v7: () => (BadRequestError),
-  fK: () => (ConflictError),
-  pf: () => (ContentFilterFinishReasonError),
-  PO: () => (InternalServerError),
-  k5: () => (LengthFinishReasonError),
-  m_: () => (NotFoundError),
-  vc: () => (error_OpenAIError),
-  Ll: () => (PermissionDeniedError),
-  OE: () => (RateLimitError),
-  Is: () => (UnprocessableEntityError)
-});
-
-// NAMESPACE OBJECT: ./node_modules/@anthropic-ai/sdk/error.mjs
-var sdk_error_namespaceObject = {};
-__nccwpck_require__.r(sdk_error_namespaceObject);
-__nccwpck_require__.d(sdk_error_namespaceObject, {
-  xX: () => (error_APIConnectionError),
-  qA: () => (error_APIConnectionTimeoutError),
-  LG: () => (error_APIError),
-  cH: () => (error_APIUserAbortError),
-  pJ: () => (error_AnthropicError),
-  v3: () => (error_AuthenticationError),
-  v7: () => (error_BadRequestError),
-  fK: () => (error_ConflictError),
-  PO: () => (error_InternalServerError),
-  m_: () => (error_NotFoundError),
-  Ll: () => (error_PermissionDeniedError),
-  OE: () => (error_RateLimitError),
-  Is: () => (error_UnprocessableEntityError)
-});
-
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(7484);
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
 var github = __nccwpck_require__(3228);
 // EXTERNAL MODULE: ./node_modules/parse-diff/index.js
 var parse_diff = __nccwpck_require__(2673);
+;// CONCATENATED MODULE: ./node_modules/openai/internal/qs/formats.mjs
+const default_format = 'RFC3986';
+const formatters = {
+    RFC1738: (v) => String(v).replace(/%20/g, '+'),
+    RFC3986: (v) => String(v),
+};
+const RFC1738 = 'RFC1738';
+const RFC3986 = 'RFC3986';
+//# sourceMappingURL=formats.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/internal/qs/utils.mjs
+
+const has = Object.prototype.hasOwnProperty;
+const is_array = Array.isArray;
+const hex_table = (() => {
+    const array = [];
+    for (let i = 0; i < 256; ++i) {
+        array.push('%' + ((i < 16 ? '0' : '') + i.toString(16)).toUpperCase());
+    }
+    return array;
+})();
+function compact_queue(queue) {
+    while (queue.length > 1) {
+        const item = queue.pop();
+        if (!item)
+            continue;
+        const obj = item.obj[item.prop];
+        if (is_array(obj)) {
+            const compacted = [];
+            for (let j = 0; j < obj.length; ++j) {
+                if (typeof obj[j] !== 'undefined') {
+                    compacted.push(obj[j]);
+                }
+            }
+            // @ts-ignore
+            item.obj[item.prop] = compacted;
+        }
+    }
+}
+function array_to_object(source, options) {
+    const obj = options && options.plainObjects ? Object.create(null) : {};
+    for (let i = 0; i < source.length; ++i) {
+        if (typeof source[i] !== 'undefined') {
+            obj[i] = source[i];
+        }
+    }
+    return obj;
+}
+function merge(target, source, options = {}) {
+    if (!source) {
+        return target;
+    }
+    if (typeof source !== 'object') {
+        if (is_array(target)) {
+            target.push(source);
+        }
+        else if (target && typeof target === 'object') {
+            if ((options && (options.plainObjects || options.allowPrototypes)) ||
+                !has.call(Object.prototype, source)) {
+                target[source] = true;
+            }
+        }
+        else {
+            return [target, source];
+        }
+        return target;
+    }
+    if (!target || typeof target !== 'object') {
+        return [target].concat(source);
+    }
+    let mergeTarget = target;
+    if (is_array(target) && !is_array(source)) {
+        // @ts-ignore
+        mergeTarget = array_to_object(target, options);
+    }
+    if (is_array(target) && is_array(source)) {
+        source.forEach(function (item, i) {
+            if (has.call(target, i)) {
+                const targetItem = target[i];
+                if (targetItem && typeof targetItem === 'object' && item && typeof item === 'object') {
+                    target[i] = merge(targetItem, item, options);
+                }
+                else {
+                    target.push(item);
+                }
+            }
+            else {
+                target[i] = item;
+            }
+        });
+        return target;
+    }
+    return Object.keys(source).reduce(function (acc, key) {
+        const value = source[key];
+        if (has.call(acc, key)) {
+            acc[key] = merge(acc[key], value, options);
+        }
+        else {
+            acc[key] = value;
+        }
+        return acc;
+    }, mergeTarget);
+}
+function assign_single_source(target, source) {
+    return Object.keys(source).reduce(function (acc, key) {
+        acc[key] = source[key];
+        return acc;
+    }, target);
+}
+function decode(str, _, charset) {
+    const strWithoutPlus = str.replace(/\+/g, ' ');
+    if (charset === 'iso-8859-1') {
+        // unescape never throws, no try...catch needed:
+        return strWithoutPlus.replace(/%[0-9a-f]{2}/gi, unescape);
+    }
+    // utf-8
+    try {
+        return decodeURIComponent(strWithoutPlus);
+    }
+    catch (e) {
+        return strWithoutPlus;
+    }
+}
+const limit = 1024;
+const encode = (str, _defaultEncoder, charset, _kind, format) => {
+    // This code was originally written by Brian White for the io.js core querystring library.
+    // It has been adapted here for stricter adherence to RFC 3986
+    if (str.length === 0) {
+        return str;
+    }
+    let string = str;
+    if (typeof str === 'symbol') {
+        string = Symbol.prototype.toString.call(str);
+    }
+    else if (typeof str !== 'string') {
+        string = String(str);
+    }
+    if (charset === 'iso-8859-1') {
+        return escape(string).replace(/%u[0-9a-f]{4}/gi, function ($0) {
+            return '%26%23' + parseInt($0.slice(2), 16) + '%3B';
+        });
+    }
+    let out = '';
+    for (let j = 0; j < string.length; j += limit) {
+        const segment = string.length >= limit ? string.slice(j, j + limit) : string;
+        const arr = [];
+        for (let i = 0; i < segment.length; ++i) {
+            let c = segment.charCodeAt(i);
+            if (c === 0x2d || // -
+                c === 0x2e || // .
+                c === 0x5f || // _
+                c === 0x7e || // ~
+                (c >= 0x30 && c <= 0x39) || // 0-9
+                (c >= 0x41 && c <= 0x5a) || // a-z
+                (c >= 0x61 && c <= 0x7a) || // A-Z
+                (format === RFC1738 && (c === 0x28 || c === 0x29)) // ( )
+            ) {
+                arr[arr.length] = segment.charAt(i);
+                continue;
+            }
+            if (c < 0x80) {
+                arr[arr.length] = hex_table[c];
+                continue;
+            }
+            if (c < 0x800) {
+                arr[arr.length] = hex_table[0xc0 | (c >> 6)] + hex_table[0x80 | (c & 0x3f)];
+                continue;
+            }
+            if (c < 0xd800 || c >= 0xe000) {
+                arr[arr.length] =
+                    hex_table[0xe0 | (c >> 12)] + hex_table[0x80 | ((c >> 6) & 0x3f)] + hex_table[0x80 | (c & 0x3f)];
+                continue;
+            }
+            i += 1;
+            c = 0x10000 + (((c & 0x3ff) << 10) | (segment.charCodeAt(i) & 0x3ff));
+            arr[arr.length] =
+                hex_table[0xf0 | (c >> 18)] +
+                    hex_table[0x80 | ((c >> 12) & 0x3f)] +
+                    hex_table[0x80 | ((c >> 6) & 0x3f)] +
+                    hex_table[0x80 | (c & 0x3f)];
+        }
+        out += arr.join('');
+    }
+    return out;
+};
+function compact(value) {
+    const queue = [{ obj: { o: value }, prop: 'o' }];
+    const refs = [];
+    for (let i = 0; i < queue.length; ++i) {
+        const item = queue[i];
+        // @ts-ignore
+        const obj = item.obj[item.prop];
+        const keys = Object.keys(obj);
+        for (let j = 0; j < keys.length; ++j) {
+            const key = keys[j];
+            const val = obj[key];
+            if (typeof val === 'object' && val !== null && refs.indexOf(val) === -1) {
+                queue.push({ obj: obj, prop: key });
+                refs.push(val);
+            }
+        }
+    }
+    compact_queue(queue);
+    return value;
+}
+function is_regexp(obj) {
+    return Object.prototype.toString.call(obj) === '[object RegExp]';
+}
+function is_buffer(obj) {
+    if (!obj || typeof obj !== 'object') {
+        return false;
+    }
+    return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
+}
+function combine(a, b) {
+    return [].concat(a, b);
+}
+function maybe_map(val, fn) {
+    if (is_array(val)) {
+        const mapped = [];
+        for (let i = 0; i < val.length; i += 1) {
+            mapped.push(fn(val[i]));
+        }
+        return mapped;
+    }
+    return fn(val);
+}
+//# sourceMappingURL=utils.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/internal/qs/stringify.mjs
+
+
+const stringify_has = Object.prototype.hasOwnProperty;
+const array_prefix_generators = {
+    brackets(prefix) {
+        return String(prefix) + '[]';
+    },
+    comma: 'comma',
+    indices(prefix, key) {
+        return String(prefix) + '[' + key + ']';
+    },
+    repeat(prefix) {
+        return String(prefix);
+    },
+};
+const stringify_is_array = Array.isArray;
+const push = Array.prototype.push;
+const push_to_array = function (arr, value_or_array) {
+    push.apply(arr, stringify_is_array(value_or_array) ? value_or_array : [value_or_array]);
+};
+const to_ISO = Date.prototype.toISOString;
+const defaults = {
+    addQueryPrefix: false,
+    allowDots: false,
+    allowEmptyArrays: false,
+    arrayFormat: 'indices',
+    charset: 'utf-8',
+    charsetSentinel: false,
+    delimiter: '&',
+    encode: true,
+    encodeDotInKeys: false,
+    encoder: encode,
+    encodeValuesOnly: false,
+    format: default_format,
+    formatter: formatters[default_format],
+    /** @deprecated */
+    indices: false,
+    serializeDate(date) {
+        return to_ISO.call(date);
+    },
+    skipNulls: false,
+    strictNullHandling: false,
+};
+function is_non_nullish_primitive(v) {
+    return (typeof v === 'string' ||
+        typeof v === 'number' ||
+        typeof v === 'boolean' ||
+        typeof v === 'symbol' ||
+        typeof v === 'bigint');
+}
+const sentinel = {};
+function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
+    let obj = object;
+    let tmp_sc = sideChannel;
+    let step = 0;
+    let find_flag = false;
+    while ((tmp_sc = tmp_sc.get(sentinel)) !== void undefined && !find_flag) {
+        // Where object last appeared in the ref tree
+        const pos = tmp_sc.get(object);
+        step += 1;
+        if (typeof pos !== 'undefined') {
+            if (pos === step) {
+                throw new RangeError('Cyclic object value');
+            }
+            else {
+                find_flag = true; // Break while
+            }
+        }
+        if (typeof tmp_sc.get(sentinel) === 'undefined') {
+            step = 0;
+        }
+    }
+    if (typeof filter === 'function') {
+        obj = filter(prefix, obj);
+    }
+    else if (obj instanceof Date) {
+        obj = serializeDate?.(obj);
+    }
+    else if (generateArrayPrefix === 'comma' && stringify_is_array(obj)) {
+        obj = maybe_map(obj, function (value) {
+            if (value instanceof Date) {
+                return serializeDate?.(value);
+            }
+            return value;
+        });
+    }
+    if (obj === null) {
+        if (strictNullHandling) {
+            return encoder && !encodeValuesOnly ?
+                // @ts-expect-error
+                encoder(prefix, defaults.encoder, charset, 'key', format)
+                : prefix;
+        }
+        obj = '';
+    }
+    if (is_non_nullish_primitive(obj) || is_buffer(obj)) {
+        if (encoder) {
+            const key_value = encodeValuesOnly ? prefix
+                // @ts-expect-error
+                : encoder(prefix, defaults.encoder, charset, 'key', format);
+            return [
+                formatter?.(key_value) +
+                    '=' +
+                    // @ts-expect-error
+                    formatter?.(encoder(obj, defaults.encoder, charset, 'value', format)),
+            ];
+        }
+        return [formatter?.(prefix) + '=' + formatter?.(String(obj))];
+    }
+    const values = [];
+    if (typeof obj === 'undefined') {
+        return values;
+    }
+    let obj_keys;
+    if (generateArrayPrefix === 'comma' && stringify_is_array(obj)) {
+        // we need to join elements in
+        if (encodeValuesOnly && encoder) {
+            // @ts-expect-error values only
+            obj = maybe_map(obj, encoder);
+        }
+        obj_keys = [{ value: obj.length > 0 ? obj.join(',') || null : void undefined }];
+    }
+    else if (stringify_is_array(filter)) {
+        obj_keys = filter;
+    }
+    else {
+        const keys = Object.keys(obj);
+        obj_keys = sort ? keys.sort(sort) : keys;
+    }
+    const encoded_prefix = encodeDotInKeys ? String(prefix).replace(/\./g, '%2E') : String(prefix);
+    const adjusted_prefix = commaRoundTrip && stringify_is_array(obj) && obj.length === 1 ? encoded_prefix + '[]' : encoded_prefix;
+    if (allowEmptyArrays && stringify_is_array(obj) && obj.length === 0) {
+        return adjusted_prefix + '[]';
+    }
+    for (let j = 0; j < obj_keys.length; ++j) {
+        const key = obj_keys[j];
+        const value = 
+        // @ts-ignore
+        typeof key === 'object' && typeof key.value !== 'undefined' ? key.value : obj[key];
+        if (skipNulls && value === null) {
+            continue;
+        }
+        // @ts-ignore
+        const encoded_key = allowDots && encodeDotInKeys ? key.replace(/\./g, '%2E') : key;
+        const key_prefix = stringify_is_array(obj) ?
+            typeof generateArrayPrefix === 'function' ?
+                generateArrayPrefix(adjusted_prefix, encoded_key)
+                : adjusted_prefix
+            : adjusted_prefix + (allowDots ? '.' + encoded_key : '[' + encoded_key + ']');
+        sideChannel.set(object, step);
+        const valueSideChannel = new WeakMap();
+        valueSideChannel.set(sentinel, sideChannel);
+        push_to_array(values, inner_stringify(value, key_prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, 
+        // @ts-ignore
+        generateArrayPrefix === 'comma' && encodeValuesOnly && stringify_is_array(obj) ? null : encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, valueSideChannel));
+    }
+    return values;
+}
+function normalize_stringify_options(opts = defaults) {
+    if (typeof opts.allowEmptyArrays !== 'undefined' && typeof opts.allowEmptyArrays !== 'boolean') {
+        throw new TypeError('`allowEmptyArrays` option can only be `true` or `false`, when provided');
+    }
+    if (typeof opts.encodeDotInKeys !== 'undefined' && typeof opts.encodeDotInKeys !== 'boolean') {
+        throw new TypeError('`encodeDotInKeys` option can only be `true` or `false`, when provided');
+    }
+    if (opts.encoder !== null && typeof opts.encoder !== 'undefined' && typeof opts.encoder !== 'function') {
+        throw new TypeError('Encoder has to be a function.');
+    }
+    const charset = opts.charset || defaults.charset;
+    if (typeof opts.charset !== 'undefined' && opts.charset !== 'utf-8' && opts.charset !== 'iso-8859-1') {
+        throw new TypeError('The charset option must be either utf-8, iso-8859-1, or undefined');
+    }
+    let format = default_format;
+    if (typeof opts.format !== 'undefined') {
+        if (!stringify_has.call(formatters, opts.format)) {
+            throw new TypeError('Unknown format option provided.');
+        }
+        format = opts.format;
+    }
+    const formatter = formatters[format];
+    let filter = defaults.filter;
+    if (typeof opts.filter === 'function' || stringify_is_array(opts.filter)) {
+        filter = opts.filter;
+    }
+    let arrayFormat;
+    if (opts.arrayFormat && opts.arrayFormat in array_prefix_generators) {
+        arrayFormat = opts.arrayFormat;
+    }
+    else if ('indices' in opts) {
+        arrayFormat = opts.indices ? 'indices' : 'repeat';
+    }
+    else {
+        arrayFormat = defaults.arrayFormat;
+    }
+    if ('commaRoundTrip' in opts && typeof opts.commaRoundTrip !== 'boolean') {
+        throw new TypeError('`commaRoundTrip` must be a boolean, or absent');
+    }
+    const allowDots = typeof opts.allowDots === 'undefined' ?
+        !!opts.encodeDotInKeys === true ?
+            true
+            : defaults.allowDots
+        : !!opts.allowDots;
+    return {
+        addQueryPrefix: typeof opts.addQueryPrefix === 'boolean' ? opts.addQueryPrefix : defaults.addQueryPrefix,
+        // @ts-ignore
+        allowDots: allowDots,
+        allowEmptyArrays: typeof opts.allowEmptyArrays === 'boolean' ? !!opts.allowEmptyArrays : defaults.allowEmptyArrays,
+        arrayFormat: arrayFormat,
+        charset: charset,
+        charsetSentinel: typeof opts.charsetSentinel === 'boolean' ? opts.charsetSentinel : defaults.charsetSentinel,
+        commaRoundTrip: !!opts.commaRoundTrip,
+        delimiter: typeof opts.delimiter === 'undefined' ? defaults.delimiter : opts.delimiter,
+        encode: typeof opts.encode === 'boolean' ? opts.encode : defaults.encode,
+        encodeDotInKeys: typeof opts.encodeDotInKeys === 'boolean' ? opts.encodeDotInKeys : defaults.encodeDotInKeys,
+        encoder: typeof opts.encoder === 'function' ? opts.encoder : defaults.encoder,
+        encodeValuesOnly: typeof opts.encodeValuesOnly === 'boolean' ? opts.encodeValuesOnly : defaults.encodeValuesOnly,
+        filter: filter,
+        format: format,
+        formatter: formatter,
+        serializeDate: typeof opts.serializeDate === 'function' ? opts.serializeDate : defaults.serializeDate,
+        skipNulls: typeof opts.skipNulls === 'boolean' ? opts.skipNulls : defaults.skipNulls,
+        // @ts-ignore
+        sort: typeof opts.sort === 'function' ? opts.sort : null,
+        strictNullHandling: typeof opts.strictNullHandling === 'boolean' ? opts.strictNullHandling : defaults.strictNullHandling,
+    };
+}
+function stringify(object, opts = {}) {
+    let obj = object;
+    const options = normalize_stringify_options(opts);
+    let obj_keys;
+    let filter;
+    if (typeof options.filter === 'function') {
+        filter = options.filter;
+        obj = filter('', obj);
+    }
+    else if (stringify_is_array(options.filter)) {
+        filter = options.filter;
+        obj_keys = filter;
+    }
+    const keys = [];
+    if (typeof obj !== 'object' || obj === null) {
+        return '';
+    }
+    const generateArrayPrefix = array_prefix_generators[options.arrayFormat];
+    const commaRoundTrip = generateArrayPrefix === 'comma' && options.commaRoundTrip;
+    if (!obj_keys) {
+        obj_keys = Object.keys(obj);
+    }
+    if (options.sort) {
+        obj_keys.sort(options.sort);
+    }
+    const sideChannel = new WeakMap();
+    for (let i = 0; i < obj_keys.length; ++i) {
+        const key = obj_keys[i];
+        if (options.skipNulls && obj[key] === null) {
+            continue;
+        }
+        push_to_array(keys, inner_stringify(obj[key], key, 
+        // @ts-expect-error
+        generateArrayPrefix, commaRoundTrip, options.allowEmptyArrays, options.strictNullHandling, options.skipNulls, options.encodeDotInKeys, options.encode ? options.encoder : null, options.filter, options.sort, options.allowDots, options.serializeDate, options.format, options.formatter, options.encodeValuesOnly, options.charset, sideChannel));
+    }
+    const joined = keys.join(options.delimiter);
+    let prefix = options.addQueryPrefix === true ? '?' : '';
+    if (options.charsetSentinel) {
+        if (options.charset === 'iso-8859-1') {
+            // encodeURIComponent('&#10003;'), the "numeric entity" representation of a checkmark
+            prefix += 'utf8=%26%2310003%3B&';
+        }
+        else {
+            // encodeURIComponent('✓')
+            prefix += 'utf8=%E2%9C%93&';
+        }
+    }
+    return joined.length > 0 ? prefix + joined : '';
+}
+//# sourceMappingURL=stringify.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/version.mjs
-const VERSION = '4.68.4'; // x-release-please-version
+const VERSION = '4.72.0'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_shims/registry.mjs
 let auto = false;
@@ -42415,6 +42868,149 @@ function getRuntime() {
 if (!kind) setShims(getRuntime(), { auto: true });
 
 
+;// CONCATENATED MODULE: ./node_modules/openai/error.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+class error_OpenAIError extends Error {
+}
+class APIError extends error_OpenAIError {
+    constructor(status, error, message, headers) {
+        super(`${APIError.makeMessage(status, error, message)}`);
+        this.status = status;
+        this.headers = headers;
+        this.request_id = headers?.['x-request-id'];
+        const data = error;
+        this.error = data;
+        this.code = data?.['code'];
+        this.param = data?.['param'];
+        this.type = data?.['type'];
+    }
+    static makeMessage(status, error, message) {
+        const msg = error?.message ?
+            typeof error.message === 'string' ?
+                error.message
+                : JSON.stringify(error.message)
+            : error ? JSON.stringify(error)
+                : message;
+        if (status && msg) {
+            return `${status} ${msg}`;
+        }
+        if (status) {
+            return `${status} status code (no body)`;
+        }
+        if (msg) {
+            return msg;
+        }
+        return '(no status code or body)';
+    }
+    static generate(status, errorResponse, message, headers) {
+        if (!status) {
+            return new APIConnectionError({ message, cause: castToError(errorResponse) });
+        }
+        const error = errorResponse?.['error'];
+        if (status === 400) {
+            return new BadRequestError(status, error, message, headers);
+        }
+        if (status === 401) {
+            return new AuthenticationError(status, error, message, headers);
+        }
+        if (status === 403) {
+            return new PermissionDeniedError(status, error, message, headers);
+        }
+        if (status === 404) {
+            return new NotFoundError(status, error, message, headers);
+        }
+        if (status === 409) {
+            return new ConflictError(status, error, message, headers);
+        }
+        if (status === 422) {
+            return new UnprocessableEntityError(status, error, message, headers);
+        }
+        if (status === 429) {
+            return new RateLimitError(status, error, message, headers);
+        }
+        if (status >= 500) {
+            return new InternalServerError(status, error, message, headers);
+        }
+        return new APIError(status, error, message, headers);
+    }
+}
+class APIUserAbortError extends APIError {
+    constructor({ message } = {}) {
+        super(undefined, undefined, message || 'Request was aborted.', undefined);
+        this.status = undefined;
+    }
+}
+class APIConnectionError extends APIError {
+    constructor({ message, cause }) {
+        super(undefined, undefined, message || 'Connection error.', undefined);
+        this.status = undefined;
+        // in some environments the 'cause' property is already declared
+        // @ts-ignore
+        if (cause)
+            this.cause = cause;
+    }
+}
+class APIConnectionTimeoutError extends APIConnectionError {
+    constructor({ message } = {}) {
+        super({ message: message ?? 'Request timed out.' });
+    }
+}
+class BadRequestError extends APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 400;
+    }
+}
+class AuthenticationError extends APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 401;
+    }
+}
+class PermissionDeniedError extends APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 403;
+    }
+}
+class NotFoundError extends APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 404;
+    }
+}
+class ConflictError extends APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 409;
+    }
+}
+class UnprocessableEntityError extends APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 422;
+    }
+}
+class RateLimitError extends APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 429;
+    }
+}
+class InternalServerError extends APIError {
+}
+class LengthFinishReasonError extends error_OpenAIError {
+    constructor() {
+        super(`Could not parse response content as the length limit was reached`);
+    }
+}
+class ContentFilterFinishReasonError extends error_OpenAIError {
+    constructor() {
+        super(`Could not parse response content as the request was rejected by the content filter`);
+    }
+}
+//# sourceMappingURL=error.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/internal/decoders/line.mjs
 
 /**
@@ -43899,653 +44495,57 @@ function isObj(obj) {
     return obj != null && typeof obj === 'object' && !Array.isArray(obj);
 }
 //# sourceMappingURL=core.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/error.mjs
+;// CONCATENATED MODULE: ./node_modules/openai/resource.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class APIResource {
+    constructor(client) {
+        this._client = client;
+    }
+}
+//# sourceMappingURL=resource.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/resources/completions.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-class error_OpenAIError extends Error {
-}
-class APIError extends error_OpenAIError {
-    constructor(status, error, message, headers) {
-        super(`${APIError.makeMessage(status, error, message)}`);
-        this.status = status;
-        this.headers = headers;
-        this.request_id = headers?.['x-request-id'];
-        const data = error;
-        this.error = data;
-        this.code = data?.['code'];
-        this.param = data?.['param'];
-        this.type = data?.['type'];
-    }
-    static makeMessage(status, error, message) {
-        const msg = error?.message ?
-            typeof error.message === 'string' ?
-                error.message
-                : JSON.stringify(error.message)
-            : error ? JSON.stringify(error)
-                : message;
-        if (status && msg) {
-            return `${status} ${msg}`;
-        }
-        if (status) {
-            return `${status} status code (no body)`;
-        }
-        if (msg) {
-            return msg;
-        }
-        return '(no status code or body)';
-    }
-    static generate(status, errorResponse, message, headers) {
-        if (!status) {
-            return new APIConnectionError({ message, cause: castToError(errorResponse) });
-        }
-        const error = errorResponse?.['error'];
-        if (status === 400) {
-            return new BadRequestError(status, error, message, headers);
-        }
-        if (status === 401) {
-            return new AuthenticationError(status, error, message, headers);
-        }
-        if (status === 403) {
-            return new PermissionDeniedError(status, error, message, headers);
-        }
-        if (status === 404) {
-            return new NotFoundError(status, error, message, headers);
-        }
-        if (status === 409) {
-            return new ConflictError(status, error, message, headers);
-        }
-        if (status === 422) {
-            return new UnprocessableEntityError(status, error, message, headers);
-        }
-        if (status === 429) {
-            return new RateLimitError(status, error, message, headers);
-        }
-        if (status >= 500) {
-            return new InternalServerError(status, error, message, headers);
-        }
-        return new APIError(status, error, message, headers);
+class Completions extends APIResource {
+    create(body, options) {
+        return this._client.post('/completions', { body, ...options, stream: body.stream ?? false });
     }
 }
-class APIUserAbortError extends APIError {
-    constructor({ message } = {}) {
-        super(undefined, undefined, message || 'Request was aborted.', undefined);
-        this.status = undefined;
-    }
-}
-class APIConnectionError extends APIError {
-    constructor({ message, cause }) {
-        super(undefined, undefined, message || 'Connection error.', undefined);
-        this.status = undefined;
-        // in some environments the 'cause' property is already declared
-        // @ts-ignore
-        if (cause)
-            this.cause = cause;
-    }
-}
-class APIConnectionTimeoutError extends APIConnectionError {
-    constructor({ message } = {}) {
-        super({ message: message ?? 'Request timed out.' });
-    }
-}
-class BadRequestError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 400;
-    }
-}
-class AuthenticationError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 401;
-    }
-}
-class PermissionDeniedError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 403;
-    }
-}
-class NotFoundError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 404;
-    }
-}
-class ConflictError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 409;
-    }
-}
-class UnprocessableEntityError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 422;
-    }
-}
-class RateLimitError extends APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 429;
-    }
-}
-class InternalServerError extends APIError {
-}
-class LengthFinishReasonError extends error_OpenAIError {
-    constructor() {
-        super(`Could not parse response content as the length limit was reached`);
-    }
-}
-class ContentFilterFinishReasonError extends error_OpenAIError {
-    constructor() {
-        super(`Could not parse response content as the request was rejected by the content filter`);
-    }
-}
-//# sourceMappingURL=error.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/internal/qs/formats.mjs
-const default_format = 'RFC3986';
-const formatters = {
-    RFC1738: (v) => String(v).replace(/%20/g, '+'),
-    RFC3986: (v) => String(v),
-};
-const RFC1738 = 'RFC1738';
-const RFC3986 = 'RFC3986';
-//# sourceMappingURL=formats.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/internal/qs/utils.mjs
+//# sourceMappingURL=completions.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/resources/chat/completions.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-const has = Object.prototype.hasOwnProperty;
-const is_array = Array.isArray;
-const hex_table = (() => {
-    const array = [];
-    for (let i = 0; i < 256; ++i) {
-        array.push('%' + ((i < 16 ? '0' : '') + i.toString(16)).toUpperCase());
-    }
-    return array;
-})();
-function compact_queue(queue) {
-    while (queue.length > 1) {
-        const item = queue.pop();
-        if (!item)
-            continue;
-        const obj = item.obj[item.prop];
-        if (is_array(obj)) {
-            const compacted = [];
-            for (let j = 0; j < obj.length; ++j) {
-                if (typeof obj[j] !== 'undefined') {
-                    compacted.push(obj[j]);
-                }
-            }
-            // @ts-ignore
-            item.obj[item.prop] = compacted;
-        }
+class completions_Completions extends APIResource {
+    create(body, options) {
+        return this._client.post('/chat/completions', { body, ...options, stream: body.stream ?? false });
     }
 }
-function array_to_object(source, options) {
-    const obj = options && options.plainObjects ? Object.create(null) : {};
-    for (let i = 0; i < source.length; ++i) {
-        if (typeof source[i] !== 'undefined') {
-            obj[i] = source[i];
-        }
-    }
-    return obj;
-}
-function merge(target, source, options = {}) {
-    if (!source) {
-        return target;
-    }
-    if (typeof source !== 'object') {
-        if (is_array(target)) {
-            target.push(source);
-        }
-        else if (target && typeof target === 'object') {
-            if ((options && (options.plainObjects || options.allowPrototypes)) ||
-                !has.call(Object.prototype, source)) {
-                target[source] = true;
-            }
-        }
-        else {
-            return [target, source];
-        }
-        return target;
-    }
-    if (!target || typeof target !== 'object') {
-        return [target].concat(source);
-    }
-    let mergeTarget = target;
-    if (is_array(target) && !is_array(source)) {
-        // @ts-ignore
-        mergeTarget = array_to_object(target, options);
-    }
-    if (is_array(target) && is_array(source)) {
-        source.forEach(function (item, i) {
-            if (has.call(target, i)) {
-                const targetItem = target[i];
-                if (targetItem && typeof targetItem === 'object' && item && typeof item === 'object') {
-                    target[i] = merge(targetItem, item, options);
-                }
-                else {
-                    target.push(item);
-                }
-            }
-            else {
-                target[i] = item;
-            }
-        });
-        return target;
-    }
-    return Object.keys(source).reduce(function (acc, key) {
-        const value = source[key];
-        if (has.call(acc, key)) {
-            acc[key] = merge(acc[key], value, options);
-        }
-        else {
-            acc[key] = value;
-        }
-        return acc;
-    }, mergeTarget);
-}
-function assign_single_source(target, source) {
-    return Object.keys(source).reduce(function (acc, key) {
-        acc[key] = source[key];
-        return acc;
-    }, target);
-}
-function decode(str, _, charset) {
-    const strWithoutPlus = str.replace(/\+/g, ' ');
-    if (charset === 'iso-8859-1') {
-        // unescape never throws, no try...catch needed:
-        return strWithoutPlus.replace(/%[0-9a-f]{2}/gi, unescape);
-    }
-    // utf-8
-    try {
-        return decodeURIComponent(strWithoutPlus);
-    }
-    catch (e) {
-        return strWithoutPlus;
-    }
-}
-const limit = 1024;
-const encode = (str, _defaultEncoder, charset, _kind, format) => {
-    // This code was originally written by Brian White for the io.js core querystring library.
-    // It has been adapted here for stricter adherence to RFC 3986
-    if (str.length === 0) {
-        return str;
-    }
-    let string = str;
-    if (typeof str === 'symbol') {
-        string = Symbol.prototype.toString.call(str);
-    }
-    else if (typeof str !== 'string') {
-        string = String(str);
-    }
-    if (charset === 'iso-8859-1') {
-        return escape(string).replace(/%u[0-9a-f]{4}/gi, function ($0) {
-            return '%26%23' + parseInt($0.slice(2), 16) + '%3B';
-        });
-    }
-    let out = '';
-    for (let j = 0; j < string.length; j += limit) {
-        const segment = string.length >= limit ? string.slice(j, j + limit) : string;
-        const arr = [];
-        for (let i = 0; i < segment.length; ++i) {
-            let c = segment.charCodeAt(i);
-            if (c === 0x2d || // -
-                c === 0x2e || // .
-                c === 0x5f || // _
-                c === 0x7e || // ~
-                (c >= 0x30 && c <= 0x39) || // 0-9
-                (c >= 0x41 && c <= 0x5a) || // a-z
-                (c >= 0x61 && c <= 0x7a) || // A-Z
-                (format === RFC1738 && (c === 0x28 || c === 0x29)) // ( )
-            ) {
-                arr[arr.length] = segment.charAt(i);
-                continue;
-            }
-            if (c < 0x80) {
-                arr[arr.length] = hex_table[c];
-                continue;
-            }
-            if (c < 0x800) {
-                arr[arr.length] = hex_table[0xc0 | (c >> 6)] + hex_table[0x80 | (c & 0x3f)];
-                continue;
-            }
-            if (c < 0xd800 || c >= 0xe000) {
-                arr[arr.length] =
-                    hex_table[0xe0 | (c >> 12)] + hex_table[0x80 | ((c >> 6) & 0x3f)] + hex_table[0x80 | (c & 0x3f)];
-                continue;
-            }
-            i += 1;
-            c = 0x10000 + (((c & 0x3ff) << 10) | (segment.charCodeAt(i) & 0x3ff));
-            arr[arr.length] =
-                hex_table[0xf0 | (c >> 18)] +
-                    hex_table[0x80 | ((c >> 12) & 0x3f)] +
-                    hex_table[0x80 | ((c >> 6) & 0x3f)] +
-                    hex_table[0x80 | (c & 0x3f)];
-        }
-        out += arr.join('');
-    }
-    return out;
-};
-function compact(value) {
-    const queue = [{ obj: { o: value }, prop: 'o' }];
-    const refs = [];
-    for (let i = 0; i < queue.length; ++i) {
-        const item = queue[i];
-        // @ts-ignore
-        const obj = item.obj[item.prop];
-        const keys = Object.keys(obj);
-        for (let j = 0; j < keys.length; ++j) {
-            const key = keys[j];
-            const val = obj[key];
-            if (typeof val === 'object' && val !== null && refs.indexOf(val) === -1) {
-                queue.push({ obj: obj, prop: key });
-                refs.push(val);
-            }
-        }
-    }
-    compact_queue(queue);
-    return value;
-}
-function is_regexp(obj) {
-    return Object.prototype.toString.call(obj) === '[object RegExp]';
-}
-function is_buffer(obj) {
-    if (!obj || typeof obj !== 'object') {
-        return false;
-    }
-    return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
-}
-function combine(a, b) {
-    return [].concat(a, b);
-}
-function maybe_map(val, fn) {
-    if (is_array(val)) {
-        const mapped = [];
-        for (let i = 0; i < val.length; i += 1) {
-            mapped.push(fn(val[i]));
-        }
-        return mapped;
-    }
-    return fn(val);
-}
-//# sourceMappingURL=utils.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/internal/qs/stringify.mjs
+//# sourceMappingURL=completions.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/resources/chat/chat.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
 
-const stringify_has = Object.prototype.hasOwnProperty;
-const array_prefix_generators = {
-    brackets(prefix) {
-        return String(prefix) + '[]';
-    },
-    comma: 'comma',
-    indices(prefix, key) {
-        return String(prefix) + '[' + key + ']';
-    },
-    repeat(prefix) {
-        return String(prefix);
-    },
-};
-const stringify_is_array = Array.isArray;
-const push = Array.prototype.push;
-const push_to_array = function (arr, value_or_array) {
-    push.apply(arr, stringify_is_array(value_or_array) ? value_or_array : [value_or_array]);
-};
-const to_ISO = Date.prototype.toISOString;
-const defaults = {
-    addQueryPrefix: false,
-    allowDots: false,
-    allowEmptyArrays: false,
-    arrayFormat: 'indices',
-    charset: 'utf-8',
-    charsetSentinel: false,
-    delimiter: '&',
-    encode: true,
-    encodeDotInKeys: false,
-    encoder: encode,
-    encodeValuesOnly: false,
-    format: default_format,
-    formatter: formatters[default_format],
-    /** @deprecated */
-    indices: false,
-    serializeDate(date) {
-        return to_ISO.call(date);
-    },
-    skipNulls: false,
-    strictNullHandling: false,
-};
-function is_non_nullish_primitive(v) {
-    return (typeof v === 'string' ||
-        typeof v === 'number' ||
-        typeof v === 'boolean' ||
-        typeof v === 'symbol' ||
-        typeof v === 'bigint');
+
+class Chat extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.completions = new completions_Completions(this._client);
+    }
 }
-const sentinel = {};
-function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
-    let obj = object;
-    let tmp_sc = sideChannel;
-    let step = 0;
-    let find_flag = false;
-    while ((tmp_sc = tmp_sc.get(sentinel)) !== void undefined && !find_flag) {
-        // Where object last appeared in the ref tree
-        const pos = tmp_sc.get(object);
-        step += 1;
-        if (typeof pos !== 'undefined') {
-            if (pos === step) {
-                throw new RangeError('Cyclic object value');
-            }
-            else {
-                find_flag = true; // Break while
-            }
-        }
-        if (typeof tmp_sc.get(sentinel) === 'undefined') {
-            step = 0;
-        }
+Chat.Completions = completions_Completions;
+//# sourceMappingURL=chat.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/resources/embeddings.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+class Embeddings extends APIResource {
+    /**
+     * Creates an embedding vector representing the input text.
+     */
+    create(body, options) {
+        return this._client.post('/embeddings', { body, ...options });
     }
-    if (typeof filter === 'function') {
-        obj = filter(prefix, obj);
-    }
-    else if (obj instanceof Date) {
-        obj = serializeDate?.(obj);
-    }
-    else if (generateArrayPrefix === 'comma' && stringify_is_array(obj)) {
-        obj = maybe_map(obj, function (value) {
-            if (value instanceof Date) {
-                return serializeDate?.(value);
-            }
-            return value;
-        });
-    }
-    if (obj === null) {
-        if (strictNullHandling) {
-            return encoder && !encodeValuesOnly ?
-                // @ts-expect-error
-                encoder(prefix, defaults.encoder, charset, 'key', format)
-                : prefix;
-        }
-        obj = '';
-    }
-    if (is_non_nullish_primitive(obj) || is_buffer(obj)) {
-        if (encoder) {
-            const key_value = encodeValuesOnly ? prefix
-                // @ts-expect-error
-                : encoder(prefix, defaults.encoder, charset, 'key', format);
-            return [
-                formatter?.(key_value) +
-                    '=' +
-                    // @ts-expect-error
-                    formatter?.(encoder(obj, defaults.encoder, charset, 'value', format)),
-            ];
-        }
-        return [formatter?.(prefix) + '=' + formatter?.(String(obj))];
-    }
-    const values = [];
-    if (typeof obj === 'undefined') {
-        return values;
-    }
-    let obj_keys;
-    if (generateArrayPrefix === 'comma' && stringify_is_array(obj)) {
-        // we need to join elements in
-        if (encodeValuesOnly && encoder) {
-            // @ts-expect-error values only
-            obj = maybe_map(obj, encoder);
-        }
-        obj_keys = [{ value: obj.length > 0 ? obj.join(',') || null : void undefined }];
-    }
-    else if (stringify_is_array(filter)) {
-        obj_keys = filter;
-    }
-    else {
-        const keys = Object.keys(obj);
-        obj_keys = sort ? keys.sort(sort) : keys;
-    }
-    const encoded_prefix = encodeDotInKeys ? String(prefix).replace(/\./g, '%2E') : String(prefix);
-    const adjusted_prefix = commaRoundTrip && stringify_is_array(obj) && obj.length === 1 ? encoded_prefix + '[]' : encoded_prefix;
-    if (allowEmptyArrays && stringify_is_array(obj) && obj.length === 0) {
-        return adjusted_prefix + '[]';
-    }
-    for (let j = 0; j < obj_keys.length; ++j) {
-        const key = obj_keys[j];
-        const value = 
-        // @ts-ignore
-        typeof key === 'object' && typeof key.value !== 'undefined' ? key.value : obj[key];
-        if (skipNulls && value === null) {
-            continue;
-        }
-        // @ts-ignore
-        const encoded_key = allowDots && encodeDotInKeys ? key.replace(/\./g, '%2E') : key;
-        const key_prefix = stringify_is_array(obj) ?
-            typeof generateArrayPrefix === 'function' ?
-                generateArrayPrefix(adjusted_prefix, encoded_key)
-                : adjusted_prefix
-            : adjusted_prefix + (allowDots ? '.' + encoded_key : '[' + encoded_key + ']');
-        sideChannel.set(object, step);
-        const valueSideChannel = new WeakMap();
-        valueSideChannel.set(sentinel, sideChannel);
-        push_to_array(values, inner_stringify(value, key_prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, 
-        // @ts-ignore
-        generateArrayPrefix === 'comma' && encodeValuesOnly && stringify_is_array(obj) ? null : encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, valueSideChannel));
-    }
-    return values;
 }
-function normalize_stringify_options(opts = defaults) {
-    if (typeof opts.allowEmptyArrays !== 'undefined' && typeof opts.allowEmptyArrays !== 'boolean') {
-        throw new TypeError('`allowEmptyArrays` option can only be `true` or `false`, when provided');
-    }
-    if (typeof opts.encodeDotInKeys !== 'undefined' && typeof opts.encodeDotInKeys !== 'boolean') {
-        throw new TypeError('`encodeDotInKeys` option can only be `true` or `false`, when provided');
-    }
-    if (opts.encoder !== null && typeof opts.encoder !== 'undefined' && typeof opts.encoder !== 'function') {
-        throw new TypeError('Encoder has to be a function.');
-    }
-    const charset = opts.charset || defaults.charset;
-    if (typeof opts.charset !== 'undefined' && opts.charset !== 'utf-8' && opts.charset !== 'iso-8859-1') {
-        throw new TypeError('The charset option must be either utf-8, iso-8859-1, or undefined');
-    }
-    let format = default_format;
-    if (typeof opts.format !== 'undefined') {
-        if (!stringify_has.call(formatters, opts.format)) {
-            throw new TypeError('Unknown format option provided.');
-        }
-        format = opts.format;
-    }
-    const formatter = formatters[format];
-    let filter = defaults.filter;
-    if (typeof opts.filter === 'function' || stringify_is_array(opts.filter)) {
-        filter = opts.filter;
-    }
-    let arrayFormat;
-    if (opts.arrayFormat && opts.arrayFormat in array_prefix_generators) {
-        arrayFormat = opts.arrayFormat;
-    }
-    else if ('indices' in opts) {
-        arrayFormat = opts.indices ? 'indices' : 'repeat';
-    }
-    else {
-        arrayFormat = defaults.arrayFormat;
-    }
-    if ('commaRoundTrip' in opts && typeof opts.commaRoundTrip !== 'boolean') {
-        throw new TypeError('`commaRoundTrip` must be a boolean, or absent');
-    }
-    const allowDots = typeof opts.allowDots === 'undefined' ?
-        !!opts.encodeDotInKeys === true ?
-            true
-            : defaults.allowDots
-        : !!opts.allowDots;
-    return {
-        addQueryPrefix: typeof opts.addQueryPrefix === 'boolean' ? opts.addQueryPrefix : defaults.addQueryPrefix,
-        // @ts-ignore
-        allowDots: allowDots,
-        allowEmptyArrays: typeof opts.allowEmptyArrays === 'boolean' ? !!opts.allowEmptyArrays : defaults.allowEmptyArrays,
-        arrayFormat: arrayFormat,
-        charset: charset,
-        charsetSentinel: typeof opts.charsetSentinel === 'boolean' ? opts.charsetSentinel : defaults.charsetSentinel,
-        commaRoundTrip: !!opts.commaRoundTrip,
-        delimiter: typeof opts.delimiter === 'undefined' ? defaults.delimiter : opts.delimiter,
-        encode: typeof opts.encode === 'boolean' ? opts.encode : defaults.encode,
-        encodeDotInKeys: typeof opts.encodeDotInKeys === 'boolean' ? opts.encodeDotInKeys : defaults.encodeDotInKeys,
-        encoder: typeof opts.encoder === 'function' ? opts.encoder : defaults.encoder,
-        encodeValuesOnly: typeof opts.encodeValuesOnly === 'boolean' ? opts.encodeValuesOnly : defaults.encodeValuesOnly,
-        filter: filter,
-        format: format,
-        formatter: formatter,
-        serializeDate: typeof opts.serializeDate === 'function' ? opts.serializeDate : defaults.serializeDate,
-        skipNulls: typeof opts.skipNulls === 'boolean' ? opts.skipNulls : defaults.skipNulls,
-        // @ts-ignore
-        sort: typeof opts.sort === 'function' ? opts.sort : null,
-        strictNullHandling: typeof opts.strictNullHandling === 'boolean' ? opts.strictNullHandling : defaults.strictNullHandling,
-    };
-}
-function stringify(object, opts = {}) {
-    let obj = object;
-    const options = normalize_stringify_options(opts);
-    let obj_keys;
-    let filter;
-    if (typeof options.filter === 'function') {
-        filter = options.filter;
-        obj = filter('', obj);
-    }
-    else if (stringify_is_array(options.filter)) {
-        filter = options.filter;
-        obj_keys = filter;
-    }
-    const keys = [];
-    if (typeof obj !== 'object' || obj === null) {
-        return '';
-    }
-    const generateArrayPrefix = array_prefix_generators[options.arrayFormat];
-    const commaRoundTrip = generateArrayPrefix === 'comma' && options.commaRoundTrip;
-    if (!obj_keys) {
-        obj_keys = Object.keys(obj);
-    }
-    if (options.sort) {
-        obj_keys.sort(options.sort);
-    }
-    const sideChannel = new WeakMap();
-    for (let i = 0; i < obj_keys.length; ++i) {
-        const key = obj_keys[i];
-        if (options.skipNulls && obj[key] === null) {
-            continue;
-        }
-        push_to_array(keys, inner_stringify(obj[key], key, 
-        // @ts-expect-error
-        generateArrayPrefix, commaRoundTrip, options.allowEmptyArrays, options.strictNullHandling, options.skipNulls, options.encodeDotInKeys, options.encode ? options.encoder : null, options.filter, options.sort, options.allowDots, options.serializeDate, options.format, options.formatter, options.encodeValuesOnly, options.charset, sideChannel));
-    }
-    const joined = keys.join(options.delimiter);
-    let prefix = options.addQueryPrefix === true ? '?' : '';
-    if (options.charsetSentinel) {
-        if (options.charset === 'iso-8859-1') {
-            // encodeURIComponent('&#10003;'), the "numeric entity" representation of a checkmark
-            prefix += 'utf8=%26%2310003%3B&';
-        }
-        else {
-            // encodeURIComponent('✓')
-            prefix += 'utf8=%E2%9C%93&';
-        }
-    }
-    return joined.length > 0 ? prefix + joined : '';
-}
-//# sourceMappingURL=stringify.mjs.map
+//# sourceMappingURL=embeddings.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/pagination.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
@@ -44606,67 +44606,8 @@ class CursorPage extends AbstractPage {
     }
 }
 //# sourceMappingURL=pagination.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/resource.mjs
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-class APIResource {
-    constructor(client) {
-        this._client = client;
-    }
-}
-//# sourceMappingURL=resource.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/resources/completions.mjs
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-class Completions extends APIResource {
-    create(body, options) {
-        return this._client.post('/completions', { body, ...options, stream: body.stream ?? false });
-    }
-}
-(function (Completions) {
-})(Completions || (Completions = {}));
-//# sourceMappingURL=completions.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/resources/chat/completions.mjs
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-class completions_Completions extends APIResource {
-    create(body, options) {
-        return this._client.post('/chat/completions', { body, ...options, stream: body.stream ?? false });
-    }
-}
-(function (Completions) {
-})(completions_Completions || (completions_Completions = {}));
-//# sourceMappingURL=completions.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/resources/chat/chat.mjs
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-
-class Chat extends APIResource {
-    constructor() {
-        super(...arguments);
-        this.completions = new completions_Completions(this._client);
-    }
-}
-(function (Chat) {
-    Chat.Completions = completions_Completions;
-})(Chat || (Chat = {}));
-//# sourceMappingURL=chat.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/resources/embeddings.mjs
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-class Embeddings extends APIResource {
-    /**
-     * Creates an embedding vector representing the input text.
-     */
-    create(body, options) {
-        return this._client.post('/embeddings', { body, ...options });
-    }
-}
-(function (Embeddings) {
-})(Embeddings || (Embeddings = {}));
-//# sourceMappingURL=embeddings.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/files.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 
 
 
@@ -44754,14 +44695,9 @@ class Files extends APIResource {
         return file;
     }
 }
-/**
- * Note: no pagination actually occurs yet, this is for forwards-compatibility.
- */
-class FileObjectsPage extends Page {
+class FileObjectsPage extends CursorPage {
 }
-(function (Files) {
-    Files.FileObjectsPage = FileObjectsPage;
-})(Files || (Files = {}));
+Files.FileObjectsPage = FileObjectsPage;
 //# sourceMappingURL=files.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/images.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -44787,8 +44723,6 @@ class Images extends APIResource {
         return this._client.post('/images/generations', { body, ...options });
     }
 }
-(function (Images) {
-})(Images || (Images = {}));
 //# sourceMappingURL=images.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/audio/speech.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -44801,8 +44735,6 @@ class Speech extends APIResource {
         return this._client.post('/audio/speech', { body, ...options, __binaryResponse: true });
     }
 }
-(function (Speech) {
-})(Speech || (Speech = {}));
 //# sourceMappingURL=speech.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/audio/transcriptions.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -44813,8 +44745,6 @@ class Transcriptions extends APIResource {
         return this._client.post('/audio/transcriptions', multipartFormRequestOptions({ body, ...options }));
     }
 }
-(function (Transcriptions) {
-})(Transcriptions || (Transcriptions = {}));
 //# sourceMappingURL=transcriptions.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/audio/translations.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -44825,11 +44755,12 @@ class Translations extends APIResource {
         return this._client.post('/audio/translations', multipartFormRequestOptions({ body, ...options }));
     }
 }
-(function (Translations) {
-})(Translations || (Translations = {}));
 //# sourceMappingURL=translations.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/audio/audio.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+
+
 
 
 
@@ -44842,11 +44773,9 @@ class Audio extends APIResource {
         this.speech = new Speech(this._client);
     }
 }
-(function (Audio) {
-    Audio.Transcriptions = Transcriptions;
-    Audio.Translations = Translations;
-    Audio.Speech = Speech;
-})(Audio || (Audio = {}));
+Audio.Transcriptions = Transcriptions;
+Audio.Translations = Translations;
+Audio.Speech = Speech;
 //# sourceMappingURL=audio.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/moderations.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -44860,12 +44789,9 @@ class Moderations extends APIResource {
         return this._client.post('/moderations', { body, ...options });
     }
 }
-(function (Moderations) {
-})(Moderations || (Moderations = {}));
 //# sourceMappingURL=moderations.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/models.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 
 
 class Models extends APIResource {
@@ -44896,13 +44822,10 @@ class Models extends APIResource {
  */
 class ModelsPage extends Page {
 }
-(function (Models) {
-    Models.ModelsPage = ModelsPage;
-})(Models || (Models = {}));
+Models.ModelsPage = ModelsPage;
 //# sourceMappingURL=models.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/fine-tuning/jobs/checkpoints.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 
 
 
@@ -44916,9 +44839,7 @@ class Checkpoints extends APIResource {
 }
 class FineTuningJobCheckpointsPage extends CursorPage {
 }
-(function (Checkpoints) {
-    Checkpoints.FineTuningJobCheckpointsPage = FineTuningJobCheckpointsPage;
-})(Checkpoints || (Checkpoints = {}));
+Checkpoints.FineTuningJobCheckpointsPage = FineTuningJobCheckpointsPage;
 //# sourceMappingURL=checkpoints.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/fine-tuning/jobs/jobs.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -44978,15 +44899,14 @@ class FineTuningJobsPage extends CursorPage {
 }
 class FineTuningJobEventsPage extends CursorPage {
 }
-(function (Jobs) {
-    Jobs.FineTuningJobsPage = FineTuningJobsPage;
-    Jobs.FineTuningJobEventsPage = FineTuningJobEventsPage;
-    Jobs.Checkpoints = Checkpoints;
-    Jobs.FineTuningJobCheckpointsPage = FineTuningJobCheckpointsPage;
-})(Jobs || (Jobs = {}));
+Jobs.FineTuningJobsPage = FineTuningJobsPage;
+Jobs.FineTuningJobEventsPage = FineTuningJobEventsPage;
+Jobs.Checkpoints = Checkpoints;
+Jobs.FineTuningJobCheckpointsPage = FineTuningJobCheckpointsPage;
 //# sourceMappingURL=jobs.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/fine-tuning/fine-tuning.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
 
 
 class FineTuning extends APIResource {
@@ -44995,15 +44915,12 @@ class FineTuning extends APIResource {
         this.jobs = new Jobs(this._client);
     }
 }
-(function (FineTuning) {
-    FineTuning.Jobs = Jobs;
-    FineTuning.FineTuningJobsPage = FineTuningJobsPage;
-    FineTuning.FineTuningJobEventsPage = FineTuningJobEventsPage;
-})(FineTuning || (FineTuning = {}));
+FineTuning.Jobs = Jobs;
+FineTuning.FineTuningJobsPage = FineTuningJobsPage;
+FineTuning.FineTuningJobEventsPage = FineTuningJobEventsPage;
 //# sourceMappingURL=fine-tuning.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/beta/assistants.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 
 
 
@@ -45059,9 +44976,7 @@ class Assistants extends APIResource {
 }
 class AssistantsPage extends CursorPage {
 }
-(function (Assistants) {
-    Assistants.AssistantsPage = AssistantsPage;
-})(Assistants || (Assistants = {}));
+Assistants.AssistantsPage = AssistantsPage;
 //# sourceMappingURL=assistants.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/lib/RunnableFunction.mjs
 function isRunnableFunctionWithParse(fn) {
@@ -47217,7 +47132,6 @@ _AssistantStream_addEvent = function _AssistantStream_addEvent(event) {
 
 
 
-
 class Messages extends APIResource {
     /**
      * Create a message.
@@ -47270,13 +47184,10 @@ class Messages extends APIResource {
 }
 class MessagesPage extends CursorPage {
 }
-(function (Messages) {
-    Messages.MessagesPage = MessagesPage;
-})(Messages || (Messages = {}));
+Messages.MessagesPage = MessagesPage;
 //# sourceMappingURL=messages.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/beta/threads/runs/steps.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 
 
 
@@ -47304,9 +47215,7 @@ class Steps extends APIResource {
 }
 class RunStepsPage extends CursorPage {
 }
-(function (Steps) {
-    Steps.RunStepsPage = RunStepsPage;
-})(Steps || (Steps = {}));
+Steps.RunStepsPage = RunStepsPage;
 //# sourceMappingURL=steps.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/beta/threads/runs/runs.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -47467,14 +47376,14 @@ class Runs extends APIResource {
 }
 class RunsPage extends CursorPage {
 }
-(function (Runs) {
-    Runs.RunsPage = RunsPage;
-    Runs.Steps = Steps;
-    Runs.RunStepsPage = RunStepsPage;
-})(Runs || (Runs = {}));
+Runs.RunsPage = RunsPage;
+Runs.Steps = Steps;
+Runs.RunStepsPage = RunStepsPage;
 //# sourceMappingURL=runs.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/beta/threads/threads.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+
 
 
 
@@ -47548,12 +47457,10 @@ class Threads extends APIResource {
         return AssistantStream.createThreadAssistantStream(body, this._client.beta.threads, options);
     }
 }
-(function (Threads) {
-    Threads.Runs = Runs;
-    Threads.RunsPage = RunsPage;
-    Threads.Messages = Messages;
-    Threads.MessagesPage = MessagesPage;
-})(Threads || (Threads = {}));
+Threads.Runs = Runs;
+Threads.RunsPage = RunsPage;
+Threads.Messages = Messages;
+Threads.MessagesPage = MessagesPage;
 //# sourceMappingURL=threads.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/lib/Util.mjs
 /**
@@ -47580,7 +47487,6 @@ const allSettledWithThrow = async (promises) => {
 //# sourceMappingURL=Util.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/beta/vector-stores/files.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 
 
 
@@ -47695,9 +47601,7 @@ class files_Files extends APIResource {
 }
 class VectorStoreFilesPage extends CursorPage {
 }
-(function (Files) {
-    Files.VectorStoreFilesPage = VectorStoreFilesPage;
-})(files_Files || (files_Files = {}));
+files_Files.VectorStoreFilesPage = VectorStoreFilesPage;
 //# sourceMappingURL=files.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/beta/vector-stores/file-batches.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -47821,12 +47725,11 @@ class FileBatches extends APIResource {
         });
     }
 }
-(function (FileBatches) {
-})(FileBatches || (FileBatches = {}));
 
 //# sourceMappingURL=file-batches.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/beta/vector-stores/vector-stores.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
 
 
 
@@ -47890,15 +47793,17 @@ class VectorStores extends APIResource {
 }
 class VectorStoresPage extends CursorPage {
 }
-(function (VectorStores) {
-    VectorStores.VectorStoresPage = VectorStoresPage;
-    VectorStores.Files = files_Files;
-    VectorStores.VectorStoreFilesPage = VectorStoreFilesPage;
-    VectorStores.FileBatches = FileBatches;
-})(VectorStores || (VectorStores = {}));
+VectorStores.VectorStoresPage = VectorStoresPage;
+VectorStores.Files = files_Files;
+VectorStores.VectorStoreFilesPage = VectorStoreFilesPage;
+VectorStores.FileBatches = FileBatches;
 //# sourceMappingURL=vector-stores.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/beta/beta.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+
+
+
 
 
 
@@ -47913,18 +47818,14 @@ class Beta extends APIResource {
         this.threads = new Threads(this._client);
     }
 }
-(function (Beta) {
-    Beta.VectorStores = VectorStores;
-    Beta.VectorStoresPage = VectorStoresPage;
-    Beta.Chat = chat_Chat;
-    Beta.Assistants = Assistants;
-    Beta.AssistantsPage = AssistantsPage;
-    Beta.Threads = Threads;
-})(Beta || (Beta = {}));
+Beta.VectorStores = VectorStores;
+Beta.VectorStoresPage = VectorStoresPage;
+Beta.Assistants = Assistants;
+Beta.AssistantsPage = AssistantsPage;
+Beta.Threads = Threads;
 //# sourceMappingURL=beta.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/batches.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 
 
 
@@ -47958,9 +47859,7 @@ class Batches extends APIResource {
 }
 class BatchesPage extends CursorPage {
 }
-(function (Batches) {
-    Batches.BatchesPage = BatchesPage;
-})(Batches || (Batches = {}));
+Batches.BatchesPage = BatchesPage;
 //# sourceMappingURL=batches.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/uploads/parts.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -47984,11 +47883,10 @@ class Parts extends APIResource {
         return this._client.post(`/uploads/${uploadId}/parts`, multipartFormRequestOptions({ body, ...options }));
     }
 }
-(function (Parts) {
-})(Parts || (Parts = {}));
 //# sourceMappingURL=parts.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/uploads/uploads.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
 
 
 class Uploads extends APIResource {
@@ -48012,7 +47910,7 @@ class Uploads extends APIResource {
      * For certain `purpose`s, the correct `mime_type` must be specified. Please refer
      * to documentation for the supported MIME types for your use case:
      *
-     * - [Assistants](https://platform.openai.com/docs/assistants/tools/file-search/supported-files)
+     * - [Assistants](https://platform.openai.com/docs/assistants/tools/file-search#supported-files)
      *
      * For guidance on the proper filename extensions for each purpose, please follow
      * the documentation on
@@ -48046,13 +47944,23 @@ class Uploads extends APIResource {
         return this._client.post(`/uploads/${uploadId}/complete`, { body, ...options });
     }
 }
-(function (Uploads) {
-    Uploads.Parts = Parts;
-})(Uploads || (Uploads = {}));
+Uploads.Parts = Parts;
 //# sourceMappingURL=uploads.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/index.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 var _a;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -48152,28 +48060,24 @@ OpenAI.PermissionDeniedError = PermissionDeniedError;
 OpenAI.UnprocessableEntityError = UnprocessableEntityError;
 OpenAI.toFile = toFile;
 OpenAI.fileFromPath = fileFromPath;
-const { /* OpenAIError */ "vc": openai_OpenAIError, /* APIError */ "LG": openai_APIError, /* APIConnectionError */ "xX": openai_APIConnectionError, /* APIConnectionTimeoutError */ "qA": openai_APIConnectionTimeoutError, /* APIUserAbortError */ "cH": openai_APIUserAbortError, /* NotFoundError */ "m_": openai_NotFoundError, /* ConflictError */ "fK": openai_ConflictError, /* RateLimitError */ "OE": openai_RateLimitError, /* BadRequestError */ "v7": openai_BadRequestError, /* AuthenticationError */ "v3": openai_AuthenticationError, /* InternalServerError */ "PO": openai_InternalServerError, /* PermissionDeniedError */ "Ll": openai_PermissionDeniedError, /* UnprocessableEntityError */ "Is": openai_UnprocessableEntityError, } = error_namespaceObject;
+
 var openai_toFile = toFile;
 var openai_fileFromPath = fileFromPath;
-(function (OpenAI) {
-    OpenAI.Page = Page;
-    OpenAI.CursorPage = CursorPage;
-    OpenAI.Completions = Completions;
-    OpenAI.Chat = Chat;
-    OpenAI.Embeddings = Embeddings;
-    OpenAI.Files = Files;
-    OpenAI.FileObjectsPage = FileObjectsPage;
-    OpenAI.Images = Images;
-    OpenAI.Audio = Audio;
-    OpenAI.Moderations = Moderations;
-    OpenAI.Models = Models;
-    OpenAI.ModelsPage = ModelsPage;
-    OpenAI.FineTuning = FineTuning;
-    OpenAI.Beta = Beta;
-    OpenAI.Batches = Batches;
-    OpenAI.BatchesPage = BatchesPage;
-    OpenAI.Uploads = Uploads;
-})(OpenAI || (OpenAI = {}));
+OpenAI.Completions = Completions;
+OpenAI.Chat = Chat;
+OpenAI.Embeddings = Embeddings;
+OpenAI.Files = Files;
+OpenAI.FileObjectsPage = FileObjectsPage;
+OpenAI.Images = Images;
+OpenAI.Audio = Audio;
+OpenAI.Moderations = Moderations;
+OpenAI.Models = Models;
+OpenAI.ModelsPage = ModelsPage;
+OpenAI.FineTuning = FineTuning;
+OpenAI.Beta = Beta;
+OpenAI.Batches = Batches;
+OpenAI.BatchesPage = BatchesPage;
+OpenAI.Uploads = Uploads;
 /** API Client for interfacing with the Azure OpenAI API. */
 class AzureOpenAI extends OpenAI {
     /**
@@ -48297,7 +48201,7 @@ const API_KEY_SENTINEL = '<Missing Key>';
 /* harmony default export */ const openai = (OpenAI);
 //# sourceMappingURL=index.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/version.mjs
-const version_VERSION = '0.30.1'; // x-release-please-version
+const version_VERSION = '0.32.1'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/_shims/registry.mjs
 let registry_auto = false;
@@ -48416,6 +48320,135 @@ function node_runtime_getRuntime() {
 if (!registry_kind) registry_setShims(node_runtime_getRuntime(), { auto: true });
 
 
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/error.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+class error_AnthropicError extends Error {
+}
+class error_APIError extends error_AnthropicError {
+    constructor(status, error, message, headers) {
+        super(`${error_APIError.makeMessage(status, error, message)}`);
+        this.status = status;
+        this.headers = headers;
+        this.request_id = headers?.['request-id'];
+        this.error = error;
+    }
+    static makeMessage(status, error, message) {
+        const msg = error?.message ?
+            typeof error.message === 'string' ?
+                error.message
+                : JSON.stringify(error.message)
+            : error ? JSON.stringify(error)
+                : message;
+        if (status && msg) {
+            return `${status} ${msg}`;
+        }
+        if (status) {
+            return `${status} status code (no body)`;
+        }
+        if (msg) {
+            return msg;
+        }
+        return '(no status code or body)';
+    }
+    static generate(status, errorResponse, message, headers) {
+        if (!status) {
+            return new error_APIConnectionError({ message, cause: core_castToError(errorResponse) });
+        }
+        const error = errorResponse;
+        if (status === 400) {
+            return new error_BadRequestError(status, error, message, headers);
+        }
+        if (status === 401) {
+            return new error_AuthenticationError(status, error, message, headers);
+        }
+        if (status === 403) {
+            return new error_PermissionDeniedError(status, error, message, headers);
+        }
+        if (status === 404) {
+            return new error_NotFoundError(status, error, message, headers);
+        }
+        if (status === 409) {
+            return new error_ConflictError(status, error, message, headers);
+        }
+        if (status === 422) {
+            return new error_UnprocessableEntityError(status, error, message, headers);
+        }
+        if (status === 429) {
+            return new error_RateLimitError(status, error, message, headers);
+        }
+        if (status >= 500) {
+            return new error_InternalServerError(status, error, message, headers);
+        }
+        return new error_APIError(status, error, message, headers);
+    }
+}
+class error_APIUserAbortError extends error_APIError {
+    constructor({ message } = {}) {
+        super(undefined, undefined, message || 'Request was aborted.', undefined);
+        this.status = undefined;
+    }
+}
+class error_APIConnectionError extends error_APIError {
+    constructor({ message, cause }) {
+        super(undefined, undefined, message || 'Connection error.', undefined);
+        this.status = undefined;
+        // in some environments the 'cause' property is already declared
+        // @ts-ignore
+        if (cause)
+            this.cause = cause;
+    }
+}
+class error_APIConnectionTimeoutError extends error_APIConnectionError {
+    constructor({ message } = {}) {
+        super({ message: message ?? 'Request timed out.' });
+    }
+}
+class error_BadRequestError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 400;
+    }
+}
+class error_AuthenticationError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 401;
+    }
+}
+class error_PermissionDeniedError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 403;
+    }
+}
+class error_NotFoundError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 404;
+    }
+}
+class error_ConflictError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 409;
+    }
+}
+class error_UnprocessableEntityError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 422;
+    }
+}
+class error_RateLimitError extends error_APIError {
+    constructor() {
+        super(...arguments);
+        this.status = 429;
+    }
+}
+class error_InternalServerError extends error_APIError {
+}
+//# sourceMappingURL=error.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/internal/decoders/line.mjs
 
 /**
@@ -49884,186 +49917,6 @@ function core_isObj(obj) {
     return obj != null && typeof obj === 'object' && !Array.isArray(obj);
 }
 //# sourceMappingURL=core.mjs.map
-;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/error.mjs
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-class error_AnthropicError extends Error {
-}
-class error_APIError extends error_AnthropicError {
-    constructor(status, error, message, headers) {
-        super(`${error_APIError.makeMessage(status, error, message)}`);
-        this.status = status;
-        this.headers = headers;
-        this.request_id = headers?.['request-id'];
-        this.error = error;
-    }
-    static makeMessage(status, error, message) {
-        const msg = error?.message ?
-            typeof error.message === 'string' ?
-                error.message
-                : JSON.stringify(error.message)
-            : error ? JSON.stringify(error)
-                : message;
-        if (status && msg) {
-            return `${status} ${msg}`;
-        }
-        if (status) {
-            return `${status} status code (no body)`;
-        }
-        if (msg) {
-            return msg;
-        }
-        return '(no status code or body)';
-    }
-    static generate(status, errorResponse, message, headers) {
-        if (!status) {
-            return new error_APIConnectionError({ message, cause: core_castToError(errorResponse) });
-        }
-        const error = errorResponse;
-        if (status === 400) {
-            return new error_BadRequestError(status, error, message, headers);
-        }
-        if (status === 401) {
-            return new error_AuthenticationError(status, error, message, headers);
-        }
-        if (status === 403) {
-            return new error_PermissionDeniedError(status, error, message, headers);
-        }
-        if (status === 404) {
-            return new error_NotFoundError(status, error, message, headers);
-        }
-        if (status === 409) {
-            return new error_ConflictError(status, error, message, headers);
-        }
-        if (status === 422) {
-            return new error_UnprocessableEntityError(status, error, message, headers);
-        }
-        if (status === 429) {
-            return new error_RateLimitError(status, error, message, headers);
-        }
-        if (status >= 500) {
-            return new error_InternalServerError(status, error, message, headers);
-        }
-        return new error_APIError(status, error, message, headers);
-    }
-}
-class error_APIUserAbortError extends error_APIError {
-    constructor({ message } = {}) {
-        super(undefined, undefined, message || 'Request was aborted.', undefined);
-        this.status = undefined;
-    }
-}
-class error_APIConnectionError extends error_APIError {
-    constructor({ message, cause }) {
-        super(undefined, undefined, message || 'Connection error.', undefined);
-        this.status = undefined;
-        // in some environments the 'cause' property is already declared
-        // @ts-ignore
-        if (cause)
-            this.cause = cause;
-    }
-}
-class error_APIConnectionTimeoutError extends error_APIConnectionError {
-    constructor({ message } = {}) {
-        super({ message: message ?? 'Request timed out.' });
-    }
-}
-class error_BadRequestError extends error_APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 400;
-    }
-}
-class error_AuthenticationError extends error_APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 401;
-    }
-}
-class error_PermissionDeniedError extends error_APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 403;
-    }
-}
-class error_NotFoundError extends error_APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 404;
-    }
-}
-class error_ConflictError extends error_APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 409;
-    }
-}
-class error_UnprocessableEntityError extends error_APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 422;
-    }
-}
-class error_RateLimitError extends error_APIError {
-    constructor() {
-        super(...arguments);
-        this.status = 429;
-    }
-}
-class error_InternalServerError extends error_APIError {
-}
-//# sourceMappingURL=error.mjs.map
-;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/pagination.mjs
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-class pagination_Page extends core_AbstractPage {
-    constructor(client, response, body, options) {
-        super(client, response, body, options);
-        this.data = body.data || [];
-        this.has_more = body.has_more || false;
-        this.first_id = body.first_id || null;
-        this.last_id = body.last_id || null;
-    }
-    getPaginatedItems() {
-        return this.data ?? [];
-    }
-    // @deprecated Please use `nextPageInfo()` instead
-    nextPageParams() {
-        const info = this.nextPageInfo();
-        if (!info)
-            return null;
-        if ('params' in info)
-            return info.params;
-        const params = Object.fromEntries(info.url.searchParams);
-        if (!Object.keys(params).length)
-            return null;
-        return params;
-    }
-    nextPageInfo() {
-        if (this.options.query?.['before_id']) {
-            // in reverse
-            const firstId = this.first_id;
-            if (!firstId) {
-                return null;
-            }
-            return {
-                params: {
-                    before_id: firstId,
-                },
-            };
-        }
-        const cursor = this.last_id;
-        if (!cursor) {
-            return null;
-        }
-        return {
-            params: {
-                after_id: cursor,
-            },
-        };
-    }
-}
-//# sourceMappingURL=pagination.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resource.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 class resource_APIResource {
@@ -50085,8 +49938,6 @@ class resources_completions_Completions extends resource_APIResource {
         });
     }
 }
-(function (Completions) {
-})(resources_completions_Completions || (resources_completions_Completions = {}));
 //# sourceMappingURL=completions.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/_vendor/partial-json-parser/parser.mjs
 const tokenize = (input) => {
@@ -50799,9 +50650,58 @@ const DEPRECATED_MODELS = {
     'claude-instant-1.1-100k': 'November 6th, 2024',
     'claude-instant-1.2': 'November 6th, 2024',
 };
-(function (Messages) {
-})(messages_Messages || (messages_Messages = {}));
 //# sourceMappingURL=messages.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/pagination.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+class pagination_Page extends core_AbstractPage {
+    constructor(client, response, body, options) {
+        super(client, response, body, options);
+        this.data = body.data || [];
+        this.has_more = body.has_more || false;
+        this.first_id = body.first_id || null;
+        this.last_id = body.last_id || null;
+    }
+    getPaginatedItems() {
+        return this.data ?? [];
+    }
+    // @deprecated Please use `nextPageInfo()` instead
+    nextPageParams() {
+        const info = this.nextPageInfo();
+        if (!info)
+            return null;
+        if ('params' in info)
+            return info.params;
+        const params = Object.fromEntries(info.url.searchParams);
+        if (!Object.keys(params).length)
+            return null;
+        return params;
+    }
+    nextPageInfo() {
+        if (this.options.query?.['before_id']) {
+            // in reverse
+            const firstId = this.first_id;
+            if (!firstId) {
+                return null;
+            }
+            return {
+                params: {
+                    before_id: firstId,
+                },
+            };
+        }
+        const cursor = this.last_id;
+        if (!cursor) {
+            return null;
+        }
+        return {
+            params: {
+                after_id: cursor,
+            },
+        };
+    }
+}
+//# sourceMappingURL=pagination.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/internal/decoders/jsonl.mjs
 
 
@@ -50836,7 +50736,6 @@ class JSONLDecoder {
 //# sourceMappingURL=jsonl.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/beta/messages/batches.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 
 
 
@@ -50924,12 +50823,11 @@ class batches_Batches extends resource_APIResource {
 }
 class BetaMessageBatchesPage extends pagination_Page {
 }
-(function (Batches) {
-    Batches.BetaMessageBatchesPage = BetaMessageBatchesPage;
-})(batches_Batches || (batches_Batches = {}));
+batches_Batches.BetaMessageBatchesPage = BetaMessageBatchesPage;
 //# sourceMappingURL=batches.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
 
 
 class messages_messages_Messages extends resource_APIResource {
@@ -50950,11 +50848,26 @@ class messages_messages_Messages extends resource_APIResource {
             stream: params.stream ?? false,
         });
     }
+    /**
+     * Count the number of tokens in a Message.
+     *
+     * The Token Count API can be used to count the number of tokens in a Message,
+     * including tools, images, and documents, without creating it.
+     */
+    countTokens(params, options) {
+        const { betas, ...body } = params;
+        return this._client.post('/v1/messages/count_tokens?beta=true', {
+            body,
+            ...options,
+            headers: {
+                'anthropic-beta': [...(betas ?? []), 'token-counting-2024-11-01'].toString(),
+                ...options?.headers,
+            },
+        });
+    }
 }
-(function (Messages) {
-    Messages.Batches = batches_Batches;
-    Messages.BetaMessageBatchesPage = BetaMessageBatchesPage;
-})(messages_messages_Messages || (messages_messages_Messages = {}));
+messages_messages_Messages.Batches = batches_Batches;
+messages_messages_Messages.BetaMessageBatchesPage = BetaMessageBatchesPage;
 //# sourceMappingURL=messages.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/lib/PromptCachingBetaMessageStream.mjs
 var PromptCachingBetaMessageStream_classPrivateFieldSet = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
@@ -51437,11 +51350,10 @@ class prompt_caching_messages_Messages extends resource_APIResource {
         return PromptCachingBetaMessageStream.createMessage(this, body, options);
     }
 }
-(function (Messages) {
-})(prompt_caching_messages_Messages || (prompt_caching_messages_Messages = {}));
 //# sourceMappingURL=messages.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/beta/prompt-caching/prompt-caching.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
 
 
 class PromptCaching extends resource_APIResource {
@@ -51450,12 +51362,12 @@ class PromptCaching extends resource_APIResource {
         this.messages = new prompt_caching_messages_Messages(this._client);
     }
 }
-(function (PromptCaching) {
-    PromptCaching.Messages = prompt_caching_messages_Messages;
-})(PromptCaching || (PromptCaching = {}));
+PromptCaching.Messages = prompt_caching_messages_Messages;
 //# sourceMappingURL=prompt-caching.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/beta/beta.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+
 
 
 
@@ -51466,14 +51378,15 @@ class beta_Beta extends resource_APIResource {
         this.promptCaching = new PromptCaching(this._client);
     }
 }
-(function (Beta) {
-    Beta.Messages = messages_messages_Messages;
-    Beta.PromptCaching = PromptCaching;
-})(beta_Beta || (beta_Beta = {}));
+beta_Beta.Messages = messages_messages_Messages;
+beta_Beta.PromptCaching = PromptCaching;
 //# sourceMappingURL=beta.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/index.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 var sdk_a;
+
+
+
 
 
 
@@ -51594,15 +51507,12 @@ Anthropic.UnprocessableEntityError = error_UnprocessableEntityError;
 Anthropic.toFile = uploads_toFile;
 Anthropic.fileFromPath = registry_fileFromPath;
 const { HUMAN_PROMPT, AI_PROMPT } = Anthropic;
-const { /* AnthropicError */ "pJ": sdk_AnthropicError, /* APIError */ "LG": sdk_APIError, /* APIConnectionError */ "xX": sdk_APIConnectionError, /* APIConnectionTimeoutError */ "qA": sdk_APIConnectionTimeoutError, /* APIUserAbortError */ "cH": sdk_APIUserAbortError, /* NotFoundError */ "m_": sdk_NotFoundError, /* ConflictError */ "fK": sdk_ConflictError, /* RateLimitError */ "OE": sdk_RateLimitError, /* BadRequestError */ "v7": sdk_BadRequestError, /* AuthenticationError */ "v3": sdk_AuthenticationError, /* InternalServerError */ "PO": sdk_InternalServerError, /* PermissionDeniedError */ "Ll": sdk_PermissionDeniedError, /* UnprocessableEntityError */ "Is": sdk_UnprocessableEntityError, } = sdk_error_namespaceObject;
+
 var sdk_toFile = uploads_toFile;
 var sdk_fileFromPath = registry_fileFromPath;
-(function (Anthropic) {
-    Anthropic.Page = pagination_Page;
-    Anthropic.Completions = resources_completions_Completions;
-    Anthropic.Messages = messages_Messages;
-    Anthropic.Beta = beta_Beta;
-})(Anthropic || (Anthropic = {}));
+Anthropic.Completions = resources_completions_Completions;
+Anthropic.Messages = messages_Messages;
+Anthropic.Beta = beta_Beta;
 /* harmony default export */ const sdk = (Anthropic);
 //# sourceMappingURL=index.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/zod/lib/index.mjs
