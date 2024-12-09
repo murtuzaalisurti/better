@@ -42368,7 +42368,7 @@ function stringify(object, opts = {}) {
 }
 //# sourceMappingURL=stringify.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/version.mjs
-const VERSION = '4.72.0'; // x-release-please-version
+const VERSION = '4.76.0'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_shims/registry.mjs
 let auto = false;
@@ -44631,7 +44631,7 @@ class Files extends APIResource {
      * [completions](https://platform.openai.com/docs/api-reference/fine-tuning/completions-input)
      * models.
      *
-     * The Batch API only supports `.jsonl` files up to 100 MB in size. The input also
+     * The Batch API only supports `.jsonl` files up to 200 MB in size. The input also
      * has a specific required
      * [format](https://platform.openai.com/docs/api-reference/batch/request-input).
      *
@@ -48060,9 +48060,6 @@ OpenAI.PermissionDeniedError = PermissionDeniedError;
 OpenAI.UnprocessableEntityError = UnprocessableEntityError;
 OpenAI.toFile = toFile;
 OpenAI.fileFromPath = fileFromPath;
-
-var openai_toFile = toFile;
-var openai_fileFromPath = fileFromPath;
 OpenAI.Completions = Completions;
 OpenAI.Chat = Chat;
 OpenAI.Embeddings = Embeddings;
@@ -48197,7 +48194,8 @@ const _deployments_endpoints = new Set([
     '/images/generations',
 ]);
 const API_KEY_SENTINEL = '<Missing Key>';
-// ---------------------- End Azure ----------------------
+
+
 /* harmony default export */ const openai = (OpenAI);
 //# sourceMappingURL=index.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/version.mjs

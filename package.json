@@ -26,25 +26,25 @@
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
     "@anthropic-ai/sdk": "^0.32.1",
-    "is-ci": "^3.0.1",
+    "is-ci": "^4.1.0",
     "micromatch": "^4.0.8",
-    "openai": "^4.72.0",
+    "openai": "^4.76.0",
     "parse-diff": "^0.11.1",
     "zod": "^3.23.8",
     "zod-to-json-schema": "^3.23.5"
   },
   "devDependencies": {
-    "@eslint/js": "^9.15.0",
+    "@eslint/js": "^9.16.0",
     "@vercel/ncc": "^0.38.3",
-    "eslint": "^9.15.0",
+    "eslint": "^9.16.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-jsdoc": "^50.5.0",
-    "globals": "^15.12.0",
+    "eslint-plugin-jsdoc": "^50.6.0",
+    "globals": "^15.13.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
     "npm-check-updates": "^17.1.11",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.3.3"
+    "prettier": "^3.4.2"
   }
 }
