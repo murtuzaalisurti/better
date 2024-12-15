@@ -5,6 +5,9 @@ const DEFAULT_MODEL = {
     ANTHROPIC: {
         name: "claude-3-5-sonnet-20240620",
     },
+    MISTRAL: {
+        name: "pixtral-12b-2409",
+    },
 };
 
 const COMMON_SYSTEM_PROMPT = `
