@@ -3,14 +3,14 @@ import github from "@actions/github";
 import parseDiff from "parse-diff";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
-import { Mistral } from "@mistralai/mistralai";
+// import { Mistral } from "@mistralai/mistralai";
 import { ChatMistralAI, ChatMistralAICallOptions } from "@langchain/mistralai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import mm from "micromatch";
 
-import { aDiff, diffPayloadSchema } from "./utils/types.js";
+import { aDiff, diffPayloadSchema, diffPayloadSchemaWithRequiredSuggestions } from "./utils/types.js";
 import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT } from "./utils/constants.js";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { AIMessage } from "@langchain/core/messages";
@@ -256,10 +256,13 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
     mistral.model = getModelName(modelName, "mistral");
     mistral.safePrompt = true;
 
-    const parser = StructuredOutputParser.fromZodSchema(diffPayloadSchema);
+    const parser = StructuredOutputParser.fromZodSchema(diffPayloadSchemaWithRequiredSuggestions);
 
     const result = await mistral
-        .withStructuredOutput(diffPayloadSchema, { name: "diffPayloadSchema", method: "json_mode" })
+        .withStructuredOutput(diffPayloadSchemaWithRequiredSuggestions, {
+            name: "diffPayloadSchemaWithRequiredSuggestions",
+            method: "json_mode",
+        })
         .invoke([
             ["system", COMMON_SYSTEM_PROMPT],
             ["user", `${getUserPrompt(rules, rawComments, pullRequestContext)}\n${parser.getFormatInstructions()}`],

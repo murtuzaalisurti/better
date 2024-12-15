@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 const aDiff = z.object({
     path: z.string(),
@@ -15,10 +15,12 @@ const aDiff = z.object({
     suggestions: z.string().optional(),
 });
 
-const diffPayloadSchema = z.object(
-    {
-        commentsToAdd: z.array(aDiff)
-    }
-);
+const diffPayloadSchema = z.object({
+    commentsToAdd: z.array(aDiff),
+});
 
-export { aDiff, diffPayloadSchema };
+const diffPayloadSchemaWithRequiredSuggestions = diffPayloadSchema.extend({
+    commentsToAdd: z.array(aDiff.extend({ suggestions: z.string() })),
+});
+
+export { aDiff, diffPayloadSchema, diffPayloadSchemaWithRequiredSuggestions };
