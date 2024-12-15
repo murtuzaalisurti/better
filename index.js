@@ -3,7 +3,6 @@ import github from "@actions/github";
 import parseDiff from "parse-diff";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
-// import { Mistral } from "@mistralai/mistralai";
 import { ChatMistralAI, ChatMistralAICallOptions } from "@langchain/mistralai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
