@@ -265,7 +265,7 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
             ["user", `${getUserPrompt(rules, rawComments, pullRequestContext)}\n${parser.getFormatInstructions()}`],
         ]);
 
-    if (!result) {
+    if (!result || result.commentsToAdd.length === 0) {
         throw new Error(`the model refused to generate suggestions - ${result}`);
     }
 
