@@ -3,6 +3,8 @@ import github from "@actions/github";
 import parseDiff from "parse-diff";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
+import { Mistral } from "@mistralai/mistralai";
+import { ChatMistralAI, ChatMistralAICallOptions } from "@langchain/mistralai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -10,6 +12,8 @@ import mm from "micromatch";
 
 import { aDiff, diffPayloadSchema } from "./utils/types.js";
 import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT } from "./utils/constants.js";
+import { StructuredOutputParser } from "@langchain/core/output_parsers";
+import { AIMessage } from "@langchain/core/messages";
 
 /**
  * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
@@ -19,6 +23,8 @@ import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT } from ".
  * @typedef {InstanceType<GitHub>} OctokitApi
  * @typedef {parseDiff.File[]} ParsedDiff
  * @typedef {{ body: string | null }} PullRequestContext
+ * @typedef {'openai' | 'anthropic' | 'mistral'} AIPlatform
+ * @typedef {OpenAI | Anthropic | ChatMistralAI<ChatMistralAICallOptions>} AIPlatformSDK
  * @typedef {{
  *  info: (message: string) => void,
  *  warning: (message: string) => void,
@@ -28,7 +34,7 @@ import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT } from ".
 
 /**
  * @param {string} name
- * @param {'openai' | 'anthropic'} platform
+ * @param {AIPlatform} platform
  * @returns {string}
  */
 function getModelName(name, platform) {
@@ -152,7 +158,7 @@ function extractComments() {
 function getUserPrompt(rules, rawComments, pullRequestContext) {
     return `I want you to code review a pull request ${rules ? ` by including the following rules: ${rules} \nThe rules provided describe how the code should be` : ""}. Here's the diff payload from the pull request:
             ${JSON.stringify(rawComments)}
-            ${pullRequestContext.body ? `\nAlso, here's the pull request description on what it's trying to do to give you some more context (keep in mind that the description is not always accurate and can be incorrect, so compare the code changes in the diff to the description): ${pullRequestContext.body})` : ""}`;
+            ${pullRequestContext.body ? `\nAlso, here's the pull request description on what it's trying to do to give you some more context (keep in mind that the description is not always accurate and can be incorrect, so compare the code changes in the diff to the description): ${pullRequestContext.body})` : ""}.`;
 }
 
 /**
@@ -238,9 +244,40 @@ async function useAnthropic({ rawComments, anthropic, rules, modelName, pullRequ
 
 /**
  * @param {{
- *  platform: 'openai' | 'anthropic',
  *  rawComments: rawCommentsPayload,
- *  platformSDK: OpenAI | Anthropic,
+ *  mistral: ChatMistralAI<ChatMistralAICallOptions>,
+ *  rules: string,
+ *  modelName: string,
+ *  pullRequestContext: PullRequestContext
+ * }} params
+ * @returns {Promise<suggestionsPayload | null>}
+ */
+async function useMistral({ rawComments, mistral, rules, modelName, pullRequestContext }) {
+    mistral.model = getModelName(modelName, "mistral");
+    mistral.safePrompt = true;
+
+    const parser = StructuredOutputParser.fromZodSchema(diffPayloadSchema);
+
+    const result = await mistral
+        .withStructuredOutput(diffPayloadSchema, { name: "diffPayloadSchema", method: "json_mode" })
+        .invoke([
+            ["system", COMMON_SYSTEM_PROMPT],
+            ["user", `${getUserPrompt(rules, rawComments, pullRequestContext)}\n${parser.getFormatInstructions()}`],
+        ]);
+
+    if (!result) {
+        throw new Error(`the model refused to generate suggestions - ${result}`);
+    }
+
+    await parser.invoke(new AIMessage(JSON.stringify(result))); // validate output with schema
+    return result;
+}
+
+/**
+ * @param {{
+ *  platform: AIPlatform,
+ *  rawComments: rawCommentsPayload,
+ *  platformSDK: AIPlatformSDK,
  *  rules: string,
  *  modelName: string,
  *  pullRequestContext: PullRequestContext
@@ -265,6 +302,16 @@ async function getSuggestions({ platform, rawComments, platformSDK, rules, model
             return await useAnthropic({
                 rawComments,
                 anthropic: platformSDK,
+                rules,
+                modelName,
+                pullRequestContext,
+            });
+        }
+
+        if (platform === "mistral") {
+            return await useMistral({
+                rawComments,
+                mistral: platformSDK,
                 rules,
                 modelName,
                 pullRequestContext,
@@ -402,6 +449,21 @@ function log({ withTimestamp = true }) {
     };
 }
 
+/**
+ * Returns an instance of the AI platform SDK given the platform name and API key.
+ *
+ * @param {AIPlatform} platform - The name of the AI platform.
+ * @param {string} apiKey - The API key for the AI platform.
+ * @returns {AIPlatformSDK | Error} The AI platform SDK instance.
+ */
+function getPlatformSDK(platform, apiKey) {
+    if (platform === "openai") return new OpenAI({ apiKey });
+    if (platform === "anthropic") return new Anthropic({ apiKey });
+    if (platform === "mistral") return new ChatMistralAI({ apiKey });
+
+    throw new Error(`Unsupported AI platform: ${platform}`);
+}
+
 async function run() {
     const { info, warning, error } = log({ withTimestamp: true });
 
@@ -418,12 +480,7 @@ async function run() {
         const octokit = github.getOctokit(token);
 
         info("Initializing AI model...");
-        const platformSDK =
-            platform === "openai"
-                ? new OpenAI({ apiKey: modelToken })
-                : new Anthropic({
-                      apiKey: modelToken,
-                  });
+        const platformSDK = getPlatformSDK(platform, modelToken);
 
         if (github.context.payload.pull_request) {
             info("Fetching pull request details...");
