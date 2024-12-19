@@ -257,6 +257,7 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
 
     const parser = StructuredOutputParser.fromZodSchema(diffPayloadSchemaWithRequiredSuggestions);
 
+    console.log("invoking mistral");
     const result = await mistral
         .withStructuredOutput(diffPayloadSchemaWithRequiredSuggestions, {
             name: "diffPayloadSchemaWithRequiredSuggestions",
@@ -270,6 +271,7 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
             ],
         ]);
 
+    console.log("got result");
     // console.log("result", JSON.stringify(result, null, 2));
     console.log(parser.getFormatInstructions());
     if (!result || result.commentsToAdd.length === 0) {
