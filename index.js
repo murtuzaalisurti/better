@@ -270,7 +270,7 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
             ],
         ]);
 
-    console.log("result", JSON.stringify(result, null, 2));
+    // console.log("result", JSON.stringify(result, null, 2));
     console.log(parser.getFormatInstructions());
     if (!result || result.commentsToAdd.length === 0) {
         throw new Error(`the model refused to generate suggestions - ${result}`);
