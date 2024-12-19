@@ -93,9 +93,9 @@ The `repo-token` is the authorization token of your repository. It is auto gener
 
 ### 2. `platform`
 
-The `platform` is the name of the AI platform you want to use. It can be either `openai` or `anthropic`.
+The `platform` is the name of the AI platform you want to use. It can be either `openai` or `anthropic` or `mistral`.
 
-> *This action only supports ***OpenAI*** and ***Anthropic*** models for now*.
+> *This action supports ***OpenAI***, ***Anthropic*** and ***Mistral*** models for now*.
 
 ---
 
@@ -107,6 +107,7 @@ Example:
 
 - `OPEN_AI_KEY` as a secret with your OpenAI API key as a value.
 - `ANTHROPIC_KEY` as a secret with your Anthropic API key as a value.
+- `MISTRAL_KEY` as a secret with your Mistral API key as a value.
 
 They can be accessed in the workflow file using `${{ secrets.YOUR_KEY_NAME }}`.
 
@@ -114,7 +115,7 @@ They can be accessed in the workflow file using `${{ secrets.YOUR_KEY_NAME }}`.
 
 ### 4. `ai-model-name` (Optional)
 
-Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` for OpenAI and `claude-3-5-sonnet-20240620` for Anthropic if not specified. Here's a list of supported models:
+Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` for OpenAI, `claude-3-5-sonnet-20241022` for Anthropic, and `pixtral-12b-2409` for Mistral if not specified. Here's a list of supported models:
 
 For OpenAI:
 
@@ -125,10 +126,15 @@ For OpenAI:
 
 For Anthropic:
 
+- `claude-3-5-sonnet-20241022`
 - `claude-3-5-sonnet-20240620`
 - `claude-3-opus-20240229`
 - `claude-3-sonnet-20240229`
 - `claude-3-haiku-20240307`
+
+For Mistral:
+
+- Any of the latest [models](https://docs.mistral.ai/getting-started/models/models_overview/).
 
 ---
 
@@ -162,7 +168,7 @@ Glob patterns are resolved using [micromatch](https://github.com/micromatch/micr
 
 ## Things To Note
 
-- The more the pull request changes are in number, higher will be the tokens sent to the AI model and once you reach the token limit either for the model or for the API (rate limiting), the action will throw an error. So, make sure to upgrade your model or the token limit if you encounter an issue which states *too many tokens* or *token limit reached*. Visit OpenAI's or Anthropic's API documentation for more details.
+- The more the pull request changes are in number, higher will be the tokens sent to the AI model and once you reach the token limit either for the model or for the API (rate limiting), the action will throw an error. So, make sure to upgrade your model or the token limit if you encounter an issue which states *too many tokens* or *token limit reached*. Visit respective platform's API documentation for more details.
 - The [system prompt](https://github.com/murtuzaalisurti/better/blob/main/utils/constants.js#L10) is common across all supported AI models.
 
 > Made with ❤️ by [@murtuzaalisurti](https://github.com/murtuzaalisurti). Learn more at [https://syntackle.com/blog/ai-powered-code-review-tool-better/](https://syntackle.com/blog/ai-powered-code-review-tool-better/).
