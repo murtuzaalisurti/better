@@ -264,7 +264,10 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
         })
         .invoke([
             ["system", COMMON_SYSTEM_PROMPT],
-            ["user", `${getUserPrompt(rules, rawComments, pullRequestContext)}\n${parser.getFormatInstructions()}`],
+            [
+                "user",
+                `${getUserPrompt(rules, rawComments, pullRequestContext)}\n${parser.getFormatInstructions()}\nDon't give partial response. Sometimes the json is cut off in between. Please provide the full json response.`,
+            ],
         ]);
 
     console.log("result", JSON.stringify(result, null, 2));
