@@ -172,7 +172,7 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
  * @returns {Promise<suggestionsPayload | null>}
  */
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
-    const modelDeepseek = /deepseek/i.test(modelName);
+    const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
     const result = !modelDeepseek
         ? await openAI.beta.chat.completions.parse({
               model: getModelName(modelName, platform),
@@ -200,6 +200,9 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                       content: `${getUserPrompt(rules, rawComments, pullRequestContext)} - IMP: give the output in a valid JSON string and stick to the schema.`,
                   },
               ],
+              response_format: {
+                  type: "json_object",
+              },
           });
 
     const { message } = result.choices[0];
