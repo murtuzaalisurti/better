@@ -197,7 +197,23 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   },
                   {
                       role: "user",
-                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)} - IMP: give the output in a valid JSON string and stick to the schema.`,
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)} - IMP: give the output in a valid JSON string and stick to the schema mentioned here: 
+                      {
+                        commentsToAdd: {
+                            path: string;
+                            position: number;
+                            line: number;
+                            change: {
+                                type: string;
+                                add: boolean;
+                                ln: number;
+                                content: string;
+                                relativePosition: number;
+                            };
+                            previously?: string | undefined;
+                            suggestions?: string | undefined;
+                        }[];
+                      }.`,
                   },
               ],
               response_format: {
@@ -213,7 +229,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
         throw new Error(`the model refused to generate suggestions - ${message.refusal}`);
     }
 
-    return message.parsed;
+    return modelDeepseek ? JSON.parse(message.content) : message.parsed;
 }
 
 /**
