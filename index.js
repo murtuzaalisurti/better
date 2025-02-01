@@ -184,7 +184,9 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                 content: `${getUserPrompt(rules, rawComments, pullRequestContext)} - IMP: give the output in a valid JSON string and stick to the schema.`,
             },
         ],
-        response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
+        response_format: /deepseek/i.test(modelName)
+            ? { type: "json_object" }
+            : zodResponseFormat(diffPayloadSchema, "json_diff_response"),
     });
 
     const { message } = result.choices[0];
