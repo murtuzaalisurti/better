@@ -171,6 +171,7 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
  * @returns {Promise<suggestionsPayload | null>}
  */
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext }) {
+    console.log(modelName, "-- model ------");
     const result = await openAI.beta.chat.completions.parse({
         model: getModelName(modelName, "openai"),
         messages: [
