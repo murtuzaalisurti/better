@@ -166,14 +166,14 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
  *  openAI: OpenAI,
  *  rules: string,
  *  modelName: string,
- *  pullRequestContext: PullRequestContext
+ *  pullRequestContext: PullRequestContext,
+ *  platform: AIPlatform
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
-async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext }) {
-    console.log(modelName, "-- model ------");
+async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
     const result = await openAI.beta.chat.completions.parse({
-        model: getModelName(modelName, "openai"),
+        model: getModelName(modelName, platform),
         messages: [
             {
                 role: "system",
@@ -293,7 +293,6 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
 async function getSuggestions({ platform, rawComments, platformSDK, rules, modelName, pullRequestContext }) {
     const { error } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
 
-    console.log("getSuggestions ---", modelName);
     try {
         if (platform === "openai") {
             return await useOpenAI({
@@ -332,6 +331,7 @@ async function getSuggestions({ platform, rawComments, platformSDK, rules, model
                 rules,
                 modelName,
                 pullRequestContext,
+                platform,
             });
         }
 
