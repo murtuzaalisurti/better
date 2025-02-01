@@ -22,7 +22,7 @@ import { AIMessage } from "@langchain/core/messages";
  * @typedef {InstanceType<GitHub>} OctokitApi
  * @typedef {parseDiff.File[]} ParsedDiff
  * @typedef {{ body: string | null }} PullRequestContext
- * @typedef {'openai' | 'anthropic' | 'mistral'} AIPlatform
+ * @typedef {'openai' | 'anthropic' | 'mistral' | 'openrouter'} AIPlatform
  * @typedef {OpenAI | Anthropic | ChatMistralAI<ChatMistralAICallOptions>} AIPlatformSDK
  * @typedef {{
  *  info: (message: string) => void,
@@ -323,6 +323,16 @@ async function getSuggestions({ platform, rawComments, platformSDK, rules, model
             });
         }
 
+        if (platform === "openrouter") {
+            return await useOpenAI({
+                rawComments,
+                openAI: platformSDK,
+                rules,
+                modelName,
+                pullRequestContext,
+            });
+        }
+
         throw new Error(`Unsupported AI platform: ${platform}`);
     } catch (err) {
         if (err.constructor.name == "LengthFinishReasonError") {
@@ -465,6 +475,7 @@ function getPlatformSDK(platform, apiKey) {
     if (platform === "openai") return new OpenAI({ apiKey });
     if (platform === "anthropic") return new Anthropic({ apiKey });
     if (platform === "mistral") return new ChatMistralAI({ apiKey });
+    if (platform === "openrouter") return new OpenAI({ apiKey, baseURL: "https://openrouter.ai/api/v1" });
 
     throw new Error(`Unsupported AI platform: ${platform}`);
 }
