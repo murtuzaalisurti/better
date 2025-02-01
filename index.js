@@ -293,6 +293,7 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
 async function getSuggestions({ platform, rawComments, platformSDK, rules, modelName, pullRequestContext }) {
     const { error } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
 
+    console.log("getSuggestions ---", modelName);
     try {
         if (platform === "openai") {
             return await useOpenAI({
