@@ -172,24 +172,39 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
  * @returns {Promise<suggestionsPayload | null>}
  */
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
-    const result = await openAI.beta.chat.completions.parse({
-        model: getModelName(modelName, platform),
-        messages: [
-            {
-                role: "system",
-                content: COMMON_SYSTEM_PROMPT,
-            },
-            {
-                role: "user",
-                content: `${getUserPrompt(rules, rawComments, pullRequestContext)} - IMP: give the output in a valid JSON string and stick to the schema.`,
-            },
-        ],
-        response_format: /deepseek/i.test(modelName)
-            ? { type: "json_object" }
-            : zodResponseFormat(diffPayloadSchema, "json_diff_response"),
-    });
+    const modelDeepseek = /deepseek/i.test(modelName);
+    const result = !modelDeepseek
+        ? await openAI.beta.chat.completions.parse({
+              model: getModelName(modelName, platform),
+              messages: [
+                  {
+                      role: "system",
+                      content: COMMON_SYSTEM_PROMPT,
+                  },
+                  {
+                      role: "user",
+                      content: getUserPrompt(rules, rawComments, pullRequestContext),
+                  },
+              ],
+              response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
+          })
+        : await openAI.chat.completions.create({
+              model: getModelName(modelName, platform),
+              messages: [
+                  {
+                      role: "system",
+                      content: COMMON_SYSTEM_PROMPT,
+                  },
+                  {
+                      role: "user",
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)} - IMP: give the output in a valid JSON string and stick to the schema.`,
+                  },
+              ],
+          });
 
     const { message } = result.choices[0];
+
+    console.log(message);
 
     if (message.refusal) {
         throw new Error(`the model refused to generate suggestions - ${message.refusal}`);
