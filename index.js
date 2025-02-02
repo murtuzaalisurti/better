@@ -348,6 +348,10 @@ async function retry(
     let lastError;
     let delay = initialDelay;
 
+    if (retries === 0) {
+        return await fn();
+    }
+
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
             return await fn();
