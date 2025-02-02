@@ -223,8 +223,6 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
 
     const { message } = result.choices[0];
 
-    console.log(message);
-
     if (message.refusal) {
         throw new Error(`the model refused to generate suggestions - ${message.refusal}`);
     }
