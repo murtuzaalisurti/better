@@ -316,6 +316,109 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
 }
 
 /**
+ * @param {({
+ *  platform,
+ *  rawComments,
+ *  platformSDK,
+ *  rules,
+ *  modelName,
+ *  pullRequestContext
+ * }: {
+ *  platform: AIPlatform,
+ *  rawComments: rawCommentsPayload,
+ *  platformSDK: AIPlatformSDK,
+ *  rules: string,
+ *  modelName: string,
+ *  pullRequestContext: PullRequestContext
+ * }) => Promise<suggestionsPayload | null>} fn
+ * @param {{
+ *  retries: number,
+ *  platform: AIPlatform,
+ *  rawComments: rawCommentsPayload,
+ *  platformSDK: AIPlatformSDK,
+ *  rules: string,
+ *  modelName: string,
+ *  pullRequestContext: PullRequestContext
+ * }} options
+ */
+// async function retry(fn, options) {
+//     const { retries, ...suggestionOptions } = options;
+//     for (let i = 0; i < retries; i++) {
+//         try {
+//             return await fn(suggestionOptions);
+//         } catch (error) {
+//             if (i === retries - 1) {
+//                 throw error;
+//             }
+//         }
+//     }
+// }
+
+/**
+ * Retries an async function with exponential backoff
+ * @template T
+ * @param {() => Promise<T>} fn The async function to retry
+ * @param {{
+ *  retries?: number,
+ *  initialDelay?: number,
+ *  maxDelay?: number,
+ *  backoffFactor?: number,
+ *  retryableErrors?: string[],
+ *  onRetry?: (info: {
+ *    error: Error,
+ *    attempt: number,
+ *    remainingAttempts: number,
+ *    delay: number
+ *  }) => void,
+ * }} options Configuration options
+ * @returns {Promise<T>}
+ */
+async function retry(
+    fn,
+    {
+        retries = 3,
+        initialDelay = 1500, // Start with 1.5 seconds
+        backoffFactor = 2, // Double the delay each time
+        maxDelay = 10000, // Never wait more than 10 seconds
+        nonRetryableErrors = ["Unsupported AI platform", "Too many tokens"],
+        onRetry = null,
+    } = {}
+) {
+    let lastError;
+    let delay = initialDelay;
+
+    for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            lastError = error;
+
+            const shouldNotRetry = nonRetryableErrors.some(errMsg =>
+                error.message.toLowerCase().includes(errMsg.toLowerCase())
+            );
+
+            if (shouldNotRetry || attempt === retries - 1) {
+                throw error;
+            }
+
+            if (onRetry) {
+                onRetry({
+                    error,
+                    attempt: attempt + 1,
+                    remainingAttempts: retries - attempt - 1,
+                    delay,
+                });
+            }
+
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay = Math.min(delay * backoffFactor, maxDelay);
+        }
+    }
+
+    throw lastError;
+}
+
+/**
  * @param {{
  *  platform: AIPlatform,
  *  rawComments: rawCommentsPayload,
@@ -327,51 +430,64 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
  * @returns {Promise<suggestionsPayload | null>}
  */
 async function getSuggestions({ platform, rawComments, platformSDK, rules, modelName, pullRequestContext }) {
-    const { error } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
+    const { error, warning } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
 
     try {
-        if (platform === "openai") {
-            return await useOpenAI({
-                rawComments,
-                openAI: platformSDK,
-                rules,
-                modelName,
-                pullRequestContext,
-            });
-        }
+        return await retry(
+            async () => {
+                if (platform === "openai") {
+                    return await useOpenAI({
+                        rawComments,
+                        openAI: platformSDK,
+                        rules,
+                        modelName,
+                        pullRequestContext,
+                    });
+                }
 
-        if (platform === "anthropic") {
-            return await useAnthropic({
-                rawComments,
-                anthropic: platformSDK,
-                rules,
-                modelName,
-                pullRequestContext,
-            });
-        }
+                if (platform === "anthropic") {
+                    return await useAnthropic({
+                        rawComments,
+                        anthropic: platformSDK,
+                        rules,
+                        modelName,
+                        pullRequestContext,
+                    });
+                }
 
-        if (platform === "mistral") {
-            return await useMistral({
-                rawComments,
-                mistral: platformSDK,
-                rules,
-                modelName,
-                pullRequestContext,
-            });
-        }
+                if (platform === "mistral") {
+                    return await useMistral({
+                        rawComments,
+                        mistral: platformSDK,
+                        rules,
+                        modelName,
+                        pullRequestContext,
+                    });
+                }
 
-        if (platform === "openrouter") {
-            return await useOpenAI({
-                rawComments,
-                openAI: platformSDK,
-                rules,
-                modelName,
-                pullRequestContext,
-                platform,
-            });
-        }
+                if (platform === "openrouter") {
+                    return await useOpenAI({
+                        rawComments,
+                        openAI: platformSDK,
+                        rules,
+                        modelName,
+                        pullRequestContext,
+                        platform,
+                    });
+                }
 
-        throw new Error(`Unsupported AI platform: ${platform}`);
+                throw new Error(`Unsupported AI platform: ${platform}`);
+            },
+            {
+                retries: 3,
+                initialDelay: 1000,
+                maxDelay: 10000,
+                onRetry: ({ error: retryError, attempt, remainingAttempts, delay }) => {
+                    error(`Attempt ${attempt} failed: ${retryError.message}.`);
+                    warning(`Retrying in ${delay}ms. Remaining attempts: ${remainingAttempts}.`);
+                },
+            }
+        );
     } catch (err) {
         if (err.constructor.name == "LengthFinishReasonError") {
             error(`Too many tokens: ${err.message}`);
