@@ -8,6 +8,9 @@ const DEFAULT_MODEL = {
     MISTRAL: {
         name: "pixtral-12b-2409",
     },
+    OPENROUTER: {
+        name: "deepseek/deepseek-r1",
+    },
 };
 
 const COMMON_SYSTEM_PROMPT = `

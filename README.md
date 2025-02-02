@@ -40,11 +40,11 @@ jobs:
         steps:
             - name: step-name
               id: step-id
-              uses: murtuzaalisurti/better@v2 # this is the ref of the github action - https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_iduses
+              uses: murtuzaalisurti/better@v3 # this is the ref of the github action - https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_iduses
               with:
                 repo-token: ${{ secrets.GITHUB_TOKEN }} # this is auto generated
                 ai-model-api-key: ${{ secrets.MODEL_API_KEY }} # make sure to set this in your repository secrets - /settings/secrets/actions (Settings > Secrets and Variables > Actions > Secrets Tab)
-                platform: 'openai'
+                platform: 'openai' # can be 'openai' | 'anthropic' | 'mistral' | 'openrouter'
                 delete-existing-review-by-bot: true #default is true
                 filesToIgnore: '**/*.env; .husky/**; .cache/**' # uses glob patterns (micromatch - https://github.com/micromatch/micromatch)
                 rules: |- # Rules to consider for code review
@@ -93,9 +93,9 @@ The `repo-token` is the authorization token of your repository. It is auto gener
 
 ### 2. `platform`
 
-The `platform` is the name of the AI platform you want to use. It can be either `openai` or `anthropic` or `mistral`.
+The `platform` is the name of the AI platform you want to use. It can be either `openai` or `anthropic` or `mistral` or `openrouter`.
 
-> *This action supports ***OpenAI***, ***Anthropic*** and ***Mistral*** models for now*.
+> *This action supports ***OpenAI***, ***Anthropic***, ***Mistral*** and ***Deepseek*** models*.
 
 ---
 
@@ -108,6 +108,7 @@ Example:
 - `OPEN_AI_KEY` as a secret with your OpenAI API key as a value.
 - `ANTHROPIC_KEY` as a secret with your Anthropic API key as a value.
 - `MISTRAL_KEY` as a secret with your Mistral API key as a value.
+- `OPENROUTER_KEY` as a secret with your OpenRouter API key as a value.
 
 They can be accessed in the workflow file using `${{ secrets.YOUR_KEY_NAME }}`.
 
@@ -115,7 +116,7 @@ They can be accessed in the workflow file using `${{ secrets.YOUR_KEY_NAME }}`.
 
 ### 4. `ai-model-name` (Optional)
 
-Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` for OpenAI, `claude-3-5-sonnet-20241022` for Anthropic, and `pixtral-12b-2409` for Mistral if not specified. Here's a list of supported models:
+Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` for OpenAI, `claude-3-5-sonnet-20241022` for Anthropic, `pixtral-12b-2409` for Mistral, and `deepseek/deepseek-r1` for OpenRouter if not specified. Here's a list of supported models:
 
 For OpenAI:
 
@@ -135,6 +136,10 @@ For Anthropic:
 For Mistral:
 
 - Any of the latest [models](https://docs.mistral.ai/getting-started/models/models_overview/).
+
+For OpenRouter:
+
+- [deepseek/deepseek-r1](https://openrouter.ai/deepseek/deepseek-r1).
 
 ---
 
@@ -164,11 +169,16 @@ List of files to ignore. It is a semicolon(`;`) separated list of glob patterns.
 
 Glob patterns are resolved using [micromatch](https://github.com/micromatch/micromatch). Check out their documentation for more info.
 
+### 8. `max-retries` (Optional)
+
+The maximum number of retries the action will perform on failure while generating suggestions from the AI model. Specify `0` to skip retries (see things to note below to know why this is important). The default value is `3` if you don't specify.
+
 ---
 
 ## Things To Note
 
 - The more the pull request changes are in number, higher will be the tokens sent to the AI model and once you reach the token limit either for the model or for the API (rate limiting), the action will throw an error. So, make sure to upgrade your model or the token limit if you encounter an issue which states *too many tokens* or *token limit reached*. Visit respective platform's API documentation for more details.
 - The [system prompt](https://github.com/murtuzaalisurti/better/blob/main/utils/constants.js#L10) is common across all supported AI models.
+- The max retries option (new in v3) will make a call to the model at least 3 times if you don't specify the `max-retries` option in your workflow file. This will increase the consumption of tokens, so if you don't want to retry on failure, set the `max-retries` option to `0`.
 
 > Made with ❤️ by [@murtuzaalisurti](https://github.com/murtuzaalisurti). Learn more at [https://syntackle.com/blog/ai-powered-code-review-tool-better/](https://syntackle.com/blog/ai-powered-code-review-tool-better/).

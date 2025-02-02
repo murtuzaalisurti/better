@@ -1,9 +1,11 @@
 import core from "@actions/core";
 import github from "@actions/github";
-import parseDiff from "parse-diff";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { ChatMistralAI, ChatMistralAICallOptions } from "@langchain/mistralai";
+import { StructuredOutputParser } from "@langchain/core/output_parsers";
+import { AIMessage } from "@langchain/core/messages";
+import parseDiff from "parse-diff";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -11,8 +13,6 @@ import mm from "micromatch";
 
 import { aDiff, diffPayloadSchema, diffPayloadSchemaWithRequiredSuggestions } from "./utils/types.js";
 import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT } from "./utils/constants.js";
-import { StructuredOutputParser } from "@langchain/core/output_parsers";
-import { AIMessage } from "@langchain/core/messages";
 
 /**
  * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
@@ -22,7 +22,7 @@ import { AIMessage } from "@langchain/core/messages";
  * @typedef {InstanceType<GitHub>} OctokitApi
  * @typedef {parseDiff.File[]} ParsedDiff
  * @typedef {{ body: string | null }} PullRequestContext
- * @typedef {'openai' | 'anthropic' | 'mistral'} AIPlatform
+ * @typedef {'openai' | 'anthropic' | 'mistral' | 'openrouter'} AIPlatform
  * @typedef {OpenAI | Anthropic | ChatMistralAI<ChatMistralAICallOptions>} AIPlatformSDK
  * @typedef {{
  *  info: (message: string) => void,
@@ -166,25 +166,60 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
  *  openAI: OpenAI,
  *  rules: string,
  *  modelName: string,
- *  pullRequestContext: PullRequestContext
+ *  pullRequestContext: PullRequestContext,
+ *  platform: AIPlatform
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
-async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext }) {
-    const result = await openAI.beta.chat.completions.parse({
-        model: getModelName(modelName, "openai"),
-        messages: [
-            {
-                role: "system",
-                content: COMMON_SYSTEM_PROMPT,
-            },
-            {
-                role: "user",
-                content: getUserPrompt(rules, rawComments, pullRequestContext),
-            },
-        ],
-        response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
-    });
+async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
+    const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
+    const result = !modelDeepseek
+        ? await openAI.beta.chat.completions.parse({
+              model: getModelName(modelName, platform),
+              messages: [
+                  {
+                      role: "system",
+                      content: COMMON_SYSTEM_PROMPT,
+                  },
+                  {
+                      role: "user",
+                      content: getUserPrompt(rules, rawComments, pullRequestContext),
+                  },
+              ],
+              response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
+          })
+        : await openAI.chat.completions.create({
+              model: getModelName(modelName, platform),
+              messages: [
+                  {
+                      role: "system",
+                      content: COMMON_SYSTEM_PROMPT,
+                  },
+                  {
+                      role: "user",
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)} - IMP: give the output in a valid JSON string (it should be not be wrapped in markdown, just plain json object) and stick to the schema mentioned here: 
+                      {
+                        commentsToAdd: {
+                            path: string;
+                            position: number;
+                            line: number;
+                            change: {
+                                type: string;
+                                add: boolean;
+                                ln: number;
+                                content: string;
+                                relativePosition: number;
+                            };
+                            previously?: string | undefined;
+                            suggestions?: string | undefined;
+                        }[];
+                      }.`,
+                  },
+              ],
+              response_format: {
+                  type: "json_object",
+              },
+          });
 
     const { message } = result.choices[0];
 
@@ -192,7 +227,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
         throw new Error(`the model refused to generate suggestions - ${message.refusal}`);
     }
 
-    return message.parsed;
+    return modelDeepseek ? JSON.parse(message.content) : message.parsed;
 }
 
 /**
@@ -279,59 +314,154 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
 }
 
 /**
+ * Retries an async function with exponential backoff
+ * @template T
+ * @param {() => Promise<T>} fn The async function to retry
+ * @param {{
+ *  retries?: number,
+ *  initialDelay?: number,
+ *  maxDelay?: number,
+ *  backoffFactor?: number,
+ *  retryableErrors?: string[],
+ *  onRetry?: (info: {
+ *    error: Error,
+ *    attempt: number,
+ *    remainingAttempts: number,
+ *    delay: number
+ *  }) => void,
+ * }} options Configuration options
+ * @returns {Promise<T>}
+ */
+async function retry(
+    fn,
+    {
+        retries = 3,
+        initialDelay = 1500, // Start with 1.5 seconds
+        backoffFactor = 2, // Double the delay each time
+        maxDelay = 10000, // Never wait more than 10 seconds
+        nonRetryableErrors = ["Unsupported AI platform", "Too many tokens"],
+        onRetry = null,
+    } = {}
+) {
+    let lastError;
+    let delay = initialDelay;
+
+    if (retries === 0) {
+        return await fn();
+    }
+
+    for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            lastError = error;
+
+            const shouldNotRetry = nonRetryableErrors.some(errMsg =>
+                error.message.toLowerCase().includes(errMsg.toLowerCase())
+            );
+
+            if (shouldNotRetry || attempt === retries - 1) {
+                throw error;
+            }
+
+            if (onRetry) {
+                onRetry({
+                    error,
+                    attempt: attempt + 1,
+                    remainingAttempts: retries - attempt - 1,
+                    delay,
+                });
+            }
+
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay = Math.min(delay * backoffFactor, maxDelay);
+        }
+    }
+
+    throw lastError;
+}
+
+/**
  * @param {{
  *  platform: AIPlatform,
  *  rawComments: rawCommentsPayload,
  *  platformSDK: AIPlatformSDK,
  *  rules: string,
  *  modelName: string,
- *  pullRequestContext: PullRequestContext
+ *  pullRequestContext: PullRequestContext,
+ *  maxRetries: number
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
-async function getSuggestions({ platform, rawComments, platformSDK, rules, modelName, pullRequestContext }) {
-    const { error } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
+async function getSuggestions({
+    platform,
+    rawComments,
+    platformSDK,
+    rules,
+    modelName,
+    pullRequestContext,
+    maxRetries,
+}) {
+    const { error, warning } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
 
     try {
-        if (platform === "openai") {
-            return await useOpenAI({
-                rawComments,
-                openAI: platformSDK,
-                rules,
-                modelName,
-                pullRequestContext,
-            });
-        }
+        return await retry(
+            async () => {
+                if (platform === "openai") {
+                    return await useOpenAI({
+                        rawComments,
+                        openAI: platformSDK,
+                        rules,
+                        modelName,
+                        pullRequestContext,
+                        platform,
+                    });
+                }
 
-        if (platform === "anthropic") {
-            return await useAnthropic({
-                rawComments,
-                anthropic: platformSDK,
-                rules,
-                modelName,
-                pullRequestContext,
-            });
-        }
+                if (platform === "anthropic") {
+                    return await useAnthropic({
+                        rawComments,
+                        anthropic: platformSDK,
+                        rules,
+                        modelName,
+                        pullRequestContext,
+                    });
+                }
 
-        if (platform === "mistral") {
-            return await useMistral({
-                rawComments,
-                mistral: platformSDK,
-                rules,
-                modelName,
-                pullRequestContext,
-            });
-        }
+                if (platform === "mistral") {
+                    return await useMistral({
+                        rawComments,
+                        mistral: platformSDK,
+                        rules,
+                        modelName,
+                        pullRequestContext,
+                    });
+                }
 
-        throw new Error(`Unsupported AI platform: ${platform}`);
+                if (platform === "openrouter") {
+                    return await useOpenAI({
+                        rawComments,
+                        openAI: platformSDK,
+                        rules,
+                        modelName,
+                        pullRequestContext,
+                        platform,
+                    });
+                }
+
+                throw new Error(`Unsupported AI platform: ${platform}`);
+            },
+            {
+                retries: maxRetries ?? 3,
+                onRetry: ({ error: retryError, attempt, remainingAttempts, delay }) => {
+                    error(`Attempt ${attempt} failed: ${retryError.message}.`);
+                    warning(`Retrying in ${delay}ms. Remaining attempts: ${remainingAttempts}.`);
+                },
+            }
+        );
     } catch (err) {
-        if (err.constructor.name == "LengthFinishReasonError") {
-            error(`Too many tokens: ${err.message}`);
-            core.setFailed(`Too many tokens: ${err.message}`);
-        } else {
-            error(`Could not generate suggestions: ${err.message}`);
-            core.setFailed(`Could not generate suggestions: ${err.message}`);
-        }
+        error(`Could not generate suggestions: ${err.message}`);
+        core.setFailed(`Could not generate suggestions: ${err.message}`);
         return null;
     }
 }
@@ -465,6 +595,7 @@ function getPlatformSDK(platform, apiKey) {
     if (platform === "openai") return new OpenAI({ apiKey });
     if (platform === "anthropic") return new Anthropic({ apiKey });
     if (platform === "mistral") return new ChatMistralAI({ apiKey });
+    if (platform === "openrouter") return new OpenAI({ apiKey, baseURL: "https://openrouter.ai/api/v1" });
 
     throw new Error(`Unsupported AI platform: ${platform}`);
 }
@@ -482,6 +613,7 @@ async function run() {
         const modelToken = core.getInput("ai-model-api-key");
         const platform = core.getInput("platform");
         const filesToIgnore = core.getInput("filesToIgnore");
+        const maxRetries = core.getInput("max-retries");
         const octokit = github.getOctokit(token);
 
         info("Initializing AI model...");
@@ -550,6 +682,7 @@ async function run() {
                 platformSDK,
                 rules,
                 modelName,
+                maxRetries: Number(maxRetries),
                 pullRequestContext: {
                     body: pullRequestData.data.body,
                 },
