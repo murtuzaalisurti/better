@@ -457,13 +457,8 @@ async function getSuggestions({
             }
         );
     } catch (err) {
-        if (err.constructor.name == "LengthFinishReasonError") {
-            error(`Too many tokens: ${err.message}`);
-            core.setFailed(`Too many tokens: ${err.message}`);
-        } else {
-            error(`Could not generate suggestions: ${err.message}`);
-            core.setFailed(`Could not generate suggestions: ${err.message}`);
-        }
+        error(`Could not generate suggestions: ${err.message}`);
+        core.setFailed(`Could not generate suggestions: ${err.message}`);
         return null;
     }
 }
