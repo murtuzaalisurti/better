@@ -316,45 +316,6 @@ async function useMistral({ rawComments, mistral, rules, modelName, pullRequestC
 }
 
 /**
- * @param {({
- *  platform,
- *  rawComments,
- *  platformSDK,
- *  rules,
- *  modelName,
- *  pullRequestContext
- * }: {
- *  platform: AIPlatform,
- *  rawComments: rawCommentsPayload,
- *  platformSDK: AIPlatformSDK,
- *  rules: string,
- *  modelName: string,
- *  pullRequestContext: PullRequestContext
- * }) => Promise<suggestionsPayload | null>} fn
- * @param {{
- *  retries: number,
- *  platform: AIPlatform,
- *  rawComments: rawCommentsPayload,
- *  platformSDK: AIPlatformSDK,
- *  rules: string,
- *  modelName: string,
- *  pullRequestContext: PullRequestContext
- * }} options
- */
-// async function retry(fn, options) {
-//     const { retries, ...suggestionOptions } = options;
-//     for (let i = 0; i < retries; i++) {
-//         try {
-//             return await fn(suggestionOptions);
-//         } catch (error) {
-//             if (i === retries - 1) {
-//                 throw error;
-//             }
-//         }
-//     }
-// }
-
-/**
  * Retries an async function with exponential backoff
  * @template T
  * @param {() => Promise<T>} fn The async function to retry
@@ -425,11 +386,20 @@ async function retry(
  *  platformSDK: AIPlatformSDK,
  *  rules: string,
  *  modelName: string,
- *  pullRequestContext: PullRequestContext
+ *  pullRequestContext: PullRequestContext,
+ *  maxRetries: number
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
-async function getSuggestions({ platform, rawComments, platformSDK, rules, modelName, pullRequestContext }) {
+async function getSuggestions({
+    platform,
+    rawComments,
+    platformSDK,
+    rules,
+    modelName,
+    pullRequestContext,
+    maxRetries,
+}) {
     const { error, warning } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
 
     try {
@@ -479,9 +449,7 @@ async function getSuggestions({ platform, rawComments, platformSDK, rules, model
                 throw new Error(`Unsupported AI platform: ${platform}`);
             },
             {
-                retries: 3,
-                initialDelay: 1000,
-                maxDelay: 10000,
+                retries: maxRetries ?? 3,
                 onRetry: ({ error: retryError, attempt, remainingAttempts, delay }) => {
                     error(`Attempt ${attempt} failed: ${retryError.message}.`);
                     warning(`Retrying in ${delay}ms. Remaining attempts: ${remainingAttempts}.`);
@@ -647,6 +615,7 @@ async function run() {
         const modelToken = core.getInput("ai-model-api-key");
         const platform = core.getInput("platform");
         const filesToIgnore = core.getInput("filesToIgnore");
+        const maxRetries = core.getInput("max-retries");
         const octokit = github.getOctokit(token);
 
         info("Initializing AI model...");
@@ -715,6 +684,7 @@ async function run() {
                 platformSDK,
                 rules,
                 modelName,
+                maxRetries: Number(maxRetries),
                 pullRequestContext: {
                     body: pullRequestData.data.body,
                 },

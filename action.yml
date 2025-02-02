@@ -22,6 +22,8 @@ inputs:
         description: "The rules to consider for code review"
     filesToIgnore:
         description: "List of files to ignore - a semicolon(;) separated list of glob patterns"
+    max-retries:
+        description: "Maximum number of retries on failure - default is 3 - 0 means no retries"
 runs:
     using: "node20"
     main: "dist/index.js"

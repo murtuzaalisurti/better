@@ -162,6 +162,10 @@ List of files to ignore. It is a semicolon(`;`) separated list of glob patterns.
 **/*.{jpg,jpeg,png,svg,webp,avif,gif,ico,woff,woff2,ttf,otf}
 ```
 
+### 8. `max-retries` (Optional)
+
+The maximum number of retries the action will perform on failure while generating suggestions from the AI model. Specify `0` to skip retries. The default value is `3` if you don't specify.
+
 Glob patterns are resolved using [micromatch](https://github.com/micromatch/micromatch). Check out their documentation for more info.
 
 ---
