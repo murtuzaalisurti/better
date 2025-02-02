@@ -1,9 +1,11 @@
 import core from "@actions/core";
 import github from "@actions/github";
-import parseDiff from "parse-diff";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { ChatMistralAI, ChatMistralAICallOptions } from "@langchain/mistralai";
+import { StructuredOutputParser } from "@langchain/core/output_parsers";
+import { AIMessage } from "@langchain/core/messages";
+import parseDiff from "parse-diff";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -11,8 +13,6 @@ import mm from "micromatch";
 
 import { aDiff, diffPayloadSchema, diffPayloadSchemaWithRequiredSuggestions } from "./utils/types.js";
 import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT } from "./utils/constants.js";
-import { StructuredOutputParser } from "@langchain/core/output_parsers";
-import { AIMessage } from "@langchain/core/messages";
 
 /**
  * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
