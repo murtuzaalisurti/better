@@ -416,6 +416,7 @@ async function getSuggestions({
                         rules,
                         modelName,
                         pullRequestContext,
+                        platform,
                     });
                 }
 
