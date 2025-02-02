@@ -197,7 +197,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   },
                   {
                       role: "user",
-                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)} - IMP: give the output in a valid JSON string and stick to the schema mentioned here: 
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)} - IMP: give the output in a valid JSON string (it should be not be wrapped in markdown, just plain json object) and stick to the schema mentioned here: 
                       {
                         commentsToAdd: {
                             path: string;
