@@ -1,6 +1,6 @@
 {
   "name": "better",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -25,28 +25,28 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "@anthropic-ai/sdk": "^0.36.3",
-    "@langchain/core": "^0.3.37",
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@langchain/core": "^0.3.42",
     "@langchain/mistralai": "^0.2.0",
     "is-ci": "^4.1.0",
     "micromatch": "^4.0.8",
-    "openai": "^4.81.0",
+    "openai": "^4.86.2",
     "parse-diff": "^0.11.1",
-    "zod": "^3.24.1",
-    "zod-to-json-schema": "^3.24.1"
+    "zod": "^3.24.2",
+    "zod-to-json-schema": "^3.24.3"
   },
   "devDependencies": {
-    "@eslint/js": "^9.19.0",
+    "@eslint/js": "^9.22.0",
     "@vercel/ncc": "^0.38.3",
-    "eslint": "^9.19.0",
+    "eslint": "^9.22.0",
     "eslint-config-google": "^0.14.0",
-    "eslint-config-prettier": "^10.0.1",
+    "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-jsdoc": "^50.6.3",
-    "globals": "^15.14.0",
+    "globals": "^16.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
-    "npm-check-updates": "^17.1.14",
+    "npm-check-updates": "^17.1.15",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.4.2"
+    "prettier": "^3.5.3"
   }
 }

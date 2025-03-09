@@ -116,7 +116,7 @@ They can be accessed in the workflow file using `${{ secrets.YOUR_KEY_NAME }}`.
 
 ### 4. `ai-model-name` (Optional)
 
-Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` for OpenAI, `claude-3-5-sonnet-20241022` for Anthropic, `pixtral-12b-2409` for Mistral, and `deepseek/deepseek-r1` for OpenRouter if not specified. Here's a list of supported models:
+Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` for OpenAI, `claude-3-7-sonnet-latest` for Anthropic, `pixtral-12b-2409` for Mistral, and `deepseek/deepseek-r1` for OpenRouter if not specified. Here's a list of supported models:
 
 For OpenAI:
 
@@ -127,6 +127,7 @@ For OpenAI:
 
 For Anthropic:
 
+- `claude-3-7-sonnet-20250219`
 - `claude-3-5-sonnet-20241022`
 - `claude-3-5-sonnet-20240620`
 - `claude-3-opus-20240229`
