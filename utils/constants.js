@@ -13,6 +13,11 @@ const DEFAULT_MODEL = {
     },
 };
 
+const BASE_URL = {
+    OPENROUTER: "https://openrouter.ai/api/v1",
+    GOOGLE: "https://generativelanguage.googleapis.com/v1beta/openai/",
+};
+
 const COMMON_SYSTEM_PROMPT = `
     You are a highly experienced software engineer and code reviewer with a focus on code quality, maintainability, and adherence to best practices.
     Your goal is to provide thorough, constructive, and actionable feedback to help developers improve their code.
@@ -48,4 +53,4 @@ const FILES_IGNORED_BY_DEFAULT = [
     "**/*.{jpg,jpeg,png,svg,webp,avif,gif,ico,woff,woff2,ttf,otf}",
 ];
 
-export { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT };
+export { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT, BASE_URL };

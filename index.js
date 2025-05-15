@@ -12,7 +12,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import mm from "micromatch";
 
 import { aDiff, diffPayloadSchema, diffPayloadSchemaWithRequiredSuggestions } from "./utils/types.js";
-import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT } from "./utils/constants.js";
+import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT, BASE_URL } from "./utils/constants.js";
 
 /**
  * @typedef {import("@actions/github/lib/utils").GitHub} GitHub
@@ -22,7 +22,7 @@ import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT } from ".
  * @typedef {InstanceType<GitHub>} OctokitApi
  * @typedef {parseDiff.File[]} ParsedDiff
  * @typedef {{ body: string | null }} PullRequestContext
- * @typedef {'openai' | 'anthropic' | 'mistral' | 'openrouter'} AIPlatform
+ * @typedef {'openai' | 'anthropic' | 'mistral' | 'openrouter' | 'google'} AIPlatform
  * @typedef {OpenAI | Anthropic | ChatMistralAI<ChatMistralAICallOptions>} AIPlatformSDK
  * @typedef {{
  *  info: (message: string) => void,
@@ -407,7 +407,7 @@ async function getSuggestions({
     try {
         return await retry(
             async () => {
-                if (platform === "openai") {
+                if (platform === "openai" || platform === "google" || platform === "openrouter") {
                     return await useOpenAI({
                         rawComments,
                         openAI: platformSDK,
@@ -435,17 +435,6 @@ async function getSuggestions({
                         rules,
                         modelName,
                         pullRequestContext,
-                    });
-                }
-
-                if (platform === "openrouter") {
-                    return await useOpenAI({
-                        rawComments,
-                        openAI: platformSDK,
-                        rules,
-                        modelName,
-                        pullRequestContext,
-                        platform,
                     });
                 }
 
@@ -595,7 +584,8 @@ function getPlatformSDK(platform, apiKey) {
     if (platform === "openai") return new OpenAI({ apiKey });
     if (platform === "anthropic") return new Anthropic({ apiKey });
     if (platform === "mistral") return new ChatMistralAI({ apiKey });
-    if (platform === "openrouter") return new OpenAI({ apiKey, baseURL: "https://openrouter.ai/api/v1" });
+    if (platform === "openrouter") return new OpenAI({ apiKey, baseURL: BASE_URL.OPENROUTER });
+    if (platform === "google") return new OpenAI({ apiKey, baseURL: BASE_URL.GOOGLE });
 
     throw new Error(`Unsupported AI platform: ${platform}`);
 }
