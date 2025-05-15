@@ -11,6 +11,14 @@ const DEFAULT_MODEL = {
     OPENROUTER: {
         name: "deepseek/deepseek-r1",
     },
+    GOOGLE: {
+        name: "gemini-2.5-pro-preview-05-06",
+    },
+};
+
+const BASE_URL = {
+    OPENROUTER: "https://openrouter.ai/api/v1",
+    GOOGLE: "https://generativelanguage.googleapis.com/v1beta/openai/",
 };
 
 const COMMON_SYSTEM_PROMPT = `
@@ -48,4 +56,4 @@ const FILES_IGNORED_BY_DEFAULT = [
     "**/*.{jpg,jpeg,png,svg,webp,avif,gif,ico,woff,woff2,ttf,otf}",
 ];
 
-export { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT };
+export { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT, BASE_URL };
