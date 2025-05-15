@@ -44,7 +44,7 @@ jobs:
               with:
                 repo-token: ${{ secrets.GITHUB_TOKEN }} # this is auto generated
                 ai-model-api-key: ${{ secrets.MODEL_API_KEY }} # make sure to set this in your repository secrets - /settings/secrets/actions (Settings > Secrets and Variables > Actions > Secrets Tab)
-                platform: 'openai' # can be 'openai' | 'anthropic' | 'mistral' | 'openrouter'
+                platform: 'openai' # can be 'openai' | 'anthropic' | 'google' | 'openrouter' | 'mistral'
                 delete-existing-review-by-bot: true #default is true
                 filesToIgnore: '**/*.env; .husky/**; .cache/**' # uses glob patterns (micromatch - https://github.com/micromatch/micromatch)
                 rules: |- # Rules to consider for code review
@@ -93,9 +93,9 @@ The `repo-token` is the authorization token of your repository. It is auto gener
 
 ### 2. `platform`
 
-The `platform` is the name of the AI platform you want to use. It can be either `openai` or `anthropic` or `mistral` or `openrouter`.
+The `platform` is the name of the AI platform you want to use. It can be either `openai` or `anthropic` or `google` or `mistral` or `openrouter`.
 
-> *This action supports ***OpenAI***, ***Anthropic***, ***Mistral*** and ***Deepseek*** models*.
+> *This action supports ***OpenAI***, ***Anthropic***, ***Gemini***, ***Mistral*** and ***Deepseek*** models*.
 
 ---
 
@@ -109,6 +109,7 @@ Example:
 - `ANTHROPIC_KEY` as a secret with your Anthropic API key as a value.
 - `MISTRAL_KEY` as a secret with your Mistral API key as a value.
 - `OPENROUTER_KEY` as a secret with your OpenRouter API key as a value.
+- `GOOGLE_API_KEY` as a secret with your Google Gemini API key as a value.
 
 They can be accessed in the workflow file using `${{ secrets.YOUR_KEY_NAME }}`.
 
@@ -116,7 +117,7 @@ They can be accessed in the workflow file using `${{ secrets.YOUR_KEY_NAME }}`.
 
 ### 4. `ai-model-name` (Optional)
 
-Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` for OpenAI, `claude-3-7-sonnet-latest` for Anthropic, `pixtral-12b-2409` for Mistral, and `deepseek/deepseek-r1` for OpenRouter if not specified. Here's a list of supported models:
+Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` for OpenAI, `claude-3-7-sonnet-latest` for Anthropic, `gemini-2.5-pro-preview-05-06` for Google's Gemini, `pixtral-12b-2409` for Mistral, and `deepseek/deepseek-r1` for OpenRouter if not specified. Here's a list of supported models:
 
 For OpenAI:
 
@@ -141,6 +142,10 @@ For Mistral:
 For OpenRouter:
 
 - [deepseek/deepseek-r1](https://openrouter.ai/deepseek/deepseek-r1).
+
+For Google:
+
+- Any of the [Gemini](https://ai.google.dev/gemini-api/docs/models) models.
 
 ---
 
