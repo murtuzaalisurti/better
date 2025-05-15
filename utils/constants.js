@@ -11,6 +11,9 @@ const DEFAULT_MODEL = {
     OPENROUTER: {
         name: "deepseek/deepseek-r1",
     },
+    GOOGLE: {
+        name: "gemini-2.5-pro-preview-05-06",
+    },
 };
 
 const BASE_URL = {
