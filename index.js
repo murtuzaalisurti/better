@@ -198,7 +198,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   format: {
                       name: "json_diff_response",
                       type: "json_schema",
-                      schema: zodToJsonSchema(diffPayloadSchema, json_diff_response),
+                      schema: zodToJsonSchema(diffPayloadSchema, "json_diff_response"),
                   },
               },
               //   response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
