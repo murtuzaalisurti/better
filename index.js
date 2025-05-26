@@ -6,7 +6,7 @@ import { ChatMistralAI, ChatMistralAICallOptions } from "@langchain/mistralai";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { AIMessage } from "@langchain/core/messages";
 import parseDiff from "parse-diff";
-import { zodResponseFormat } from "openai/helpers/zod";
+import { zodResponseFormat, zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import mm from "micromatch";
@@ -174,19 +174,30 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
     const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
     const result = !modelDeepseek
-        ? await openAI.beta.chat.completions.parse({
+        ? await openAI.responses.parse({
               model: getModelName(modelName, platform),
-              messages: [
+              input: [
                   {
                       role: "system",
                       content: COMMON_SYSTEM_PROMPT,
                   },
                   {
                       role: "user",
-                      content: getUserPrompt(rules, rawComments, pullRequestContext),
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}. Use the styleguide of google (repo 'google/styleguide') which can be obtained from the mcp server`,
                   },
               ],
-              response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
+              tools: [
+                  {
+                      type: "mcp",
+                      server_label: "deepwiki",
+                      server_url: "https://mcp.deepwiki.com/mcp",
+                      require_approval: "never",
+                  },
+              ],
+              text: {
+                  format: zodTextFormat(diffPayloadSchema, "json_diff_response"),
+              },
+              //   response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
           })
         : await openAI.chat.completions.create({
               model: getModelName(modelName, platform),
@@ -221,6 +232,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
               },
           });
 
+    console.log(result);
     const { message } = result.choices[0];
 
     if (message.refusal) {
