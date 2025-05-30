@@ -645,6 +645,9 @@ async function run() {
                 info("Fetching pull request reviews...");
                 const reviews = await getAllReviewsForPullRequest(octokit);
 
+                for (const r of reviews.data) {
+                    console.log(r.user.login);
+                }
                 info(`Fetching reviews by bot...`);
                 const reviewsByBot = reviews.data.filter(
                     r => r.user.login === "github-actions[bot]" || r.user.type === "Bot"
