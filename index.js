@@ -239,6 +239,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
           });
 
     if (!modelDeepseek) {
+        console.log(result);
         return result.output_parsed;
     }
 
@@ -646,9 +647,6 @@ async function run() {
                 info("Fetching pull request reviews...");
                 const reviews = await getAllReviewsForPullRequest(octokit);
 
-                for (const r of reviews.data) {
-                    console.log(r.user.login);
-                }
                 info(`Fetching reviews by bot...`);
                 const reviewsByBot = reviews.data.filter(
                     r => r.user.login === "github-actions[bot]" || r.user.type === "Bot"
@@ -659,7 +657,6 @@ async function run() {
                     warning("Deleting existing comments for all reviews by bot...");
 
                     for (const review of reviewsByBot) {
-                        console.log(review.user);
                         const reviewComments = await getAllCommentsUnderAReview(octokit, review.id);
 
                         for (const comment of reviewComments.data) {
