@@ -239,7 +239,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
           });
 
     if (!modelDeepseek) {
-        console.log(result);
+        console.log(JSON.stringify(result.output.filter(i => i.type === "message")[0].content, null, 2));
         return result.output_parsed;
     }
 
