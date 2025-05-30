@@ -173,7 +173,6 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
  */
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
     const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
-    console.log(zodToJsonSchema(diffPayloadSchema, "json_diff_response"));
     const result = !modelDeepseek
         ? await openAI.responses.parse({
               model: getModelName(modelName, platform),
@@ -184,7 +183,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   },
                   {
                       role: "user",
-                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}. Use the styleguide of google (repo 'google/styleguide') which can be obtained from the mcp server`,
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}. Use the styleguide of google (repo 'google/styleguide') which can be obtained from the mcp server. Use the ask_question tool from the mcp server or a different one if its better`,
                   },
               ],
               tools: [
