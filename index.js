@@ -655,6 +655,7 @@ async function run() {
                     warning("Deleting existing comments for all reviews by bot...");
 
                     for (const review of reviewsByBot) {
+                        console.log(review.user);
                         const reviewComments = await getAllCommentsUnderAReview(octokit, review.id);
 
                         for (const comment of reviewComments.data) {
