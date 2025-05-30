@@ -183,7 +183,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   },
                   {
                       role: "user",
-                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}. Use the styleguide of google (repo 'google/styleguide') which can be obtained from the mcp server. Use the ask_question tool from the mcp server or a different one if its better`,
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}. Use the styleguide of google (repo 'google/styleguide') which can be obtained from the mcp server. Use the ask_question tool from the mcp server or a different one if its better. Use that style guide to code review code and provide suggestions.`,
                   },
               ],
               tools: [
