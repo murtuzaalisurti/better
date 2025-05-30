@@ -11,8 +11,8 @@ const aDiff = z.object({
         content: z.string(),
         relativePosition: z.number(),
     }),
-    previously: z.string().optional().nullable(),
-    suggestions: z.string().optional().nullable(),
+    previously: z.union([z.string(), z.null()]),
+    suggestions: z.union([z.string(), z.null()]),
 });
 
 const diffPayloadSchema = z.object({
