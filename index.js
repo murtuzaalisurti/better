@@ -6,7 +6,7 @@ import { ChatMistralAI, ChatMistralAICallOptions } from "@langchain/mistralai";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { AIMessage } from "@langchain/core/messages";
 import parseDiff from "parse-diff";
-import { zodResponseFormat } from "openai/helpers/zod";
+import { zodResponseFormat, zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import mm from "micromatch";
@@ -174,19 +174,35 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
     const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
     const result = !modelDeepseek
-        ? await openAI.beta.chat.completions.parse({
+        ? await openAI.responses.parse({
               model: getModelName(modelName, platform),
-              messages: [
+              input: [
                   {
                       role: "system",
                       content: COMMON_SYSTEM_PROMPT,
                   },
                   {
                       role: "user",
-                      content: getUserPrompt(rules, rawComments, pullRequestContext),
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}. Use the styleguide of google (repo 'google/styleguide') which can be obtained from the mcp server. Use the ask_question tool from the mcp server or a different one if its better. Use that style guide to code review code and provide suggestions.`,
                   },
               ],
-              response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
+              tools: [
+                  {
+                      type: "mcp",
+                      server_label: "deepwiki",
+                      server_url: "https://mcp.deepwiki.com/mcp",
+                      require_approval: "never",
+                  },
+              ],
+              text: {
+                  format: {
+                      name: "json_diff_response",
+                      type: "json_schema",
+                      schema: zodToJsonSchema(diffPayloadSchema, "json_diff_response").definitions[
+                          "json_diff_response"
+                      ],
+                  },
+              },
           })
         : await openAI.chat.completions.create({
               model: getModelName(modelName, platform),
@@ -220,6 +236,11 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   type: "json_object",
               },
           });
+
+    if (!modelDeepseek) {
+        console.log(result.output.filter(i => i.type === "mcp_call")[0].output);
+        return result.output_parsed;
+    }
 
     const { message } = result.choices[0];
 
@@ -519,6 +540,7 @@ async function getAllReviewsForPullRequest(octokit) {
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
+        per_page: 500,
     });
 }
 
