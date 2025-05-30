@@ -204,7 +204,6 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                       ],
                   },
               },
-              //   response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
           })
         : await openAI.chat.completions.create({
               model: getModelName(modelName, platform),
@@ -239,7 +238,10 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
               },
           });
 
-    console.log(result);
+    if (!modelDeepseek) {
+        return result.output_parsed;
+    }
+
     const { message } = result.choices[0];
 
     if (message.refusal) {
