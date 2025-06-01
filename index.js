@@ -178,6 +178,7 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
  * @returns {Promise<suggestionsPayload | null>}
  */
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform, tools, customPrompt }) {
+    console.log(customPrompt);
     const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
     const result = !modelDeepseek
         ? await openAI.responses.parse({
