@@ -1,6 +1,6 @@
 const DEFAULT_MODEL = {
     OPENAI: {
-        name: "gpt-4o-2024-08-06",
+        name: "gpt-4.1-2025-04-14",
     },
     ANTHROPIC: {
         name: "claude-3-7-sonnet-latest",
