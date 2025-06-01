@@ -249,7 +249,8 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
 
     if (!modelDeepseek) {
         console.log(result);
-        console.log(result.output.filter(i => i.type === "mcp_call")[0].output);
+        console.log(result.output.filter(i => i.type === "mcp_list_tools")[0]?.tools);
+        console.log(result.output.filter(i => i.type === "mcp_call")[0]?.output);
         return result.output_parsed;
     }
 
