@@ -214,6 +214,22 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                         }),
                     }
                   : {}),
+              tools: [
+                  {
+                      type: "web_search_preview",
+                      search_context_size: "low",
+                  },
+                  ...(tools && tools.length > 0
+                      ? tools.map(t => {
+                            return {
+                                type: "mcp",
+                                server_label: t.server_label,
+                                server_url: t.server_url,
+                                require_approval: "never",
+                            };
+                        })
+                      : {}),
+              ],
           })
         : await openAI.chat.completions.create({
               model: getModelName(modelName, platform),
