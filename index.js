@@ -6,7 +6,6 @@ import { ChatMistralAI, ChatMistralAICallOptions } from "@langchain/mistralai";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { AIMessage } from "@langchain/core/messages";
 import parseDiff from "parse-diff";
-import { zodResponseFormat, zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import mm from "micromatch";
@@ -29,6 +28,11 @@ import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT, BASE_URL
  *  warning: (message: string) => void,
  *  error: (error: string) => void
  * }} Logger
+ * @typedef {{
+ *  server_label: string,
+ *  server_url: string,
+ *  prompt: string
+ * }[]} Tools
  */
 
 /**
@@ -167,11 +171,13 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
  *  rules: string,
  *  modelName: string,
  *  pullRequestContext: PullRequestContext,
- *  platform: AIPlatform
+ *  platform: AIPlatform,
+ *  tools: Tools,
+ *  customPrompt: string
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
-async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
+async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform, tools, customPrompt }) {
     const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
     const result = !modelDeepseek
         ? await openAI.responses.parse({
@@ -183,15 +189,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   },
                   {
                       role: "user",
-                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}. Use the styleguide of google (repo 'google/styleguide') which can be obtained from the mcp server. Use the ask_question tool from the mcp server or a different one if its better. Use that style guide to code review code and provide suggestions.`,
-                  },
-              ],
-              tools: [
-                  {
-                      type: "mcp",
-                      server_label: "deepwiki",
-                      server_url: "https://mcp.deepwiki.com/mcp",
-                      require_approval: "never",
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}. ${customPrompt}`,
                   },
               ],
               text: {
@@ -203,6 +201,18 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                       ],
                   },
               },
+              ...(tools && tools.length > 0
+                  ? {
+                        tools: tools.map(t => {
+                            return {
+                                type: "mcp",
+                                server_label: t.server_label,
+                                server_url: t.server_url,
+                                require_approval: "never",
+                            };
+                        }),
+                    }
+                  : {}),
           })
         : await openAI.chat.completions.create({
               model: getModelName(modelName, platform),
@@ -410,7 +420,9 @@ async function retry(
  *  rules: string,
  *  modelName: string,
  *  pullRequestContext: PullRequestContext,
- *  maxRetries: number
+ *  maxRetries: number,
+ *  tools: Tools,
+ *  customPrompt: string
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
@@ -422,6 +434,8 @@ async function getSuggestions({
     modelName,
     pullRequestContext,
     maxRetries,
+    tools,
+    customPrompt,
 }) {
     const { error, warning } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
 
@@ -436,6 +450,8 @@ async function getSuggestions({
                         modelName,
                         pullRequestContext,
                         platform,
+                        tools,
+                        customPrompt,
                     });
                 }
 
@@ -612,6 +628,17 @@ function getPlatformSDK(platform, apiKey) {
     throw new Error(`Unsupported AI platform: ${platform}`);
 }
 
+/**
+ * @template T
+ * @param {string} json
+ * @returns {T}
+ */
+function parseJSON(json) {
+    if (json) {
+        return JSON.parse(json);
+    }
+}
+
 async function run() {
     const { info, warning, error } = log({ withTimestamp: true });
 
@@ -626,7 +653,14 @@ async function run() {
         const platform = core.getInput("platform");
         const filesToIgnore = core.getInput("filesToIgnore");
         const maxRetries = core.getInput("max-retries");
+        const tools = core.getInput("tools");
+        const customPrompt = core.getInput("custom-prompt");
         const octokit = github.getOctokit(token);
+
+        /**
+         * @type Tools
+         */
+        const toolsParsed = parseJSON(tools);
 
         info("Initializing AI model...");
         const platformSDK = getPlatformSDK(platform, modelToken);
@@ -695,6 +729,8 @@ async function run() {
                 rules,
                 modelName,
                 maxRetries: Number(maxRetries),
+                tools: toolsParsed,
+                customPrompt,
                 pullRequestContext: {
                     body: pullRequestData.data.body,
                 },

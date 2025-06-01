@@ -14,3 +14,4 @@ package-lock.json
 .husky/
 *.env
 .env.example
+action.yml
