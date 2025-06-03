@@ -186,11 +186,11 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
               input: [
                   {
                       role: "system",
-                      content: COMMON_SYSTEM_PROMPT,
+                      content: `${COMMON_SYSTEM_PROMPT}. ${customPrompt ? customPrompt : ""}`,
                   },
                   {
                       role: "user",
-                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}. ${customPrompt ? customPrompt : ""}`,
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}`,
                   },
               ],
               text: {
