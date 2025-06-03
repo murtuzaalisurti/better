@@ -190,7 +190,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   },
                   {
                       role: "user",
-                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}. ${customPrompt}`,
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}. ${customPrompt ? customPrompt : ""}`,
                   },
               ],
               text: {
@@ -202,18 +202,6 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                       ],
                   },
               },
-              ...(tools && tools.length > 0
-                  ? {
-                        tools: tools.map(t => {
-                            return {
-                                type: "mcp",
-                                server_label: t.server_label,
-                                server_url: t.server_url,
-                                require_approval: "never",
-                            };
-                        }),
-                    }
-                  : {}),
               tools: [
                   {
                       type: "web_search_preview",
