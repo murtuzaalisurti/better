@@ -24,6 +24,15 @@ inputs:
         description: "List of files to ignore - a semicolon(;) separated list of glob patterns"
     max-retries:
         description: "Maximum number of retries on failure - default is 3 - 0 means no retries"
+    tools:
+        description: "MCP servers to use - Use this format: > [
+            {
+                \"server_label\": \"deepwiki\",
+                \"server_url\": \"https://mcp.deepwiki.com/mcp\"
+            }
+        ]"
+    custom-prompt:
+        description: "A prompt which will be feeded to the AI model as a user input."
 runs:
     using: "node20"
     main: "dist/index.js"
