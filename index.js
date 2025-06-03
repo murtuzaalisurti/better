@@ -31,7 +31,7 @@ import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT, BASE_URL
  * @typedef {{
  *  server_label: string,
  *  server_url: string,
- *  prompt: string
+ *  allowed_tools: string[]
  * }[]} Tools
  */
 
@@ -213,6 +213,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                                 type: "mcp",
                                 server_label: t.server_label,
                                 server_url: t.server_url,
+                                allowed_tools: t.allowed_tools,
                                 require_approval: "never",
                             };
                         })
