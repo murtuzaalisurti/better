@@ -174,7 +174,7 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
     const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
     const result = !modelDeepseek
-        ? await openAI.beta.chat.completions.parse({
+        ? await openAI.chat.completions.parse({
               model: getModelName(modelName, platform),
               messages: [
                   {
