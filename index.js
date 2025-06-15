@@ -494,6 +494,7 @@ async function getSuggestions({
             }
         );
     } catch (err) {
+        console.error(err);
         error(`Could not generate suggestions: ${err.message}`);
         core.setFailed(`Could not generate suggestions: ${err.message}`);
         return null;
