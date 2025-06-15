@@ -736,14 +736,13 @@ async function run() {
             const filteredRawComments = extractComments().filteredRaw(rawComments, filesToIgnoreList);
 
             info(`Generating suggestions using model ${getModelName(modelName, platform)}...`);
-            console.log("maxRetries ------", Number(maxRetries));
             const suggestions = await getSuggestions({
                 platform,
                 rawComments: filteredRawComments,
                 platformSDK,
                 rules,
                 modelName,
-                maxRetries: Number(maxRetries),
+                maxRetries,
                 tools: toolsParsed,
                 customPrompt,
                 pullRequestContext: {
