@@ -6,7 +6,6 @@ import { ChatMistralAI, ChatMistralAICallOptions } from "@langchain/mistralai";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { AIMessage } from "@langchain/core/messages";
 import parseDiff from "parse-diff";
-import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import mm from "micromatch";
@@ -29,6 +28,11 @@ import { DEFAULT_MODEL, COMMON_SYSTEM_PROMPT, FILES_IGNORED_BY_DEFAULT, BASE_URL
  *  warning: (message: string) => void,
  *  error: (error: string) => void
  * }} Logger
+ * @typedef {{
+ *  server_label: string,
+ *  server_url: string,
+ *  allowed_tools: string[]
+ * }[]} Tools
  */
 
 /**
@@ -167,26 +171,54 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
  *  rules: string,
  *  modelName: string,
  *  pullRequestContext: PullRequestContext,
- *  platform: AIPlatform
+ *  platform: AIPlatform,
+ *  tools: Tools,
+ *  customPrompt: string
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
-async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
+async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform, tools, customPrompt }) {
+    console.log(customPrompt);
     const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
     const result = !modelDeepseek
-        ? await openAI.beta.chat.completions.parse({
+        ? await openAI.responses.parse({
               model: getModelName(modelName, platform),
-              messages: [
+              input: [
                   {
                       role: "system",
-                      content: COMMON_SYSTEM_PROMPT,
+                      content: `${COMMON_SYSTEM_PROMPT}. ${customPrompt ? customPrompt : ""}`,
                   },
                   {
                       role: "user",
-                      content: getUserPrompt(rules, rawComments, pullRequestContext),
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)}`,
                   },
               ],
-              response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
+              text: {
+                  format: {
+                      name: "json_diff_response",
+                      type: "json_schema",
+                      schema: zodToJsonSchema(diffPayloadSchema, "json_diff_response").definitions[
+                          "json_diff_response"
+                      ],
+                  },
+              },
+              tools: [
+                  {
+                      type: "web_search_preview",
+                      search_context_size: "low",
+                  },
+                  ...(tools && tools.length > 0
+                      ? tools.map(t => {
+                            return {
+                                type: "mcp",
+                                server_label: t.server_label,
+                                server_url: t.server_url,
+                                allowed_tools: t.allowed_tools,
+                                require_approval: "never",
+                            };
+                        })
+                      : {}),
+              ],
           })
         : await openAI.chat.completions.create({
               model: getModelName(modelName, platform),
@@ -220,6 +252,13 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   type: "json_object",
               },
           });
+
+    if (!modelDeepseek) {
+        console.log(result);
+        console.log(result.output.filter(i => i.type === "mcp_list_tools")[0]?.tools);
+        console.log(result.output.filter(i => i.type === "mcp_call")[0]?.output);
+        return result.output_parsed;
+    }
 
     const { message } = result.choices[0];
 
@@ -343,6 +382,7 @@ async function retry(
         onRetry = null,
     } = {}
 ) {
+    console.log(retries, "retries ----------------");
     let lastError;
     let delay = initialDelay;
 
@@ -354,15 +394,15 @@ async function retry(
         try {
             return await fn();
         } catch (error) {
+            console.log("caught error");
+            console.error(error);
             lastError = error;
 
             const shouldNotRetry = nonRetryableErrors.some(errMsg =>
                 error.message.toLowerCase().includes(errMsg.toLowerCase())
             );
 
-            if (shouldNotRetry || attempt === retries - 1) {
-                throw error;
-            }
+            console.log(shouldNotRetry, "shoulnotretry --------------------\n\n");
 
             if (onRetry) {
                 onRetry({
@@ -371,6 +411,10 @@ async function retry(
                     remainingAttempts: retries - attempt - 1,
                     delay,
                 });
+            }
+
+            if (shouldNotRetry || attempt === retries - 1) {
+                throw error;
             }
 
             await new Promise(resolve => setTimeout(resolve, delay));
@@ -389,7 +433,9 @@ async function retry(
  *  rules: string,
  *  modelName: string,
  *  pullRequestContext: PullRequestContext,
- *  maxRetries: number
+ *  maxRetries: number | null,
+ *  tools: Tools,
+ *  customPrompt: string
  * }} params
  * @returns {Promise<suggestionsPayload | null>}
  */
@@ -401,6 +447,8 @@ async function getSuggestions({
     modelName,
     pullRequestContext,
     maxRetries,
+    tools,
+    customPrompt,
 }) {
     const { error, warning } = log({ withTimestamp: true }); // eslint-disable-line no-use-before-define
 
@@ -415,6 +463,8 @@ async function getSuggestions({
                         modelName,
                         pullRequestContext,
                         platform,
+                        tools,
+                        customPrompt,
                     });
                 }
 
@@ -444,11 +494,15 @@ async function getSuggestions({
                 retries: maxRetries ?? 3,
                 onRetry: ({ error: retryError, attempt, remainingAttempts, delay }) => {
                     error(`Attempt ${attempt} failed: ${retryError.message}.`);
-                    warning(`Retrying in ${delay}ms. Remaining attempts: ${remainingAttempts}.`);
+
+                    if (remainingAttempts !== 0) {
+                        warning(`Retrying in ${delay}ms. Remaining attempts: ${remainingAttempts}.`);
+                    }
                 },
             }
         );
     } catch (err) {
+        console.error(err);
         error(`Could not generate suggestions: ${err.message}`);
         core.setFailed(`Could not generate suggestions: ${err.message}`);
         return null;
@@ -519,6 +573,7 @@ async function getAllReviewsForPullRequest(octokit) {
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number,
+        per_page: 500,
     });
 }
 
@@ -590,6 +645,17 @@ function getPlatformSDK(platform, apiKey) {
     throw new Error(`Unsupported AI platform: ${platform}`);
 }
 
+/**
+ * @template T
+ * @param {string} json
+ * @returns {T}
+ */
+function parseJSON(json) {
+    if (json) {
+        return JSON.parse(json);
+    }
+}
+
 async function run() {
     const { info, warning, error } = log({ withTimestamp: true });
 
@@ -604,7 +670,14 @@ async function run() {
         const platform = core.getInput("platform");
         const filesToIgnore = core.getInput("filesToIgnore");
         const maxRetries = core.getInput("max-retries");
+        const tools = core.getInput("tools");
+        const customPrompt = core.getInput("custom-prompt");
         const octokit = github.getOctokit(token);
+
+        /**
+         * @type Tools
+         */
+        const toolsParsed = parseJSON(tools);
 
         info("Initializing AI model...");
         const platformSDK = getPlatformSDK(platform, modelToken);
@@ -672,7 +745,9 @@ async function run() {
                 platformSDK,
                 rules,
                 modelName,
-                maxRetries: Number(maxRetries),
+                maxRetries: maxRetries === "" ? null : Number(maxRetries),
+                tools: toolsParsed,
+                customPrompt,
                 pullRequestContext: {
                     body: pullRequestData.data.body,
                 },
