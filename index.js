@@ -433,7 +433,7 @@ async function retry(
  *  rules: string,
  *  modelName: string,
  *  pullRequestContext: PullRequestContext,
- *  maxRetries: number,
+ *  maxRetries: number | null,
  *  tools: Tools,
  *  customPrompt: string
  * }} params
@@ -742,7 +742,7 @@ async function run() {
                 platformSDK,
                 rules,
                 modelName,
-                maxRetries,
+                maxRetries: maxRetries === "" ? null : Number(maxRetries),
                 tools: toolsParsed,
                 customPrompt,
                 pullRequestContext: {
