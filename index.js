@@ -378,7 +378,7 @@ async function retry(
         initialDelay = 1500, // Start with 1.5 seconds
         backoffFactor = 2, // Double the delay each time
         maxDelay = 10000, // Never wait more than 10 seconds
-        nonRetryableErrors = ["Unsupported AI platform", "Too many tokens"],
+        nonRetryableErrors = [],
         onRetry = null,
     } = {}
 ) {
