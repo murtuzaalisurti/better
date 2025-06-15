@@ -18,7 +18,7 @@ const DEFAULT_MODEL = {
 
 const BASE_URL = {
     OPENROUTER: "https://openrouter.ai/api/v1",
-    GOOGLE: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    GOOGLE: "https://generativelanguage.googleapis.com/v1beta/openai/responses/parse/",
 };
 
 const COMMON_SYSTEM_PROMPT = `
