@@ -354,6 +354,7 @@ async function retry(
         try {
             return await fn();
         } catch (error) {
+            console.error(error);
             lastError = error;
 
             if (onRetry) {
