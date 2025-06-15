@@ -117,7 +117,7 @@ They can be accessed in the workflow file using `${{ secrets.YOUR_KEY_NAME }}`.
 
 ### 4. `ai-model-name` (Optional)
 
-Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` for OpenAI, `claude-3-7-sonnet-latest` for Anthropic, `gemini-2.5-pro-preview-05-06` for Google's Gemini, `pixtral-12b-2409` for Mistral, and `deepseek/deepseek-r1` for OpenRouter if not specified. Here's a list of supported models:
+Specify the name of the model you want to use to generate suggestions. Fallbacks to `gpt-4o-2024-08-06` for OpenAI, `claude-3-7-sonnet-latest` for Anthropic, `gemini-2.5-pro-preview-05-06` for Google's Gemini, `pixtral-12b-2409` for Mistral, and `google/gemini-2.5-pro-preview-06-05` for OpenRouter if not specified. Here's a list of supported models:
 
 For OpenAI:
 
@@ -141,7 +141,7 @@ For Mistral:
 
 For OpenRouter:
 
-- [deepseek/deepseek-r1](https://openrouter.ai/deepseek/deepseek-r1).
+- Any of the models listed [here in OpenRouter](https://openrouter.ai/models?fmt=table&supported_parameters=response_format) that support `structured outputs`/`response_format`.
 
 For Google:
 

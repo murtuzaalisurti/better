@@ -9,7 +9,7 @@ const DEFAULT_MODEL = {
         name: "pixtral-12b-2409",
     },
     OPENROUTER: {
-        name: "deepseek/deepseek-r1",
+        name: "google/gemini-2.5-pro-preview-06-05",
     },
     GOOGLE: {
         name: "gemini-2.5-pro-preview-06-05",
