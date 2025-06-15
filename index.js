@@ -203,10 +203,10 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   },
               },
               tools: [
-                  {
-                      type: "web_search_preview",
-                      search_context_size: "low",
-                  },
+                  //   {
+                  //       type: "web_search_preview",
+                  //       search_context_size: "low",
+                  //   },
                   ...(tools && tools.length > 0
                       ? tools.map(t => {
                             return {
