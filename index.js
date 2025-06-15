@@ -399,6 +399,8 @@ async function retry(
                 error.message.toLowerCase().includes(errMsg.toLowerCase())
             );
 
+            console.log(shouldNotRetry, "shoulnotretry --------------------\n\n");
+
             if (shouldNotRetry || attempt === retries - 1) {
                 throw error;
             }
