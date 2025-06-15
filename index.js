@@ -356,14 +356,6 @@ async function retry(
         } catch (error) {
             lastError = error;
 
-            const shouldNotRetry = nonRetryableErrors.some(errMsg =>
-                error.message.toLowerCase().includes(errMsg.toLowerCase())
-            );
-
-            if (shouldNotRetry || attempt === retries - 1) {
-                throw error;
-            }
-
             if (onRetry) {
                 onRetry({
                     error,
@@ -371,6 +363,14 @@ async function retry(
                     remainingAttempts: retries - attempt - 1,
                     delay,
                 });
+            }
+
+            const shouldNotRetry = nonRetryableErrors.some(errMsg =>
+                error.message.toLowerCase().includes(errMsg.toLowerCase())
+            );
+
+            if (shouldNotRetry || attempt === retries - 1) {
+                throw error;
             }
 
             await new Promise(resolve => setTimeout(resolve, delay));
@@ -444,7 +444,10 @@ async function getSuggestions({
                 retries: maxRetries ?? 3,
                 onRetry: ({ error: retryError, attempt, remainingAttempts, delay }) => {
                     error(`Attempt ${attempt} failed: ${retryError.message}.`);
-                    warning(`Retrying in ${delay}ms. Remaining attempts: ${remainingAttempts}.`);
+
+                    if (remainingAttempts !== 0) {
+                        warning(`Retrying in ${delay}ms. Remaining attempts: ${remainingAttempts}.`);
+                    }
                 },
             }
         );
@@ -672,7 +675,7 @@ async function run() {
                 platformSDK,
                 rules,
                 modelName,
-                maxRetries: Number(maxRetries),
+                maxRetries: maxRetries === "" ? null : Number(maxRetries),
                 pullRequestContext: {
                     body: pullRequestData.data.body,
                 },
