@@ -378,7 +378,7 @@ async function retry(
         initialDelay = 1500, // Start with 1.5 seconds
         backoffFactor = 2, // Double the delay each time
         maxDelay = 10000, // Never wait more than 10 seconds
-        nonRetryableErrors = [],
+        nonRetryableErrors = ["Unsupported AI platform", "Too many tokens"],
         onRetry = null,
     } = {}
 ) {
@@ -404,10 +404,6 @@ async function retry(
 
             console.log(shouldNotRetry, "shoulnotretry --------------------\n\n");
 
-            if (shouldNotRetry || attempt === retries - 1) {
-                throw error;
-            }
-
             if (onRetry) {
                 onRetry({
                     error,
@@ -415,6 +411,10 @@ async function retry(
                     remainingAttempts: retries - attempt - 1,
                     delay,
                 });
+            }
+
+            if (shouldNotRetry || attempt === retries - 1) {
+                throw error;
             }
 
             await new Promise(resolve => setTimeout(resolve, delay));
@@ -494,7 +494,10 @@ async function getSuggestions({
                 retries: maxRetries ?? 3,
                 onRetry: ({ error: retryError, attempt, remainingAttempts, delay }) => {
                     error(`Attempt ${attempt} failed: ${retryError.message}.`);
-                    warning(`Retrying in ${delay}ms. Remaining attempts: ${remainingAttempts}.`);
+
+                    if (remainingAttempts !== 0) {
+                        warning(`Retrying in ${delay}ms. Remaining attempts: ${remainingAttempts}.`);
+                    }
                 },
             }
         );
