@@ -382,6 +382,7 @@ async function retry(
         onRetry = null,
     } = {}
 ) {
+    console.log(retries, "retries ----------------");
     let lastError;
     let delay = initialDelay;
 
@@ -393,6 +394,8 @@ async function retry(
         try {
             return await fn();
         } catch (error) {
+            console.log("caught error");
+            console.error(error);
             lastError = error;
 
             const shouldNotRetry = nonRetryableErrors.some(errMsg =>
