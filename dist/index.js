@@ -62444,6 +62444,11 @@ class ContentFilterFinishReasonError extends error_OpenAIError {
         super(`Could not parse response content as the request was rejected by the content filter`);
     }
 }
+class InvalidWebhookSignatureError extends Error {
+    constructor(message) {
+        super(message);
+    }
+}
 //# sourceMappingURL=error.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/internal/utils/values.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -62453,6 +62458,8 @@ const startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
 const isAbsoluteURL = (url) => {
     return startsWithSchemeRegexp.test(url);
 };
+let values_isArray = (val) => ((values_isArray = Array.isArray), values_isArray(val));
+let isReadonlyArray = values_isArray;
 /** Returns an object if the given value isn't an object, otherwise returns as-is */
 function maybeObj(x) {
     if (typeof x !== 'object') {
@@ -62542,88 +62549,8 @@ const safeJSON = (text) => {
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 //# sourceMappingURL=sleep.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/internal/utils/log.mjs
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-const levelNumbers = {
-    off: 0,
-    error: 200,
-    warn: 300,
-    info: 400,
-    debug: 500,
-};
-const parseLogLevel = (maybeLevel, sourceName, client) => {
-    if (!maybeLevel) {
-        return undefined;
-    }
-    if (hasOwn(levelNumbers, maybeLevel)) {
-        return maybeLevel;
-    }
-    loggerFor(client).warn(`${sourceName} was set to ${JSON.stringify(maybeLevel)}, expected one of ${JSON.stringify(Object.keys(levelNumbers))}`);
-    return undefined;
-};
-function noop() { }
-function makeLogFn(fnLevel, logger, logLevel) {
-    if (!logger || levelNumbers[fnLevel] > levelNumbers[logLevel]) {
-        return noop;
-    }
-    else {
-        // Don't wrap logger functions, we want the stacktrace intact!
-        return logger[fnLevel].bind(logger);
-    }
-}
-const noopLogger = {
-    error: noop,
-    warn: noop,
-    info: noop,
-    debug: noop,
-};
-let cachedLoggers = new WeakMap();
-function loggerFor(client) {
-    const logger = client.logger;
-    const logLevel = client.logLevel ?? 'off';
-    if (!logger) {
-        return noopLogger;
-    }
-    const cachedLogger = cachedLoggers.get(logger);
-    if (cachedLogger && cachedLogger[0] === logLevel) {
-        return cachedLogger[1];
-    }
-    const levelLogger = {
-        error: makeLogFn('error', logger, logLevel),
-        warn: makeLogFn('warn', logger, logLevel),
-        info: makeLogFn('info', logger, logLevel),
-        debug: makeLogFn('debug', logger, logLevel),
-    };
-    cachedLoggers.set(logger, [logLevel, levelLogger]);
-    return levelLogger;
-}
-const formatRequestDetails = (details) => {
-    if (details.options) {
-        details.options = { ...details.options };
-        delete details.options['headers']; // redundant + leaks internals
-    }
-    if (details.headers) {
-        details.headers = Object.fromEntries((details.headers instanceof Headers ? [...details.headers] : Object.entries(details.headers)).map(([name, value]) => [
-            name,
-            (name.toLowerCase() === 'authorization' ||
-                name.toLowerCase() === 'cookie' ||
-                name.toLowerCase() === 'set-cookie') ?
-                '***'
-                : value,
-        ]));
-    }
-    if ('retryOfRequestLogID' in details) {
-        if (details.retryOfRequestLogID) {
-            details.retryOf = details.retryOfRequestLogID;
-        }
-        delete details.retryOfRequestLogID;
-    }
-    return details;
-};
-//# sourceMappingURL=log.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/version.mjs
-const VERSION = '5.3.0'; // x-release-please-version
+const VERSION = '5.12.2'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/internal/detect-platform.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -62882,18 +62809,20 @@ const FallbackEncoder = ({ headers, body }) => {
 //# sourceMappingURL=request-options.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/internal/qs/formats.mjs
 const default_format = 'RFC3986';
+const default_formatter = (v) => String(v);
 const formatters = {
     RFC1738: (v) => String(v).replace(/%20/g, '+'),
-    RFC3986: (v) => String(v),
+    RFC3986: default_formatter,
 };
 const RFC1738 = 'RFC1738';
 const RFC3986 = 'RFC3986';
 //# sourceMappingURL=formats.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/internal/qs/utils.mjs
 
-const has = Object.prototype.hasOwnProperty;
-const is_array = Array.isArray;
-const hex_table = (() => {
+
+let has = (obj, key) => ((has = Object.hasOwn ?? Function.prototype.call.bind(Object.prototype.hasOwnProperty)),
+    has(obj, key));
+const hex_table = /* @__PURE__ */ (() => {
     const array = [];
     for (let i = 0; i < 256; ++i) {
         array.push('%' + ((i < 16 ? '0' : '') + i.toString(16)).toUpperCase());
@@ -62906,7 +62835,7 @@ function compact_queue(queue) {
         if (!item)
             continue;
         const obj = item.obj[item.prop];
-        if (is_array(obj)) {
+        if (isArray(obj)) {
             const compacted = [];
             for (let j = 0; j < obj.length; ++j) {
                 if (typeof obj[j] !== 'undefined') {
@@ -62932,12 +62861,11 @@ function merge(target, source, options = {}) {
         return target;
     }
     if (typeof source !== 'object') {
-        if (is_array(target)) {
+        if (isArray(target)) {
             target.push(source);
         }
         else if (target && typeof target === 'object') {
-            if ((options && (options.plainObjects || options.allowPrototypes)) ||
-                !has.call(Object.prototype, source)) {
+            if ((options && (options.plainObjects || options.allowPrototypes)) || !has(Object.prototype, source)) {
                 target[source] = true;
             }
         }
@@ -62950,13 +62878,13 @@ function merge(target, source, options = {}) {
         return [target].concat(source);
     }
     let mergeTarget = target;
-    if (is_array(target) && !is_array(source)) {
+    if (isArray(target) && !isArray(source)) {
         // @ts-ignore
         mergeTarget = array_to_object(target, options);
     }
-    if (is_array(target) && is_array(source)) {
+    if (isArray(target) && isArray(source)) {
         source.forEach(function (item, i) {
-            if (has.call(target, i)) {
+            if (has(target, i)) {
                 const targetItem = target[i];
                 if (targetItem && typeof targetItem === 'object' && item && typeof item === 'object') {
                     target[i] = merge(targetItem, item, options);
@@ -62973,7 +62901,7 @@ function merge(target, source, options = {}) {
     }
     return Object.keys(source).reduce(function (acc, key) {
         const value = source[key];
-        if (has.call(acc, key)) {
+        if (has(acc, key)) {
             acc[key] = merge(acc[key], value, options);
         }
         else {
@@ -63097,7 +63025,7 @@ function combine(a, b) {
     return [].concat(a, b);
 }
 function maybe_map(val, fn) {
-    if (is_array(val)) {
+    if (values_isArray(val)) {
         const mapped = [];
         for (let i = 0; i < val.length; i += 1) {
             mapped.push(fn(val[i]));
@@ -63110,7 +63038,7 @@ function maybe_map(val, fn) {
 ;// CONCATENATED MODULE: ./node_modules/openai/internal/qs/stringify.mjs
 
 
-const stringify_has = Object.prototype.hasOwnProperty;
+
 const array_prefix_generators = {
     brackets(prefix) {
         return String(prefix) + '[]';
@@ -63123,12 +63051,10 @@ const array_prefix_generators = {
         return String(prefix);
     },
 };
-const stringify_is_array = Array.isArray;
-const push = Array.prototype.push;
 const push_to_array = function (arr, value_or_array) {
-    push.apply(arr, stringify_is_array(value_or_array) ? value_or_array : [value_or_array]);
+    Array.prototype.push.apply(arr, values_isArray(value_or_array) ? value_or_array : [value_or_array]);
 };
-const to_ISO = Date.prototype.toISOString;
+let toISOString;
 const defaults = {
     addQueryPrefix: false,
     allowDots: false,
@@ -63142,11 +63068,11 @@ const defaults = {
     encoder: encode,
     encodeValuesOnly: false,
     format: default_format,
-    formatter: formatters[default_format],
+    formatter: default_formatter,
     /** @deprecated */
     indices: false,
     serializeDate(date) {
-        return to_ISO.call(date);
+        return (toISOString ?? (toISOString = Function.prototype.call.bind(Date.prototype.toISOString)))(date);
     },
     skipNulls: false,
     strictNullHandling: false,
@@ -63186,7 +63112,7 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
     else if (obj instanceof Date) {
         obj = serializeDate?.(obj);
     }
-    else if (generateArrayPrefix === 'comma' && stringify_is_array(obj)) {
+    else if (generateArrayPrefix === 'comma' && values_isArray(obj)) {
         obj = maybe_map(obj, function (value) {
             if (value instanceof Date) {
                 return serializeDate?.(value);
@@ -63222,7 +63148,7 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
         return values;
     }
     let obj_keys;
-    if (generateArrayPrefix === 'comma' && stringify_is_array(obj)) {
+    if (generateArrayPrefix === 'comma' && values_isArray(obj)) {
         // we need to join elements in
         if (encodeValuesOnly && encoder) {
             // @ts-expect-error values only
@@ -63230,7 +63156,7 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
         }
         obj_keys = [{ value: obj.length > 0 ? obj.join(',') || null : void undefined }];
     }
-    else if (stringify_is_array(filter)) {
+    else if (values_isArray(filter)) {
         obj_keys = filter;
     }
     else {
@@ -63238,8 +63164,8 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
         obj_keys = sort ? keys.sort(sort) : keys;
     }
     const encoded_prefix = encodeDotInKeys ? String(prefix).replace(/\./g, '%2E') : String(prefix);
-    const adjusted_prefix = commaRoundTrip && stringify_is_array(obj) && obj.length === 1 ? encoded_prefix + '[]' : encoded_prefix;
-    if (allowEmptyArrays && stringify_is_array(obj) && obj.length === 0) {
+    const adjusted_prefix = commaRoundTrip && values_isArray(obj) && obj.length === 1 ? encoded_prefix + '[]' : encoded_prefix;
+    if (allowEmptyArrays && values_isArray(obj) && obj.length === 0) {
         return adjusted_prefix + '[]';
     }
     for (let j = 0; j < obj_keys.length; ++j) {
@@ -63252,7 +63178,7 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
         }
         // @ts-ignore
         const encoded_key = allowDots && encodeDotInKeys ? key.replace(/\./g, '%2E') : key;
-        const key_prefix = stringify_is_array(obj) ?
+        const key_prefix = values_isArray(obj) ?
             typeof generateArrayPrefix === 'function' ?
                 generateArrayPrefix(adjusted_prefix, encoded_key)
                 : adjusted_prefix
@@ -63262,7 +63188,7 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
         valueSideChannel.set(sentinel, sideChannel);
         push_to_array(values, inner_stringify(value, key_prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, 
         // @ts-ignore
-        generateArrayPrefix === 'comma' && encodeValuesOnly && stringify_is_array(obj) ? null : encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, valueSideChannel));
+        generateArrayPrefix === 'comma' && encodeValuesOnly && values_isArray(obj) ? null : encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, valueSideChannel));
     }
     return values;
 }
@@ -63282,14 +63208,14 @@ function normalize_stringify_options(opts = defaults) {
     }
     let format = default_format;
     if (typeof opts.format !== 'undefined') {
-        if (!stringify_has.call(formatters, opts.format)) {
+        if (!has(formatters, opts.format)) {
             throw new TypeError('Unknown format option provided.');
         }
         format = opts.format;
     }
     const formatter = formatters[format];
     let filter = defaults.filter;
-    if (typeof opts.filter === 'function' || stringify_is_array(opts.filter)) {
+    if (typeof opts.filter === 'function' || values_isArray(opts.filter)) {
         filter = opts.filter;
     }
     let arrayFormat;
@@ -63343,7 +63269,7 @@ function stringify(object, opts = {}) {
         filter = options.filter;
         obj = filter('', obj);
     }
-    else if (stringify_is_array(options.filter)) {
+    else if (values_isArray(options.filter)) {
         filter = options.filter;
         obj_keys = filter;
     }
@@ -63531,7 +63457,90 @@ function findDoubleNewlineIndex(buffer) {
     return -1;
 }
 //# sourceMappingURL=line.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/internal/utils/log.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+const levelNumbers = {
+    off: 0,
+    error: 200,
+    warn: 300,
+    info: 400,
+    debug: 500,
+};
+const parseLogLevel = (maybeLevel, sourceName, client) => {
+    if (!maybeLevel) {
+        return undefined;
+    }
+    if (hasOwn(levelNumbers, maybeLevel)) {
+        return maybeLevel;
+    }
+    loggerFor(client).warn(`${sourceName} was set to ${JSON.stringify(maybeLevel)}, expected one of ${JSON.stringify(Object.keys(levelNumbers))}`);
+    return undefined;
+};
+function noop() { }
+function makeLogFn(fnLevel, logger, logLevel) {
+    if (!logger || levelNumbers[fnLevel] > levelNumbers[logLevel]) {
+        return noop;
+    }
+    else {
+        // Don't wrap logger functions, we want the stacktrace intact!
+        return logger[fnLevel].bind(logger);
+    }
+}
+const noopLogger = {
+    error: noop,
+    warn: noop,
+    info: noop,
+    debug: noop,
+};
+let cachedLoggers = /* @__PURE__ */ new WeakMap();
+function loggerFor(client) {
+    const logger = client.logger;
+    const logLevel = client.logLevel ?? 'off';
+    if (!logger) {
+        return noopLogger;
+    }
+    const cachedLogger = cachedLoggers.get(logger);
+    if (cachedLogger && cachedLogger[0] === logLevel) {
+        return cachedLogger[1];
+    }
+    const levelLogger = {
+        error: makeLogFn('error', logger, logLevel),
+        warn: makeLogFn('warn', logger, logLevel),
+        info: makeLogFn('info', logger, logLevel),
+        debug: makeLogFn('debug', logger, logLevel),
+    };
+    cachedLoggers.set(logger, [logLevel, levelLogger]);
+    return levelLogger;
+}
+const formatRequestDetails = (details) => {
+    if (details.options) {
+        details.options = { ...details.options };
+        delete details.options['headers']; // redundant + leaks internals
+    }
+    if (details.headers) {
+        details.headers = Object.fromEntries((details.headers instanceof Headers ? [...details.headers] : Object.entries(details.headers)).map(([name, value]) => [
+            name,
+            (name.toLowerCase() === 'authorization' ||
+                name.toLowerCase() === 'cookie' ||
+                name.toLowerCase() === 'set-cookie') ?
+                '***'
+                : value,
+        ]));
+    }
+    if ('retryOfRequestLogID' in details) {
+        if (details.retryOfRequestLogID) {
+            details.retryOf = details.retryOfRequestLogID;
+        }
+        delete details.retryOfRequestLogID;
+    }
+    return details;
+};
+//# sourceMappingURL=log.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/core/streaming.mjs
+var _Stream_client;
+
+
 
 
 
@@ -63540,12 +63549,15 @@ function findDoubleNewlineIndex(buffer) {
 
 
 class Stream {
-    constructor(iterator, controller) {
+    constructor(iterator, controller, client) {
         this.iterator = iterator;
+        _Stream_client.set(this, void 0);
         this.controller = controller;
+        __classPrivateFieldSet(this, _Stream_client, client, "f");
     }
-    static fromSSEResponse(response, controller) {
+    static fromSSEResponse(response, controller, client) {
         let consumed = false;
+        const logger = client ? loggerFor(client) : console;
         async function* iterator() {
             if (consumed) {
                 throw new error_OpenAIError('Cannot iterate over a consumed stream, use `.tee()` to split the stream.');
@@ -63560,16 +63572,14 @@ class Stream {
                         done = true;
                         continue;
                     }
-                    if (sse.event === null ||
-                        sse.event.startsWith('response.') ||
-                        sse.event.startsWith('transcript.')) {
+                    if (sse.event === null || !sse.event.startsWith('thread.')) {
                         let data;
                         try {
                             data = JSON.parse(sse.data);
                         }
                         catch (e) {
-                            console.error(`Could not parse message into JSON:`, sse.data);
-                            console.error(`From chunk:`, sse.raw);
+                            logger.error(`Could not parse message into JSON:`, sse.data);
+                            logger.error(`From chunk:`, sse.raw);
                             throw e;
                         }
                         if (data && data.error) {
@@ -63608,13 +63618,13 @@ class Stream {
                     controller.abort();
             }
         }
-        return new Stream(iterator, controller);
+        return new Stream(iterator, controller, client);
     }
     /**
      * Generates a Stream from a newline-separated ReadableStream
      * where each item is a JSON value.
      */
-    static fromReadableStream(readableStream, controller) {
+    static fromReadableStream(readableStream, controller, client) {
         let consumed = false;
         async function* iterLines() {
             const lineDecoder = new LineDecoder();
@@ -63655,9 +63665,9 @@ class Stream {
                     controller.abort();
             }
         }
-        return new Stream(iterator, controller);
+        return new Stream(iterator, controller, client);
     }
-    [Symbol.asyncIterator]() {
+    [(_Stream_client = new WeakMap(), Symbol.asyncIterator)]() {
         return this.iterator();
     }
     /**
@@ -63681,8 +63691,8 @@ class Stream {
             };
         };
         return [
-            new Stream(() => teeIterator(left), this.controller),
-            new Stream(() => teeIterator(right), this.controller),
+            new Stream(() => teeIterator(left), this.controller, __classPrivateFieldGet(this, _Stream_client, "f")),
+            new Stream(() => teeIterator(right), this.controller, __classPrivateFieldGet(this, _Stream_client, "f")),
         ];
     }
     /**
@@ -63828,9 +63838,9 @@ async function defaultParseResponse(client, props) {
             // Note: there is an invariant here that isn't represented in the type system
             // that if you set `stream: true` the response type must also be `Stream<T>`
             if (props.options.__streamClass) {
-                return props.options.__streamClass.fromSSEResponse(response, props.controller);
+                return props.options.__streamClass.fromSSEResponse(response, props.controller, client);
             }
-            return Stream.fromSSEResponse(response, props.controller);
+            return Stream.fromSSEResponse(response, props.controller, client);
         }
         // fetch refuses to read the body when the status code is 204.
         if (response.status === 204) {
@@ -64104,7 +64114,7 @@ const maybeMultipartFormRequestOptions = async (opts, fetch) => {
 const multipartFormRequestOptions = async (opts, fetch) => {
     return { ...opts, body: await createForm(opts.body, fetch) };
 };
-const supportsFormDataMap = new WeakMap();
+const supportsFormDataMap = /* @__PURE__ */ new WeakMap();
 /**
  * node-fetch doesn't support the global FormData object in recent node versions. Instead of sending
  * properly-encoded form data, it just stringifies the object, resulting in a request body of "[object FormData]".
@@ -64305,21 +64315,38 @@ class APIResource {
 function encodeURIPath(str) {
     return str.replace(/[^A-Za-z0-9\-._~!$&'()*+,;=:@]+/g, encodeURIComponent);
 }
+const EMPTY = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.create(null));
 const createPathTagFunction = (pathEncoder = encodeURIPath) => function path(statics, ...params) {
     // If there are no params, no processing is needed.
     if (statics.length === 1)
         return statics[0];
     let postPath = false;
+    const invalidSegments = [];
     const path = statics.reduce((previousValue, currentValue, index) => {
         if (/[?#]/.test(currentValue)) {
             postPath = true;
         }
-        return (previousValue +
-            currentValue +
-            (index === params.length ? '' : (postPath ? encodeURIComponent : pathEncoder)(String(params[index]))));
+        const value = params[index];
+        let encoded = (postPath ? encodeURIComponent : pathEncoder)('' + value);
+        if (index !== params.length &&
+            (value == null ||
+                (typeof value === 'object' &&
+                    // handle values from other realms
+                    value.toString ===
+                        Object.getPrototypeOf(Object.getPrototypeOf(value.hasOwnProperty ?? EMPTY) ?? EMPTY)
+                            ?.toString))) {
+            encoded = value + '';
+            invalidSegments.push({
+                start: previousValue.length + currentValue.length,
+                length: encoded.length,
+                error: `Value of type ${Object.prototype.toString
+                    .call(value)
+                    .slice(8, -1)} is not a valid path parameter`,
+            });
+        }
+        return previousValue + currentValue + (index === params.length ? '' : encoded);
     }, '');
     const pathOnly = path.split(/[?#]/, 1)[0];
-    const invalidSegments = [];
     const invalidSegmentPattern = /(?<=^|\/)(?:\.|%2e){1,2}(?=\/|$)/gi;
     let match;
     // Find all invalid segments
@@ -64327,8 +64354,10 @@ const createPathTagFunction = (pathEncoder = encodeURIPath) => function path(sta
         invalidSegments.push({
             start: match.index,
             length: match[0].length,
+            error: `Value "${match[0]}" can\'t be safely passed as a path parameter`,
         });
     }
+    invalidSegments.sort((a, b) => a.start - b.start);
     if (invalidSegments.length > 0) {
         let lastEnd = 0;
         const underline = invalidSegments.reduce((acc, segment) => {
@@ -64337,14 +64366,16 @@ const createPathTagFunction = (pathEncoder = encodeURIPath) => function path(sta
             lastEnd = segment.start + segment.length;
             return acc + spaces + arrows;
         }, '');
-        throw new error_OpenAIError(`Path parameters result in path with invalid segments:\n${path}\n${underline}`);
+        throw new error_OpenAIError(`Path parameters result in path with invalid segments:\n${invalidSegments
+            .map((e) => e.error)
+            .join('\n')}\n${path}\n${underline}`);
     }
     return path;
 };
 /**
  * URI-encodes path params and ensures no unsafe /./ or /../ path segments are introduced.
  */
-const path = createPathTagFunction(encodeURIPath);
+const path = /* @__PURE__ */ createPathTagFunction(encodeURIPath);
 //# sourceMappingURL=path.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/chat/completions/messages.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -64374,21 +64405,169 @@ class Messages extends APIResource {
 ;// CONCATENATED MODULE: ./node_modules/openai/error.mjs
 
 //# sourceMappingURL=error.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/lib/RunnableFunction.mjs
-function isRunnableFunctionWithParse(fn) {
-    return typeof fn.parse === 'function';
+;// CONCATENATED MODULE: ./node_modules/openai/lib/parser.mjs
+
+function isChatCompletionFunctionTool(tool) {
+    return tool !== undefined && 'function' in tool && tool.function !== undefined;
 }
-/**
- * This is helper class for passing a `function` and `parse` where the `function`
- * argument type matches the `parse` return type.
- */
-class ParsingToolFunction {
-    constructor(input) {
-        this.type = 'function';
-        this.function = input;
+function makeParseableResponseFormat(response_format, parser) {
+    const obj = { ...response_format };
+    Object.defineProperties(obj, {
+        $brand: {
+            value: 'auto-parseable-response-format',
+            enumerable: false,
+        },
+        $parseRaw: {
+            value: parser,
+            enumerable: false,
+        },
+    });
+    return obj;
+}
+function parser_makeParseableTextFormat(response_format, parser) {
+    const obj = { ...response_format };
+    Object.defineProperties(obj, {
+        $brand: {
+            value: 'auto-parseable-response-format',
+            enumerable: false,
+        },
+        $parseRaw: {
+            value: parser,
+            enumerable: false,
+        },
+    });
+    return obj;
+}
+function isAutoParsableResponseFormat(response_format) {
+    return response_format?.['$brand'] === 'auto-parseable-response-format';
+}
+function parser_makeParseableTool(tool, { parser, callback, }) {
+    const obj = { ...tool };
+    Object.defineProperties(obj, {
+        $brand: {
+            value: 'auto-parseable-tool',
+            enumerable: false,
+        },
+        $parseRaw: {
+            value: parser,
+            enumerable: false,
+        },
+        $callback: {
+            value: callback,
+            enumerable: false,
+        },
+    });
+    return obj;
+}
+function isAutoParsableTool(tool) {
+    return tool?.['$brand'] === 'auto-parseable-tool';
+}
+function maybeParseChatCompletion(completion, params) {
+    if (!params || !hasAutoParseableInput(params)) {
+        return {
+            ...completion,
+            choices: completion.choices.map((choice) => {
+                assertToolCallsAreChatCompletionFunctionToolCalls(choice.message.tool_calls);
+                return {
+                    ...choice,
+                    message: {
+                        ...choice.message,
+                        parsed: null,
+                        ...(choice.message.tool_calls ?
+                            {
+                                tool_calls: choice.message.tool_calls,
+                            }
+                            : undefined),
+                    },
+                };
+            }),
+        };
+    }
+    return parseChatCompletion(completion, params);
+}
+function parseChatCompletion(completion, params) {
+    const choices = completion.choices.map((choice) => {
+        if (choice.finish_reason === 'length') {
+            throw new LengthFinishReasonError();
+        }
+        if (choice.finish_reason === 'content_filter') {
+            throw new ContentFilterFinishReasonError();
+        }
+        assertToolCallsAreChatCompletionFunctionToolCalls(choice.message.tool_calls);
+        return {
+            ...choice,
+            message: {
+                ...choice.message,
+                ...(choice.message.tool_calls ?
+                    {
+                        tool_calls: choice.message.tool_calls?.map((toolCall) => parseToolCall(params, toolCall)) ?? undefined,
+                    }
+                    : undefined),
+                parsed: choice.message.content && !choice.message.refusal ?
+                    parseResponseFormat(params, choice.message.content)
+                    : null,
+            },
+        };
+    });
+    return { ...completion, choices };
+}
+function parseResponseFormat(params, content) {
+    if (params.response_format?.type !== 'json_schema') {
+        return null;
+    }
+    if (params.response_format?.type === 'json_schema') {
+        if ('$parseRaw' in params.response_format) {
+            const response_format = params.response_format;
+            return response_format.$parseRaw(content);
+        }
+        return JSON.parse(content);
+    }
+    return null;
+}
+function parseToolCall(params, toolCall) {
+    const inputTool = params.tools?.find((inputTool) => isChatCompletionFunctionTool(inputTool) && inputTool.function?.name === toolCall.function.name); // TS doesn't narrow based on isChatCompletionTool
+    return {
+        ...toolCall,
+        function: {
+            ...toolCall.function,
+            parsed_arguments: isAutoParsableTool(inputTool) ? inputTool.$parseRaw(toolCall.function.arguments)
+                : inputTool?.function.strict ? JSON.parse(toolCall.function.arguments)
+                    : null,
+        },
+    };
+}
+function shouldParseToolCall(params, toolCall) {
+    if (!params || !('tools' in params) || !params.tools) {
+        return false;
+    }
+    const inputTool = params.tools?.find((inputTool) => isChatCompletionFunctionTool(inputTool) && inputTool.function?.name === toolCall.function.name);
+    return (isChatCompletionFunctionTool(inputTool) &&
+        (isAutoParsableTool(inputTool) || inputTool?.function.strict || false));
+}
+function hasAutoParseableInput(params) {
+    if (isAutoParsableResponseFormat(params.response_format)) {
+        return true;
+    }
+    return (params.tools?.some((t) => isAutoParsableTool(t) || (t.type === 'function' && t.function.strict === true)) ?? false);
+}
+function assertToolCallsAreChatCompletionFunctionToolCalls(toolCalls) {
+    for (const toolCall of toolCalls || []) {
+        if (toolCall.type !== 'function') {
+            throw new error_OpenAIError(`Currently only \`function\` tool calls are supported; Received \`${toolCall.type}\``);
+        }
     }
 }
-//# sourceMappingURL=RunnableFunction.mjs.map
+function validateInputTools(tools) {
+    for (const tool of tools ?? []) {
+        if (tool.type !== 'function') {
+            throw new error_OpenAIError(`Currently only \`function\` tool types support auto-parsing; Received \`${tool.type}\``);
+        }
+        if (tool.function.strict !== true) {
+            throw new error_OpenAIError(`The \`${tool.function.name}\` tool is not marked with \`strict: true\`. Only strict function tools can be auto-parsed`);
+        }
+    }
+}
+//# sourceMappingURL=parser.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/lib/chatCompletionUtils.mjs
 const isAssistantMessage = (message) => {
     return message?.role === 'assistant';
@@ -64587,154 +64766,21 @@ _EventStream_connectedPromise = new WeakMap(), _EventStream_resolveConnectedProm
     return this._emit('error', new error_OpenAIError(String(error)));
 };
 //# sourceMappingURL=EventStream.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/lib/parser.mjs
-
-function makeParseableResponseFormat(response_format, parser) {
-    const obj = { ...response_format };
-    Object.defineProperties(obj, {
-        $brand: {
-            value: 'auto-parseable-response-format',
-            enumerable: false,
-        },
-        $parseRaw: {
-            value: parser,
-            enumerable: false,
-        },
-    });
-    return obj;
+;// CONCATENATED MODULE: ./node_modules/openai/lib/RunnableFunction.mjs
+function isRunnableFunctionWithParse(fn) {
+    return typeof fn.parse === 'function';
 }
-function parser_makeParseableTextFormat(response_format, parser) {
-    const obj = { ...response_format };
-    Object.defineProperties(obj, {
-        $brand: {
-            value: 'auto-parseable-response-format',
-            enumerable: false,
-        },
-        $parseRaw: {
-            value: parser,
-            enumerable: false,
-        },
-    });
-    return obj;
-}
-function isAutoParsableResponseFormat(response_format) {
-    return response_format?.['$brand'] === 'auto-parseable-response-format';
-}
-function parser_makeParseableTool(tool, { parser, callback, }) {
-    const obj = { ...tool };
-    Object.defineProperties(obj, {
-        $brand: {
-            value: 'auto-parseable-tool',
-            enumerable: false,
-        },
-        $parseRaw: {
-            value: parser,
-            enumerable: false,
-        },
-        $callback: {
-            value: callback,
-            enumerable: false,
-        },
-    });
-    return obj;
-}
-function isAutoParsableTool(tool) {
-    return tool?.['$brand'] === 'auto-parseable-tool';
-}
-function maybeParseChatCompletion(completion, params) {
-    if (!params || !hasAutoParseableInput(params)) {
-        return {
-            ...completion,
-            choices: completion.choices.map((choice) => ({
-                ...choice,
-                message: {
-                    ...choice.message,
-                    parsed: null,
-                    ...(choice.message.tool_calls ?
-                        {
-                            tool_calls: choice.message.tool_calls,
-                        }
-                        : undefined),
-                },
-            })),
-        };
-    }
-    return parseChatCompletion(completion, params);
-}
-function parseChatCompletion(completion, params) {
-    const choices = completion.choices.map((choice) => {
-        if (choice.finish_reason === 'length') {
-            throw new LengthFinishReasonError();
-        }
-        if (choice.finish_reason === 'content_filter') {
-            throw new ContentFilterFinishReasonError();
-        }
-        return {
-            ...choice,
-            message: {
-                ...choice.message,
-                ...(choice.message.tool_calls ?
-                    {
-                        tool_calls: choice.message.tool_calls?.map((toolCall) => parseToolCall(params, toolCall)) ?? undefined,
-                    }
-                    : undefined),
-                parsed: choice.message.content && !choice.message.refusal ?
-                    parseResponseFormat(params, choice.message.content)
-                    : null,
-            },
-        };
-    });
-    return { ...completion, choices };
-}
-function parseResponseFormat(params, content) {
-    if (params.response_format?.type !== 'json_schema') {
-        return null;
-    }
-    if (params.response_format?.type === 'json_schema') {
-        if ('$parseRaw' in params.response_format) {
-            const response_format = params.response_format;
-            return response_format.$parseRaw(content);
-        }
-        return JSON.parse(content);
-    }
-    return null;
-}
-function parseToolCall(params, toolCall) {
-    const inputTool = params.tools?.find((inputTool) => inputTool.function?.name === toolCall.function.name);
-    return {
-        ...toolCall,
-        function: {
-            ...toolCall.function,
-            parsed_arguments: isAutoParsableTool(inputTool) ? inputTool.$parseRaw(toolCall.function.arguments)
-                : inputTool?.function.strict ? JSON.parse(toolCall.function.arguments)
-                    : null,
-        },
-    };
-}
-function shouldParseToolCall(params, toolCall) {
-    if (!params) {
-        return false;
-    }
-    const inputTool = params.tools?.find((inputTool) => inputTool.function?.name === toolCall.function.name);
-    return isAutoParsableTool(inputTool) || inputTool?.function.strict || false;
-}
-function hasAutoParseableInput(params) {
-    if (isAutoParsableResponseFormat(params.response_format)) {
-        return true;
-    }
-    return (params.tools?.some((t) => isAutoParsableTool(t) || (t.type === 'function' && t.function.strict === true)) ?? false);
-}
-function validateInputTools(tools) {
-    for (const tool of tools ?? []) {
-        if (tool.type !== 'function') {
-            throw new error_OpenAIError(`Currently only \`function\` tool types support auto-parsing; Received \`${tool.type}\``);
-        }
-        if (tool.function.strict !== true) {
-            throw new error_OpenAIError(`The \`${tool.function.name}\` tool is not marked with \`strict: true\`. Only strict function tools can be auto-parsed`);
-        }
+/**
+ * This is helper class for passing a `function` and `parse` where the `function`
+ * argument type matches the `parse` return type.
+ */
+class ParsingToolFunction {
+    constructor(input) {
+        this.type = 'function';
+        this.function = input;
     }
 }
-//# sourceMappingURL=parser.mjs.map
+//# sourceMappingURL=RunnableFunction.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/lib/AbstractChatCompletionRunner.mjs
 var _AbstractChatCompletionRunner_instances, _AbstractChatCompletionRunner_getFinalContent, _AbstractChatCompletionRunner_getFinalMessage, _AbstractChatCompletionRunner_getFinalFunctionToolCall, _AbstractChatCompletionRunner_getFinalFunctionToolCallResult, _AbstractChatCompletionRunner_calculateTotalUsage, _AbstractChatCompletionRunner_validateParams, _AbstractChatCompletionRunner_stringifyFunctionCallResult;
 
@@ -64865,7 +64911,7 @@ class AbstractChatCompletionRunner extends EventStream {
     async _runTools(client, params, options) {
         const role = 'tool';
         const { tool_choice = 'auto', stream, ...restParams } = params;
-        const singleFunctionToCall = typeof tool_choice !== 'string' && tool_choice?.function?.name;
+        const singleFunctionToCall = typeof tool_choice !== 'string' && tool_choice.type === 'function' && tool_choice?.function?.name;
         const { maxChatCompletions = DEFAULT_MAX_CHAT_COMPLETIONS } = options || {};
         // TODO(someday): clean this logic up
         const inputTools = params.tools.map((tool) => {
@@ -64983,7 +65029,7 @@ _AbstractChatCompletionRunner_instances = new WeakSet(), _AbstractChatCompletion
     for (let i = this.messages.length - 1; i >= 0; i--) {
         const message = this.messages[i];
         if (isAssistantMessage(message) && message?.tool_calls?.length) {
-            return message.tool_calls.at(-1)?.function;
+            return message.tool_calls.filter((x) => x.type === 'function').at(-1)?.function;
         }
     }
     return;
@@ -65044,9 +65090,6 @@ class ChatCompletionRunner extends AbstractChatCompletionRunner {
     }
 }
 //# sourceMappingURL=ChatCompletionRunner.mjs.map
-;// CONCATENATED MODULE: ./node_modules/openai/streaming.mjs
-
-//# sourceMappingURL=streaming.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/partial-json-parser/parser.mjs
 const STR = 0b000000001;
 const NUM = 0b000000010;
@@ -65289,6 +65332,9 @@ const _parseJSON = (jsonString, allow) => {
 const partialParse = (input) => parseJSON(input, Allow.ALL ^ Allow.NUM);
 
 //# sourceMappingURL=parser.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/streaming.mjs
+
+//# sourceMappingURL=streaming.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/lib/ChatCompletionStream.mjs
 var _ChatCompletionStream_instances, _ChatCompletionStream_params, _ChatCompletionStream_choiceEventStates, _ChatCompletionStream_currentChatCompletionSnapshot, _ChatCompletionStream_beginRequest, _ChatCompletionStream_getChoiceEventState, _ChatCompletionStream_addChunk, _ChatCompletionStream_emitToolCallDoneEvent, _ChatCompletionStream_emitContentDoneEvents, _ChatCompletionStream_endRequest, _ChatCompletionStream_getAutoParseableResponseFormat, _ChatCompletionStream_accumulateChatCompletion;
 
@@ -65476,7 +65522,7 @@ class ChatCompletionStream extends AbstractChatCompletionRunner {
             throw new Error('tool call snapshot missing `type`');
         }
         if (toolCallSnapshot.type === 'function') {
-            const inputTool = __classPrivateFieldGet(this, _ChatCompletionStream_params, "f")?.tools?.find((tool) => tool.type === 'function' && tool.function.name === toolCallSnapshot.function.name);
+            const inputTool = __classPrivateFieldGet(this, _ChatCompletionStream_params, "f")?.tools?.find((tool) => isChatCompletionFunctionTool(tool) && tool.function.name === toolCallSnapshot.function.name); // TS doesn't narrow based on isChatCompletionTool
             this._emit('tool_calls.function.arguments.done', {
                 name: toolCallSnapshot.function.name,
                 index: toolCallIndex,
@@ -65933,8 +65979,8 @@ Chat.Completions = Completions;
 //# sourceMappingURL=index.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/internal/headers.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-const brand_privateNullableHeaders = Symbol('brand.privateNullableHeaders');
-const isArray = Array.isArray;
+
+const brand_privateNullableHeaders = /* @__PURE__ */ Symbol('brand.privateNullableHeaders');
 function* iterateHeaders(headers) {
     if (!headers)
         return;
@@ -65951,7 +65997,7 @@ function* iterateHeaders(headers) {
     if (headers instanceof Headers) {
         iter = headers.entries();
     }
-    else if (isArray(headers)) {
+    else if (isReadonlyArray(headers)) {
         iter = headers;
     }
     else {
@@ -65962,7 +66008,7 @@ function* iterateHeaders(headers) {
         const name = row[0];
         if (typeof name !== 'string')
             throw new TypeError('expected header name to be a string');
-        const values = isArray(row[1]) ? row[1] : [row[1]];
+        const values = isReadonlyArray(row[1]) ? row[1] : [row[1]];
         let didClear = false;
         for (const value of values) {
             if (value === undefined)
@@ -67895,7 +67941,7 @@ class Jobs extends APIResource {
      * Response includes details of the enqueued job including job status and the name
      * of the fine-tuned models once complete.
      *
-     * [Learn more about fine-tuning](https://platform.openai.com/docs/guides/fine-tuning)
+     * [Learn more about fine-tuning](https://platform.openai.com/docs/guides/model-optimization)
      *
      * @example
      * ```ts
@@ -67911,7 +67957,7 @@ class Jobs extends APIResource {
     /**
      * Get info about a fine-tuning job.
      *
-     * [Learn more about fine-tuning](https://platform.openai.com/docs/guides/fine-tuning)
+     * [Learn more about fine-tuning](https://platform.openai.com/docs/guides/model-optimization)
      *
      * @example
      * ```ts
@@ -68057,34 +68103,11 @@ class Images extends APIResource {
     createVariation(body, options) {
         return this._client.post('/images/variations', multipartFormRequestOptions({ body, ...options }, this._client));
     }
-    /**
-     * Creates an edited or extended image given one or more source images and a
-     * prompt. This endpoint only supports `gpt-image-1` and `dall-e-2`.
-     *
-     * @example
-     * ```ts
-     * const imagesResponse = await client.images.edit({
-     *   image: fs.createReadStream('path/to/file'),
-     *   prompt: 'A cute baby sea otter wearing a beret',
-     * });
-     * ```
-     */
     edit(body, options) {
-        return this._client.post('/images/edits', multipartFormRequestOptions({ body, ...options }, this._client));
+        return this._client.post('/images/edits', multipartFormRequestOptions({ body, ...options, stream: body.stream ?? false }, this._client));
     }
-    /**
-     * Creates an image given a prompt.
-     * [Learn more](https://platform.openai.com/docs/guides/images).
-     *
-     * @example
-     * ```ts
-     * const imagesResponse = await client.images.generate({
-     *   prompt: 'A cute baby sea otter',
-     * });
-     * ```
-     */
     generate(body, options) {
-        return this._client.post('/images/generations', { body, ...options });
+        return this._client.post('/images/generations', { body, ...options, stream: body.stream ?? false });
     }
 }
 //# sourceMappingURL=images.mjs.map
@@ -68579,6 +68602,11 @@ class Responses extends APIResource {
             query,
             ...options,
             stream: query?.stream ?? false,
+        })._thenUnwrap((rsp) => {
+            if ('object' in rsp && rsp.object === 'response') {
+                addOutputText(rsp);
+            }
+            return rsp;
         });
     }
     /**
@@ -69084,8 +69112,107 @@ class VectorStores extends APIResource {
 VectorStores.Files = vector_stores_files_Files;
 VectorStores.FileBatches = FileBatches;
 //# sourceMappingURL=vector-stores.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/resources/webhooks.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+var _Webhooks_instances, _Webhooks_validateSecret, _Webhooks_getRequiredHeader;
+
+
+
+
+class Webhooks extends APIResource {
+    constructor() {
+        super(...arguments);
+        _Webhooks_instances.add(this);
+    }
+    /**
+     * Validates that the given payload was sent by OpenAI and parses the payload.
+     */
+    async unwrap(payload, headers, secret = this._client.webhookSecret, tolerance = 300) {
+        await this.verifySignature(payload, headers, secret, tolerance);
+        return JSON.parse(payload);
+    }
+    /**
+     * Validates whether or not the webhook payload was sent by OpenAI.
+     *
+     * An error will be raised if the webhook payload was not sent by OpenAI.
+     *
+     * @param payload - The webhook payload
+     * @param headers - The webhook headers
+     * @param secret - The webhook secret (optional, will use client secret if not provided)
+     * @param tolerance - Maximum age of the webhook in seconds (default: 300 = 5 minutes)
+     */
+    async verifySignature(payload, headers, secret = this._client.webhookSecret, tolerance = 300) {
+        if (typeof crypto === 'undefined' ||
+            typeof crypto.subtle.importKey !== 'function' ||
+            typeof crypto.subtle.verify !== 'function') {
+            throw new Error('Webhook signature verification is only supported when the `crypto` global is defined');
+        }
+        __classPrivateFieldGet(this, _Webhooks_instances, "m", _Webhooks_validateSecret).call(this, secret);
+        const headersObj = buildHeaders([headers]).values;
+        const signatureHeader = __classPrivateFieldGet(this, _Webhooks_instances, "m", _Webhooks_getRequiredHeader).call(this, headersObj, 'webhook-signature');
+        const timestamp = __classPrivateFieldGet(this, _Webhooks_instances, "m", _Webhooks_getRequiredHeader).call(this, headersObj, 'webhook-timestamp');
+        const webhookId = __classPrivateFieldGet(this, _Webhooks_instances, "m", _Webhooks_getRequiredHeader).call(this, headersObj, 'webhook-id');
+        // Validate timestamp to prevent replay attacks
+        const timestampSeconds = parseInt(timestamp, 10);
+        if (isNaN(timestampSeconds)) {
+            throw new InvalidWebhookSignatureError('Invalid webhook timestamp format');
+        }
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        if (nowSeconds - timestampSeconds > tolerance) {
+            throw new InvalidWebhookSignatureError('Webhook timestamp is too old');
+        }
+        if (timestampSeconds > nowSeconds + tolerance) {
+            throw new InvalidWebhookSignatureError('Webhook timestamp is too new');
+        }
+        // Extract signatures from v1,<base64> format
+        // The signature header can have multiple values, separated by spaces.
+        // Each value is in the format v1,<base64>. We should accept if any match.
+        const signatures = signatureHeader
+            .split(' ')
+            .map((part) => (part.startsWith('v1,') ? part.substring(3) : part));
+        // Decode the secret if it starts with whsec_
+        const decodedSecret = secret.startsWith('whsec_') ?
+            Buffer.from(secret.replace('whsec_', ''), 'base64')
+            : Buffer.from(secret, 'utf-8');
+        // Create the signed payload: {webhook_id}.{timestamp}.{payload}
+        const signedPayload = webhookId ? `${webhookId}.${timestamp}.${payload}` : `${timestamp}.${payload}`;
+        // Import the secret as a cryptographic key for HMAC
+        const key = await crypto.subtle.importKey('raw', decodedSecret, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+        // Check if any signature matches using timing-safe WebCrypto verify
+        for (const signature of signatures) {
+            try {
+                const signatureBytes = Buffer.from(signature, 'base64');
+                const isValid = await crypto.subtle.verify('HMAC', key, signatureBytes, new TextEncoder().encode(signedPayload));
+                if (isValid) {
+                    return; // Valid signature found
+                }
+            }
+            catch {
+                // Invalid base64 or signature format, continue to next signature
+                continue;
+            }
+        }
+        throw new InvalidWebhookSignatureError('The given webhook signature does not match the expected signature');
+    }
+}
+_Webhooks_instances = new WeakSet(), _Webhooks_validateSecret = function _Webhooks_validateSecret(secret) {
+    if (typeof secret !== 'string' || secret.length === 0) {
+        throw new Error(`The webhook secret must either be set using the env var, OPENAI_WEBHOOK_SECRET, on the client class, OpenAI({ webhookSecret: '123' }), or passed to this function`);
+    }
+}, _Webhooks_getRequiredHeader = function _Webhooks_getRequiredHeader(headers, name) {
+    if (!headers) {
+        throw new Error(`Headers are required`);
+    }
+    const value = headers.get(name);
+    if (value === null || value === undefined) {
+        throw new Error(`Missing required header: ${name}`);
+    }
+    return value;
+};
+//# sourceMappingURL=webhooks.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/resources/index.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
 
 
 
@@ -69107,7 +69234,7 @@ VectorStores.FileBatches = FileBatches;
 //# sourceMappingURL=index.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/client.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-var client_a, _OpenAI_encoder;
+var _OpenAI_instances, client_a, _OpenAI_encoder, _OpenAI_baseURLOverridden;
 
 
 
@@ -69156,6 +69283,7 @@ class OpenAI {
      * @param {string | undefined} [opts.apiKey=process.env['OPENAI_API_KEY'] ?? undefined]
      * @param {string | null | undefined} [opts.organization=process.env['OPENAI_ORG_ID'] ?? null]
      * @param {string | null | undefined} [opts.project=process.env['OPENAI_PROJECT_ID'] ?? null]
+     * @param {string | null | undefined} [opts.webhookSecret=process.env['OPENAI_WEBHOOK_SECRET'] ?? null]
      * @param {string} [opts.baseURL=process.env['OPENAI_BASE_URL'] ?? https://api.openai.com/v1] - Override the default base URL for the API.
      * @param {number} [opts.timeout=10 minutes] - The maximum amount of time (in milliseconds) the client will wait for a response before timing out.
      * @param {MergedRequestInit} [opts.fetchOptions] - Additional `RequestInit` options to be passed to `fetch` calls.
@@ -69165,7 +69293,8 @@ class OpenAI {
      * @param {Record<string, string | undefined>} opts.defaultQuery - Default query parameters to include with every request to the API.
      * @param {boolean} [opts.dangerouslyAllowBrowser=false] - By default, client-side use of this library is not allowed, as it risks exposing your secret API credentials to attackers.
      */
-    constructor({ baseURL = readEnv('OPENAI_BASE_URL'), apiKey = readEnv('OPENAI_API_KEY'), organization = readEnv('OPENAI_ORG_ID') ?? null, project = readEnv('OPENAI_PROJECT_ID') ?? null, ...opts } = {}) {
+    constructor({ baseURL = readEnv('OPENAI_BASE_URL'), apiKey = readEnv('OPENAI_API_KEY'), organization = readEnv('OPENAI_ORG_ID') ?? null, project = readEnv('OPENAI_PROJECT_ID') ?? null, webhookSecret = readEnv('OPENAI_WEBHOOK_SECRET') ?? null, ...opts } = {}) {
+        _OpenAI_instances.add(this);
         _OpenAI_encoder.set(this, void 0);
         this.completions = new completions_Completions(this);
         this.chat = new Chat(this);
@@ -69178,6 +69307,7 @@ class OpenAI {
         this.fineTuning = new FineTuning(this);
         this.graders = new graders_Graders(this);
         this.vectorStores = new VectorStores(this);
+        this.webhooks = new Webhooks(this);
         this.beta = new Beta(this);
         this.batches = new Batches(this);
         this.uploads = new Uploads(this);
@@ -69191,6 +69321,7 @@ class OpenAI {
             apiKey,
             organization,
             project,
+            webhookSecret,
             ...opts,
             baseURL: baseURL || `https://api.openai.com/v1`,
         };
@@ -69215,24 +69346,28 @@ class OpenAI {
         this.apiKey = apiKey;
         this.organization = organization;
         this.project = project;
+        this.webhookSecret = webhookSecret;
     }
     /**
      * Create a new client instance re-using the same options given to the current client with optional overriding.
      */
     withOptions(options) {
-        return new this.constructor({
+        const client = new this.constructor({
             ...this._options,
             baseURL: this.baseURL,
             maxRetries: this.maxRetries,
             timeout: this.timeout,
             logger: this.logger,
             logLevel: this.logLevel,
+            fetch: this.fetch,
             fetchOptions: this.fetchOptions,
             apiKey: this.apiKey,
             organization: this.organization,
             project: this.project,
+            webhookSecret: this.webhookSecret,
             ...options,
         });
+        return client;
     }
     defaultQuery() {
         return this._options.defaultQuery;
@@ -69240,7 +69375,7 @@ class OpenAI {
     validateHeaders({ values, nulls }) {
         return;
     }
-    authHeaders(opts) {
+    async authHeaders(opts) {
         return buildHeaders([{ Authorization: `Bearer ${this.apiKey}` }]);
     }
     stringifyQuery(query) {
@@ -69255,10 +69390,11 @@ class OpenAI {
     makeStatusError(status, error, message, headers) {
         return APIError.generate(status, error, message, headers);
     }
-    buildURL(path, query) {
+    buildURL(path, query, defaultBaseURL) {
+        const baseURL = (!__classPrivateFieldGet(this, _OpenAI_instances, "m", _OpenAI_baseURLOverridden).call(this) && defaultBaseURL) || this.baseURL;
         const url = isAbsoluteURL(path) ?
             new URL(path)
-            : new URL(this.baseURL + (this.baseURL.endsWith('/') && path.startsWith('/') ? path.slice(1) : path));
+            : new URL(baseURL + (baseURL.endsWith('/') && path.startsWith('/') ? path.slice(1) : path));
         const defaultQuery = this.defaultQuery();
         if (!isEmptyObj(defaultQuery)) {
             query = { ...defaultQuery, ...query };
@@ -69309,7 +69445,9 @@ class OpenAI {
             retriesRemaining = maxRetries;
         }
         await this.prepareOptions(options);
-        const { req, url, timeout } = this.buildRequest(options, { retryCount: maxRetries - retriesRemaining });
+        const { req, url, timeout } = await this.buildRequest(options, {
+            retryCount: maxRetries - retriesRemaining,
+        });
         await this.prepareRequest(req, { url, options });
         /** Not an API request ID, just for correlating local log entries. */
         const requestLogID = 'log_' + ((Math.random() * (1 << 24)) | 0).toString(16).padStart(6, '0');
@@ -69367,7 +69505,7 @@ class OpenAI {
             .join('');
         const responseInfo = `[${requestLogID}${retryLogStr}${specialHeaders}] ${req.method} ${url} ${response.ok ? 'succeeded' : 'failed'} with status ${response.status} in ${headersTime - startTime}ms`;
         if (!response.ok) {
-            const shouldRetry = this.shouldRetry(response);
+            const shouldRetry = await this.shouldRetry(response);
             if (retriesRemaining && shouldRetry) {
                 const retryMessage = `retrying, ${retriesRemaining} attempts remaining`;
                 // We don't need the body of this response.
@@ -69441,7 +69579,7 @@ class OpenAI {
             clearTimeout(timeout);
         }
     }
-    shouldRetry(response) {
+    async shouldRetry(response) {
         // Note this is not a standard header.
         const shouldRetryHeader = response.headers.get('x-should-retry');
         // If the server explicitly says whether or not to retry, obey.
@@ -69503,15 +69641,15 @@ class OpenAI {
         const jitter = 1 - Math.random() * 0.25;
         return sleepSeconds * jitter * 1000;
     }
-    buildRequest(inputOptions, { retryCount = 0 } = {}) {
+    async buildRequest(inputOptions, { retryCount = 0 } = {}) {
         const options = { ...inputOptions };
-        const { method, path, query } = options;
-        const url = this.buildURL(path, query);
+        const { method, path, query, defaultBaseURL } = options;
+        const url = this.buildURL(path, query, defaultBaseURL);
         if ('timeout' in options)
             validatePositiveInteger('timeout', options.timeout);
         options.timeout = options.timeout ?? this.timeout;
         const { bodyHeaders, body } = this.buildBody({ options });
-        const reqHeaders = this.buildHeaders({ options: inputOptions, method, bodyHeaders, retryCount });
+        const reqHeaders = await this.buildHeaders({ options: inputOptions, method, bodyHeaders, retryCount });
         const req = {
             method,
             headers: reqHeaders,
@@ -69524,7 +69662,7 @@ class OpenAI {
         };
         return { req, url, timeout: options.timeout };
     }
-    buildHeaders({ options, method, bodyHeaders, retryCount, }) {
+    async buildHeaders({ options, method, bodyHeaders, retryCount, }) {
         let idempotencyHeaders = {};
         if (this.idempotencyHeader && method !== 'get') {
             if (!options.idempotencyKey)
@@ -69542,7 +69680,7 @@ class OpenAI {
                 'OpenAI-Organization': this.organization,
                 'OpenAI-Project': this.project,
             },
-            this.authHeaders(options),
+            await this.authHeaders(options),
             this._options.defaultHeaders,
             bodyHeaders,
             options.headers,
@@ -69583,7 +69721,9 @@ class OpenAI {
         }
     }
 }
-client_a = OpenAI, _OpenAI_encoder = new WeakMap();
+client_a = OpenAI, _OpenAI_encoder = new WeakMap(), _OpenAI_instances = new WeakSet(), _OpenAI_baseURLOverridden = function _OpenAI_baseURLOverridden() {
+    return this.baseURL !== 'https://api.openai.com/v1';
+};
 OpenAI.OpenAI = client_a;
 OpenAI.DEFAULT_TIMEOUT = 600000; // 10 minutes
 OpenAI.OpenAIError = error_OpenAIError;
@@ -69599,6 +69739,7 @@ OpenAI.AuthenticationError = AuthenticationError;
 OpenAI.InternalServerError = InternalServerError;
 OpenAI.PermissionDeniedError = PermissionDeniedError;
 OpenAI.UnprocessableEntityError = UnprocessableEntityError;
+OpenAI.InvalidWebhookSignatureError = InvalidWebhookSignatureError;
 OpenAI.toFile = toFile;
 OpenAI.Completions = completions_Completions;
 OpenAI.Chat = Chat;
@@ -69611,6 +69752,7 @@ OpenAI.Models = Models;
 OpenAI.FineTuning = FineTuning;
 OpenAI.Graders = graders_Graders;
 OpenAI.VectorStores = VectorStores;
+OpenAI.Webhooks = Webhooks;
 OpenAI.Beta = Beta;
 OpenAI.Batches = Batches;
 OpenAI.Uploads = Uploads;
@@ -69683,7 +69825,7 @@ class AzureOpenAI extends OpenAI {
         this.apiVersion = apiVersion;
         this.deploymentName = deployment;
     }
-    buildRequest(options, props = {}) {
+    async buildRequest(options, props = {}) {
         if (_deployments_endpoints.has(options.path) && options.method === 'post' && options.body !== undefined) {
             if (!isObj(options.body)) {
                 throw new Error('Expected request body to be an object');
@@ -69705,7 +69847,7 @@ class AzureOpenAI extends OpenAI {
         }
         return undefined;
     }
-    authHeaders(opts) {
+    async authHeaders(opts) {
         return;
     }
     async prepareOptions(opts) {
@@ -69934,6 +70076,8 @@ const values_startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
 const values_isAbsoluteURL = (url) => {
     return values_startsWithSchemeRegexp.test(url);
 };
+let utils_values_isArray = (val) => ((utils_values_isArray = Array.isArray), utils_values_isArray(val));
+let values_isReadonlyArray = utils_values_isArray;
 /** Returns an object if the given value isn't an object, otherwise returns as-is */
 function values_maybeObj(x) {
     if (typeof x !== 'object') {
@@ -70023,89 +70167,8 @@ const values_safeJSON = (text) => {
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 const sleep_sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 //# sourceMappingURL=sleep.mjs.map
-;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/internal/utils/log.mjs
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-const log_levelNumbers = {
-    off: 0,
-    error: 200,
-    warn: 300,
-    info: 400,
-    debug: 500,
-};
-const log_parseLogLevel = (maybeLevel, sourceName, client) => {
-    if (!maybeLevel) {
-        return undefined;
-    }
-    if (values_hasOwn(log_levelNumbers, maybeLevel)) {
-        return maybeLevel;
-    }
-    log_loggerFor(client).warn(`${sourceName} was set to ${JSON.stringify(maybeLevel)}, expected one of ${JSON.stringify(Object.keys(log_levelNumbers))}`);
-    return undefined;
-};
-function log_noop() { }
-function log_makeLogFn(fnLevel, logger, logLevel) {
-    if (!logger || log_levelNumbers[fnLevel] > log_levelNumbers[logLevel]) {
-        return log_noop;
-    }
-    else {
-        // Don't wrap logger functions, we want the stacktrace intact!
-        return logger[fnLevel].bind(logger);
-    }
-}
-const log_noopLogger = {
-    error: log_noop,
-    warn: log_noop,
-    info: log_noop,
-    debug: log_noop,
-};
-let log_cachedLoggers = new WeakMap();
-function log_loggerFor(client) {
-    const logger = client.logger;
-    const logLevel = client.logLevel ?? 'off';
-    if (!logger) {
-        return log_noopLogger;
-    }
-    const cachedLogger = log_cachedLoggers.get(logger);
-    if (cachedLogger && cachedLogger[0] === logLevel) {
-        return cachedLogger[1];
-    }
-    const levelLogger = {
-        error: log_makeLogFn('error', logger, logLevel),
-        warn: log_makeLogFn('warn', logger, logLevel),
-        info: log_makeLogFn('info', logger, logLevel),
-        debug: log_makeLogFn('debug', logger, logLevel),
-    };
-    log_cachedLoggers.set(logger, [logLevel, levelLogger]);
-    return levelLogger;
-}
-const log_formatRequestDetails = (details) => {
-    if (details.options) {
-        details.options = { ...details.options };
-        delete details.options['headers']; // redundant + leaks internals
-    }
-    if (details.headers) {
-        details.headers = Object.fromEntries((details.headers instanceof Headers ? [...details.headers] : Object.entries(details.headers)).map(([name, value]) => [
-            name,
-            (name.toLowerCase() === 'x-api-key' ||
-                name.toLowerCase() === 'authorization' ||
-                name.toLowerCase() === 'cookie' ||
-                name.toLowerCase() === 'set-cookie') ?
-                '***'
-                : value,
-        ]));
-    }
-    if ('retryOfRequestLogID' in details) {
-        if (details.retryOfRequestLogID) {
-            details.retryOf = details.retryOfRequestLogID;
-        }
-        delete details.retryOfRequestLogID;
-    }
-    return details;
-};
-//# sourceMappingURL=log.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/version.mjs
-const version_VERSION = '0.54.0'; // x-release-please-version
+const version_VERSION = '0.59.0'; // x-release-please-version
 //# sourceMappingURL=version.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/internal/detect-platform.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -70498,7 +70561,91 @@ function line_findDoubleNewlineIndex(buffer) {
     return -1;
 }
 //# sourceMappingURL=line.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/internal/utils/log.mjs
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+const log_levelNumbers = {
+    off: 0,
+    error: 200,
+    warn: 300,
+    info: 400,
+    debug: 500,
+};
+const log_parseLogLevel = (maybeLevel, sourceName, client) => {
+    if (!maybeLevel) {
+        return undefined;
+    }
+    if (values_hasOwn(log_levelNumbers, maybeLevel)) {
+        return maybeLevel;
+    }
+    log_loggerFor(client).warn(`${sourceName} was set to ${JSON.stringify(maybeLevel)}, expected one of ${JSON.stringify(Object.keys(log_levelNumbers))}`);
+    return undefined;
+};
+function log_noop() { }
+function log_makeLogFn(fnLevel, logger, logLevel) {
+    if (!logger || log_levelNumbers[fnLevel] > log_levelNumbers[logLevel]) {
+        return log_noop;
+    }
+    else {
+        // Don't wrap logger functions, we want the stacktrace intact!
+        return logger[fnLevel].bind(logger);
+    }
+}
+const log_noopLogger = {
+    error: log_noop,
+    warn: log_noop,
+    info: log_noop,
+    debug: log_noop,
+};
+let log_cachedLoggers = /* @__PURE__ */ new WeakMap();
+function log_loggerFor(client) {
+    const logger = client.logger;
+    const logLevel = client.logLevel ?? 'off';
+    if (!logger) {
+        return log_noopLogger;
+    }
+    const cachedLogger = log_cachedLoggers.get(logger);
+    if (cachedLogger && cachedLogger[0] === logLevel) {
+        return cachedLogger[1];
+    }
+    const levelLogger = {
+        error: log_makeLogFn('error', logger, logLevel),
+        warn: log_makeLogFn('warn', logger, logLevel),
+        info: log_makeLogFn('info', logger, logLevel),
+        debug: log_makeLogFn('debug', logger, logLevel),
+    };
+    log_cachedLoggers.set(logger, [logLevel, levelLogger]);
+    return levelLogger;
+}
+const log_formatRequestDetails = (details) => {
+    if (details.options) {
+        details.options = { ...details.options };
+        delete details.options['headers']; // redundant + leaks internals
+    }
+    if (details.headers) {
+        details.headers = Object.fromEntries((details.headers instanceof Headers ? [...details.headers] : Object.entries(details.headers)).map(([name, value]) => [
+            name,
+            (name.toLowerCase() === 'x-api-key' ||
+                name.toLowerCase() === 'authorization' ||
+                name.toLowerCase() === 'cookie' ||
+                name.toLowerCase() === 'set-cookie') ?
+                '***'
+                : value,
+        ]));
+    }
+    if ('retryOfRequestLogID' in details) {
+        if (details.retryOfRequestLogID) {
+            details.retryOf = details.retryOfRequestLogID;
+        }
+        delete details.retryOfRequestLogID;
+    }
+    return details;
+};
+//# sourceMappingURL=log.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/core/streaming.mjs
+var streaming_Stream_client;
+
+
 
 
 
@@ -70508,12 +70655,15 @@ function line_findDoubleNewlineIndex(buffer) {
 
 
 class streaming_Stream {
-    constructor(iterator, controller) {
+    constructor(iterator, controller, client) {
         this.iterator = iterator;
+        streaming_Stream_client.set(this, void 0);
         this.controller = controller;
+        tslib_classPrivateFieldSet(this, streaming_Stream_client, client, "f");
     }
-    static fromSSEResponse(response, controller) {
+    static fromSSEResponse(response, controller, client) {
         let consumed = false;
+        const logger = client ? log_loggerFor(client) : console;
         async function* iterator() {
             if (consumed) {
                 throw new error_AnthropicError('Cannot iterate over a consumed stream, use `.tee()` to split the stream.');
@@ -70527,8 +70677,8 @@ class streaming_Stream {
                             yield JSON.parse(sse.data);
                         }
                         catch (e) {
-                            console.error(`Could not parse message into JSON:`, sse.data);
-                            console.error(`From chunk:`, sse.raw);
+                            logger.error(`Could not parse message into JSON:`, sse.data);
+                            logger.error(`From chunk:`, sse.raw);
                             throw e;
                         }
                     }
@@ -70542,8 +70692,8 @@ class streaming_Stream {
                             yield JSON.parse(sse.data);
                         }
                         catch (e) {
-                            console.error(`Could not parse message into JSON:`, sse.data);
-                            console.error(`From chunk:`, sse.raw);
+                            logger.error(`Could not parse message into JSON:`, sse.data);
+                            logger.error(`From chunk:`, sse.raw);
                             throw e;
                         }
                     }
@@ -70568,13 +70718,13 @@ class streaming_Stream {
                     controller.abort();
             }
         }
-        return new streaming_Stream(iterator, controller);
+        return new streaming_Stream(iterator, controller, client);
     }
     /**
      * Generates a Stream from a newline-separated ReadableStream
      * where each item is a JSON value.
      */
-    static fromReadableStream(readableStream, controller) {
+    static fromReadableStream(readableStream, controller, client) {
         let consumed = false;
         async function* iterLines() {
             const lineDecoder = new line_LineDecoder();
@@ -70615,9 +70765,9 @@ class streaming_Stream {
                     controller.abort();
             }
         }
-        return new streaming_Stream(iterator, controller);
+        return new streaming_Stream(iterator, controller, client);
     }
-    [Symbol.asyncIterator]() {
+    [(streaming_Stream_client = new WeakMap(), Symbol.asyncIterator)]() {
         return this.iterator();
     }
     /**
@@ -70641,8 +70791,8 @@ class streaming_Stream {
             };
         };
         return [
-            new streaming_Stream(() => teeIterator(left), this.controller),
-            new streaming_Stream(() => teeIterator(right), this.controller),
+            new streaming_Stream(() => teeIterator(left), this.controller, tslib_classPrivateFieldGet(this, streaming_Stream_client, "f")),
+            new streaming_Stream(() => teeIterator(right), this.controller, tslib_classPrivateFieldGet(this, streaming_Stream_client, "f")),
         ];
     }
     /**
@@ -71063,7 +71213,7 @@ const uploads_maybeMultipartFormRequestOptions = async (opts, fetch) => {
 const uploads_multipartFormRequestOptions = async (opts, fetch) => {
     return { ...opts, body: await uploads_createForm(opts.body, fetch) };
 };
-const uploads_supportsFormDataMap = new WeakMap();
+const uploads_supportsFormDataMap = /* @__PURE__ */ new WeakMap();
 /**
  * node-fetch doesn't support the global FormData object in recent node versions. Instead of sending
  * properly-encoded form data, it just stringifies the object, resulting in a request body of "[object FormData]".
@@ -71263,8 +71413,8 @@ class resource_APIResource {
 //# sourceMappingURL=resource.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/internal/headers.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
 const headers_brand_privateNullableHeaders = Symbol.for('brand.privateNullableHeaders');
-const headers_isArray = Array.isArray;
 function* headers_iterateHeaders(headers) {
     if (!headers)
         return;
@@ -71281,7 +71431,7 @@ function* headers_iterateHeaders(headers) {
     if (headers instanceof Headers) {
         iter = headers.entries();
     }
-    else if (headers_isArray(headers)) {
+    else if (values_isReadonlyArray(headers)) {
         iter = headers;
     }
     else {
@@ -71292,7 +71442,7 @@ function* headers_iterateHeaders(headers) {
         const name = row[0];
         if (typeof name !== 'string')
             throw new TypeError('expected header name to be a string');
-        const values = headers_isArray(row[1]) ? row[1] : [row[1]];
+        const values = values_isReadonlyArray(row[1]) ? row[1] : [row[1]];
         let didClear = false;
         for (const value of values) {
             if (value === undefined)
@@ -71349,21 +71499,38 @@ const headers_isEmptyHeaders = (headers) => {
 function path_encodeURIPath(str) {
     return str.replace(/[^A-Za-z0-9\-._~!$&'()*+,;=:@]+/g, encodeURIComponent);
 }
+const path_EMPTY = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.create(null));
 const path_createPathTagFunction = (pathEncoder = path_encodeURIPath) => function path(statics, ...params) {
     // If there are no params, no processing is needed.
     if (statics.length === 1)
         return statics[0];
     let postPath = false;
+    const invalidSegments = [];
     const path = statics.reduce((previousValue, currentValue, index) => {
         if (/[?#]/.test(currentValue)) {
             postPath = true;
         }
-        return (previousValue +
-            currentValue +
-            (index === params.length ? '' : (postPath ? encodeURIComponent : pathEncoder)(String(params[index]))));
+        const value = params[index];
+        let encoded = (postPath ? encodeURIComponent : pathEncoder)('' + value);
+        if (index !== params.length &&
+            (value == null ||
+                (typeof value === 'object' &&
+                    // handle values from other realms
+                    value.toString ===
+                        Object.getPrototypeOf(Object.getPrototypeOf(value.hasOwnProperty ?? path_EMPTY) ?? path_EMPTY)
+                            ?.toString))) {
+            encoded = value + '';
+            invalidSegments.push({
+                start: previousValue.length + currentValue.length,
+                length: encoded.length,
+                error: `Value of type ${Object.prototype.toString
+                    .call(value)
+                    .slice(8, -1)} is not a valid path parameter`,
+            });
+        }
+        return previousValue + currentValue + (index === params.length ? '' : encoded);
     }, '');
     const pathOnly = path.split(/[?#]/, 1)[0];
-    const invalidSegments = [];
     const invalidSegmentPattern = /(?<=^|\/)(?:\.|%2e){1,2}(?=\/|$)/gi;
     let match;
     // Find all invalid segments
@@ -71371,8 +71538,10 @@ const path_createPathTagFunction = (pathEncoder = path_encodeURIPath) => functio
         invalidSegments.push({
             start: match.index,
             length: match[0].length,
+            error: `Value "${match[0]}" can\'t be safely passed as a path parameter`,
         });
     }
+    invalidSegments.sort((a, b) => a.start - b.start);
     if (invalidSegments.length > 0) {
         let lastEnd = 0;
         const underline = invalidSegments.reduce((acc, segment) => {
@@ -71381,14 +71550,16 @@ const path_createPathTagFunction = (pathEncoder = path_encodeURIPath) => functio
             lastEnd = segment.start + segment.length;
             return acc + spaces + arrows;
         }, '');
-        throw new error_AnthropicError(`Path parameters result in path with invalid segments:\n${path}\n${underline}`);
+        throw new error_AnthropicError(`Path parameters result in path with invalid segments:\n${invalidSegments
+            .map((e) => e.error)
+            .join('\n')}\n${path}\n${underline}`);
     }
     return path;
 };
 /**
  * URI-encodes path params and ensures no unsafe /./ or /../ path segments are introduced.
  */
-const path_path = path_createPathTagFunction(path_encodeURIPath);
+const path_path = /* @__PURE__ */ path_createPathTagFunction(path_encodeURIPath);
 //# sourceMappingURL=path.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/beta/files.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
@@ -71636,7 +71807,7 @@ class batches_Batches extends resource_APIResource {
      *           messages: [
      *             { content: 'Hello, world', role: 'user' },
      *           ],
-     *           model: 'claude-3-7-sonnet-20250219',
+     *           model: 'claude-sonnet-4-20250514',
      *         },
      *       },
      *     ],
@@ -72163,23 +72334,32 @@ class BetaMessageStream {
     }
     async _createMessage(messages, params, options) {
         const signal = options?.signal;
+        let abortHandler;
         if (signal) {
             if (signal.aborted)
                 this.controller.abort();
-            signal.addEventListener('abort', () => this.controller.abort());
+            abortHandler = this.controller.abort.bind(this.controller);
+            signal.addEventListener('abort', abortHandler);
         }
-        tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_beginRequest).call(this);
-        const { response, data: stream } = await messages
-            .create({ ...params, stream: true }, { ...options, signal: this.controller.signal })
-            .withResponse();
-        this._connected(response);
-        for await (const event of stream) {
-            tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_addStreamEvent).call(this, event);
+        try {
+            tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_beginRequest).call(this);
+            const { response, data: stream } = await messages
+                .create({ ...params, stream: true }, { ...options, signal: this.controller.signal })
+                .withResponse();
+            this._connected(response);
+            for await (const event of stream) {
+                tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_addStreamEvent).call(this, event);
+            }
+            if (stream.controller.signal?.aborted) {
+                throw new error_APIUserAbortError();
+            }
+            tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_endRequest).call(this);
         }
-        if (stream.controller.signal?.aborted) {
-            throw new error_APIUserAbortError();
+        finally {
+            if (signal && abortHandler) {
+                signal.removeEventListener('abort', abortHandler);
+            }
         }
-        tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_endRequest).call(this);
     }
     _connected(response) {
         if (this.ended)
@@ -72330,21 +72510,30 @@ class BetaMessageStream {
     }
     async _fromReadableStream(readableStream, options) {
         const signal = options?.signal;
+        let abortHandler;
         if (signal) {
             if (signal.aborted)
                 this.controller.abort();
-            signal.addEventListener('abort', () => this.controller.abort());
+            abortHandler = this.controller.abort.bind(this.controller);
+            signal.addEventListener('abort', abortHandler);
         }
-        tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_beginRequest).call(this);
-        this._connected(null);
-        const stream = streaming_Stream.fromReadableStream(readableStream, this.controller);
-        for await (const event of stream) {
-            tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_addStreamEvent).call(this, event);
+        try {
+            tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_beginRequest).call(this);
+            this._connected(null);
+            const stream = streaming_Stream.fromReadableStream(readableStream, this.controller);
+            for await (const event of stream) {
+                tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_addStreamEvent).call(this, event);
+            }
+            if (stream.controller.signal?.aborted) {
+                throw new error_APIUserAbortError();
+            }
+            tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_endRequest).call(this);
         }
-        if (stream.controller.signal?.aborted) {
-            throw new error_APIUserAbortError();
+        finally {
+            if (signal && abortHandler) {
+                signal.removeEventListener('abort', abortHandler);
+            }
         }
-        tslib_classPrivateFieldGet(this, _BetaMessageStream_instances, "m", _BetaMessageStream_endRequest).call(this);
     }
     [(_BetaMessageStream_currentMessageSnapshot = new WeakMap(), _BetaMessageStream_connectedPromise = new WeakMap(), _BetaMessageStream_resolveConnectedPromise = new WeakMap(), _BetaMessageStream_rejectConnectedPromise = new WeakMap(), _BetaMessageStream_endPromise = new WeakMap(), _BetaMessageStream_resolveEndPromise = new WeakMap(), _BetaMessageStream_rejectEndPromise = new WeakMap(), _BetaMessageStream_listeners = new WeakMap(), _BetaMessageStream_ended = new WeakMap(), _BetaMessageStream_errored = new WeakMap(), _BetaMessageStream_aborted = new WeakMap(), _BetaMessageStream_catchingPromiseCreated = new WeakMap(), _BetaMessageStream_response = new WeakMap(), _BetaMessageStream_request_id = new WeakMap(), _BetaMessageStream_handleError = new WeakMap(), _BetaMessageStream_instances = new WeakSet(), _BetaMessageStream_getFinalMessage = function _BetaMessageStream_getFinalMessage() {
         if (this.receivedMessages.length === 0) {
@@ -72478,14 +72667,19 @@ class BetaMessageStream {
                 switch (event.delta.type) {
                     case 'text_delta': {
                         if (snapshotContent?.type === 'text') {
-                            snapshotContent.text += event.delta.text;
+                            snapshot.content[event.index] = {
+                                ...snapshotContent,
+                                text: (snapshotContent.text || '') + event.delta.text,
+                            };
                         }
                         break;
                     }
                     case 'citations_delta': {
                         if (snapshotContent?.type === 'text') {
-                            snapshotContent.citations ?? (snapshotContent.citations = []);
-                            snapshotContent.citations.push(event.delta.citation);
+                            snapshot.content[event.index] = {
+                                ...snapshotContent,
+                                citations: [...(snapshotContent.citations ?? []), event.delta.citation],
+                            };
                         }
                         break;
                     }
@@ -72496,32 +72690,40 @@ class BetaMessageStream {
                             // non-enumerable property on the snapshot
                             let jsonBuf = snapshotContent[JSON_BUF_PROPERTY] || '';
                             jsonBuf += event.delta.partial_json;
-                            Object.defineProperty(snapshotContent, JSON_BUF_PROPERTY, {
+                            const newContent = { ...snapshotContent };
+                            Object.defineProperty(newContent, JSON_BUF_PROPERTY, {
                                 value: jsonBuf,
                                 enumerable: false,
                                 writable: true,
                             });
                             if (jsonBuf) {
                                 try {
-                                    snapshotContent.input = parser_partialParse(jsonBuf);
+                                    newContent.input = parser_partialParse(jsonBuf);
                                 }
                                 catch (err) {
                                     const error = new error_AnthropicError(`Unable to parse tool parameter JSON from model. Please retry your request or adjust your prompt. Error: ${err}. JSON: ${jsonBuf}`);
                                     tslib_classPrivateFieldGet(this, _BetaMessageStream_handleError, "f").call(this, error);
                                 }
                             }
+                            snapshot.content[event.index] = newContent;
                         }
                         break;
                     }
                     case 'thinking_delta': {
                         if (snapshotContent?.type === 'thinking') {
-                            snapshotContent.thinking += event.delta.thinking;
+                            snapshot.content[event.index] = {
+                                ...snapshotContent,
+                                thinking: snapshotContent.thinking + event.delta.thinking,
+                            };
                         }
                         break;
                     }
                     case 'signature_delta': {
                         if (snapshotContent?.type === 'thinking') {
-                            snapshotContent.signature = event.delta.signature;
+                            snapshot.content[event.index] = {
+                                ...snapshotContent,
+                                signature: event.delta.signature,
+                            };
                         }
                         break;
                     }
@@ -72603,6 +72805,9 @@ const MODEL_NONSTREAMING_TOKENS = {
     'claude-4-opus-20250514': 8192,
     'anthropic.claude-opus-4-20250514-v1:0': 8192,
     'claude-opus-4@20250514': 8192,
+    'claude-opus-4-1-20250805': 8192,
+    'anthropic.claude-opus-4-1-20250805-v1:0': 8192,
+    'claude-opus-4-1@20250805': 8192,
 };
 //# sourceMappingURL=constants.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/resources/beta/messages/messages.mjs
@@ -72619,6 +72824,7 @@ const DEPRECATED_MODELS = {
     'claude-instant-1.1-100k': 'November 6th, 2024',
     'claude-instant-1.2': 'November 6th, 2024',
     'claude-3-sonnet-20240229': 'July 21st, 2025',
+    'claude-3-opus-20240229': 'January 5th, 2026',
     'claude-2.1': 'July 21st, 2025',
     'claude-2.0': 'July 21st, 2025',
 };
@@ -72858,23 +73064,32 @@ class MessageStream {
     }
     async _createMessage(messages, params, options) {
         const signal = options?.signal;
+        let abortHandler;
         if (signal) {
             if (signal.aborted)
                 this.controller.abort();
-            signal.addEventListener('abort', () => this.controller.abort());
+            abortHandler = this.controller.abort.bind(this.controller);
+            signal.addEventListener('abort', abortHandler);
         }
-        tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_beginRequest).call(this);
-        const { response, data: stream } = await messages
-            .create({ ...params, stream: true }, { ...options, signal: this.controller.signal })
-            .withResponse();
-        this._connected(response);
-        for await (const event of stream) {
-            tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_addStreamEvent).call(this, event);
+        try {
+            tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_beginRequest).call(this);
+            const { response, data: stream } = await messages
+                .create({ ...params, stream: true }, { ...options, signal: this.controller.signal })
+                .withResponse();
+            this._connected(response);
+            for await (const event of stream) {
+                tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_addStreamEvent).call(this, event);
+            }
+            if (stream.controller.signal?.aborted) {
+                throw new error_APIUserAbortError();
+            }
+            tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_endRequest).call(this);
         }
-        if (stream.controller.signal?.aborted) {
-            throw new error_APIUserAbortError();
+        finally {
+            if (signal && abortHandler) {
+                signal.removeEventListener('abort', abortHandler);
+            }
         }
-        tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_endRequest).call(this);
     }
     _connected(response) {
         if (this.ended)
@@ -73025,21 +73240,30 @@ class MessageStream {
     }
     async _fromReadableStream(readableStream, options) {
         const signal = options?.signal;
+        let abortHandler;
         if (signal) {
             if (signal.aborted)
                 this.controller.abort();
-            signal.addEventListener('abort', () => this.controller.abort());
+            abortHandler = this.controller.abort.bind(this.controller);
+            signal.addEventListener('abort', abortHandler);
         }
-        tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_beginRequest).call(this);
-        this._connected(null);
-        const stream = streaming_Stream.fromReadableStream(readableStream, this.controller);
-        for await (const event of stream) {
-            tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_addStreamEvent).call(this, event);
+        try {
+            tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_beginRequest).call(this);
+            this._connected(null);
+            const stream = streaming_Stream.fromReadableStream(readableStream, this.controller);
+            for await (const event of stream) {
+                tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_addStreamEvent).call(this, event);
+            }
+            if (stream.controller.signal?.aborted) {
+                throw new error_APIUserAbortError();
+            }
+            tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_endRequest).call(this);
         }
-        if (stream.controller.signal?.aborted) {
-            throw new error_APIUserAbortError();
+        finally {
+            if (signal && abortHandler) {
+                signal.removeEventListener('abort', abortHandler);
+            }
         }
-        tslib_classPrivateFieldGet(this, _MessageStream_instances, "m", _MessageStream_endRequest).call(this);
     }
     [(_MessageStream_currentMessageSnapshot = new WeakMap(), _MessageStream_connectedPromise = new WeakMap(), _MessageStream_resolveConnectedPromise = new WeakMap(), _MessageStream_rejectConnectedPromise = new WeakMap(), _MessageStream_endPromise = new WeakMap(), _MessageStream_resolveEndPromise = new WeakMap(), _MessageStream_rejectEndPromise = new WeakMap(), _MessageStream_listeners = new WeakMap(), _MessageStream_ended = new WeakMap(), _MessageStream_errored = new WeakMap(), _MessageStream_aborted = new WeakMap(), _MessageStream_catchingPromiseCreated = new WeakMap(), _MessageStream_response = new WeakMap(), _MessageStream_request_id = new WeakMap(), _MessageStream_handleError = new WeakMap(), _MessageStream_instances = new WeakSet(), _MessageStream_getFinalMessage = function _MessageStream_getFinalMessage() {
         if (this.receivedMessages.length === 0) {
@@ -73166,21 +73390,26 @@ class MessageStream {
                 }
                 return snapshot;
             case 'content_block_start':
-                snapshot.content.push(event.content_block);
+                snapshot.content.push({ ...event.content_block });
                 return snapshot;
             case 'content_block_delta': {
                 const snapshotContent = snapshot.content.at(event.index);
                 switch (event.delta.type) {
                     case 'text_delta': {
                         if (snapshotContent?.type === 'text') {
-                            snapshotContent.text += event.delta.text;
+                            snapshot.content[event.index] = {
+                                ...snapshotContent,
+                                text: (snapshotContent.text || '') + event.delta.text,
+                            };
                         }
                         break;
                     }
                     case 'citations_delta': {
                         if (snapshotContent?.type === 'text') {
-                            snapshotContent.citations ?? (snapshotContent.citations = []);
-                            snapshotContent.citations.push(event.delta.citation);
+                            snapshot.content[event.index] = {
+                                ...snapshotContent,
+                                citations: [...(snapshotContent.citations ?? []), event.delta.citation],
+                            };
                         }
                         break;
                     }
@@ -73191,26 +73420,34 @@ class MessageStream {
                             // non-enumerable property on the snapshot
                             let jsonBuf = snapshotContent[MessageStream_JSON_BUF_PROPERTY] || '';
                             jsonBuf += event.delta.partial_json;
-                            Object.defineProperty(snapshotContent, MessageStream_JSON_BUF_PROPERTY, {
+                            const newContent = { ...snapshotContent };
+                            Object.defineProperty(newContent, MessageStream_JSON_BUF_PROPERTY, {
                                 value: jsonBuf,
                                 enumerable: false,
                                 writable: true,
                             });
                             if (jsonBuf) {
-                                snapshotContent.input = parser_partialParse(jsonBuf);
+                                newContent.input = parser_partialParse(jsonBuf);
                             }
+                            snapshot.content[event.index] = newContent;
                         }
                         break;
                     }
                     case 'thinking_delta': {
                         if (snapshotContent?.type === 'thinking') {
-                            snapshotContent.thinking += event.delta.thinking;
+                            snapshot.content[event.index] = {
+                                ...snapshotContent,
+                                thinking: snapshotContent.thinking + event.delta.thinking,
+                            };
                         }
                         break;
                     }
                     case 'signature_delta': {
                         if (snapshotContent?.type === 'thinking') {
-                            snapshotContent.signature = event.delta.signature;
+                            snapshot.content[event.index] = {
+                                ...snapshotContent,
+                                signature: event.delta.signature,
+                            };
                         }
                         break;
                     }
@@ -73311,7 +73548,7 @@ class messages_batches_Batches extends resource_APIResource {
      *         messages: [
      *           { content: 'Hello, world', role: 'user' },
      *         ],
-     *         model: 'claude-3-7-sonnet-20250219',
+     *         model: 'claude-sonnet-4-20250514',
      *       },
      *     },
      *   ],
@@ -73494,6 +73731,7 @@ const messages_DEPRECATED_MODELS = {
     'claude-instant-1.1-100k': 'November 6th, 2024',
     'claude-instant-1.2': 'November 6th, 2024',
     'claude-3-sonnet-20240229': 'July 21st, 2025',
+    'claude-3-opus-20240229': 'January 5th, 2026',
     'claude-2.1': 'July 21st, 2025',
     'claude-2.0': 'July 21st, 2025',
 };
@@ -73570,7 +73808,7 @@ const env_readEnv = (env) => {
 //# sourceMappingURL=env.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/@anthropic-ai/sdk/client.mjs
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-var sdk_client_a, _BaseAnthropic_encoder;
+var _BaseAnthropic_instances, sdk_client_a, _BaseAnthropic_encoder, _BaseAnthropic_baseURLOverridden;
 
 
 
@@ -73594,7 +73832,9 @@ var sdk_client_a, _BaseAnthropic_encoder;
 
 
 
-
+/**
+ * Base class for Anthropic API clients.
+ */
 class BaseAnthropic {
     /**
      * API Client for interfacing with the Anthropic API.
@@ -73611,6 +73851,7 @@ class BaseAnthropic {
      * @param {boolean} [opts.dangerouslyAllowBrowser=false] - By default, client-side use of this library is not allowed, as it risks exposing your secret API credentials to attackers.
      */
     constructor({ baseURL = env_readEnv('ANTHROPIC_BASE_URL'), apiKey = env_readEnv('ANTHROPIC_API_KEY') ?? null, authToken = env_readEnv('ANTHROPIC_AUTH_TOKEN') ?? null, ...opts } = {}) {
+        _BaseAnthropic_instances.add(this);
         _BaseAnthropic_encoder.set(this, void 0);
         const options = {
             apiKey,
@@ -73622,7 +73863,7 @@ class BaseAnthropic {
             throw new error_AnthropicError("It looks like you're running in a browser-like environment.\n\nThis is disabled by default, as it risks exposing your secret API credentials to attackers.\nIf you understand the risks and have appropriate mitigations in place,\nyou can set the `dangerouslyAllowBrowser` option to `true`, e.g.,\n\nnew Anthropic({ apiKey, dangerouslyAllowBrowser: true });\n");
         }
         this.baseURL = options.baseURL;
-        this.timeout = options.timeout ?? Anthropic.DEFAULT_TIMEOUT /* 10 minutes */;
+        this.timeout = options.timeout ?? sdk_client_a.DEFAULT_TIMEOUT /* 10 minutes */;
         this.logger = options.logger ?? console;
         const defaultLogLevel = 'warn';
         // Set default logLevel early so that we can log a warning in parseLogLevel.
@@ -73643,18 +73884,20 @@ class BaseAnthropic {
      * Create a new client instance re-using the same options given to the current client with optional overriding.
      */
     withOptions(options) {
-        return new this.constructor({
+        const client = new this.constructor({
             ...this._options,
             baseURL: this.baseURL,
             maxRetries: this.maxRetries,
             timeout: this.timeout,
             logger: this.logger,
             logLevel: this.logLevel,
+            fetch: this.fetch,
             fetchOptions: this.fetchOptions,
             apiKey: this.apiKey,
             authToken: this.authToken,
             ...options,
         });
+        return client;
     }
     defaultQuery() {
         return this._options.defaultQuery;
@@ -73674,16 +73917,16 @@ class BaseAnthropic {
         }
         throw new Error('Could not resolve authentication method. Expected either apiKey or authToken to be set. Or for one of the "X-Api-Key" or "Authorization" headers to be explicitly omitted');
     }
-    authHeaders(opts) {
-        return headers_buildHeaders([this.apiKeyAuth(opts), this.bearerAuth(opts)]);
+    async authHeaders(opts) {
+        return headers_buildHeaders([await this.apiKeyAuth(opts), await this.bearerAuth(opts)]);
     }
-    apiKeyAuth(opts) {
+    async apiKeyAuth(opts) {
         if (this.apiKey == null) {
             return undefined;
         }
         return headers_buildHeaders([{ 'X-Api-Key': this.apiKey }]);
     }
-    bearerAuth(opts) {
+    async bearerAuth(opts) {
         if (this.authToken == null) {
             return undefined;
         }
@@ -73715,10 +73958,11 @@ class BaseAnthropic {
     makeStatusError(status, error, message, headers) {
         return error_APIError.generate(status, error, message, headers);
     }
-    buildURL(path, query) {
+    buildURL(path, query, defaultBaseURL) {
+        const baseURL = (!tslib_classPrivateFieldGet(this, _BaseAnthropic_instances, "m", _BaseAnthropic_baseURLOverridden).call(this) && defaultBaseURL) || this.baseURL;
         const url = values_isAbsoluteURL(path) ?
             new URL(path)
-            : new URL(this.baseURL + (this.baseURL.endsWith('/') && path.startsWith('/') ? path.slice(1) : path));
+            : new URL(baseURL + (baseURL.endsWith('/') && path.startsWith('/') ? path.slice(1) : path));
         const defaultQuery = this.defaultQuery();
         if (!values_isEmptyObj(defaultQuery)) {
             query = { ...defaultQuery, ...query };
@@ -73732,7 +73976,7 @@ class BaseAnthropic {
         const defaultTimeout = 10 * 60;
         const expectedTimeout = (60 * 60 * maxTokens) / 128000;
         if (expectedTimeout > defaultTimeout) {
-            throw new error_AnthropicError('Streaming is strongly recommended for operations that may take longer than 10 minutes. ' +
+            throw new error_AnthropicError('Streaming is required for operations that may take longer than 10 minutes. ' +
                 'See https://github.com/anthropics/anthropic-sdk-typescript#streaming-responses for more details');
         }
         return defaultTimeout * 1000;
@@ -73778,7 +74022,9 @@ class BaseAnthropic {
             retriesRemaining = maxRetries;
         }
         await this.prepareOptions(options);
-        const { req, url, timeout } = this.buildRequest(options, { retryCount: maxRetries - retriesRemaining });
+        const { req, url, timeout } = await this.buildRequest(options, {
+            retryCount: maxRetries - retriesRemaining,
+        });
         await this.prepareRequest(req, { url, options });
         /** Not an API request ID, just for correlating local log entries. */
         const requestLogID = 'log_' + ((Math.random() * (1 << 24)) | 0).toString(16).padStart(6, '0');
@@ -73836,7 +74082,7 @@ class BaseAnthropic {
             .join('');
         const responseInfo = `[${requestLogID}${retryLogStr}${specialHeaders}] ${req.method} ${url} ${response.ok ? 'succeeded' : 'failed'} with status ${response.status} in ${headersTime - startTime}ms`;
         if (!response.ok) {
-            const shouldRetry = this.shouldRetry(response);
+            const shouldRetry = await this.shouldRetry(response);
             if (retriesRemaining && shouldRetry) {
                 const retryMessage = `retrying, ${retriesRemaining} attempts remaining`;
                 // We don't need the body of this response.
@@ -73910,7 +74156,7 @@ class BaseAnthropic {
             clearTimeout(timeout);
         }
     }
-    shouldRetry(response) {
+    async shouldRetry(response) {
         // Note this is not a standard header.
         const shouldRetryHeader = response.headers.get('x-should-retry');
         // If the server explicitly says whether or not to retry, obey.
@@ -73977,19 +74223,19 @@ class BaseAnthropic {
         const defaultTime = 60 * 10 * 1000; // 10 minutes
         const expectedTime = (maxTime * maxTokens) / 128000;
         if (expectedTime > defaultTime || (maxNonstreamingTokens != null && maxTokens > maxNonstreamingTokens)) {
-            throw new error_AnthropicError('Streaming is strongly recommended for operations that may token longer than 10 minutes. See https://github.com/anthropics/anthropic-sdk-typescript#long-requests for more details');
+            throw new error_AnthropicError('Streaming is required for operations that may take longer than 10 minutes. See https://github.com/anthropics/anthropic-sdk-typescript#long-requests for more details');
         }
         return defaultTime;
     }
-    buildRequest(inputOptions, { retryCount = 0 } = {}) {
+    async buildRequest(inputOptions, { retryCount = 0 } = {}) {
         const options = { ...inputOptions };
-        const { method, path, query } = options;
-        const url = this.buildURL(path, query);
+        const { method, path, query, defaultBaseURL } = options;
+        const url = this.buildURL(path, query, defaultBaseURL);
         if ('timeout' in options)
             values_validatePositiveInteger('timeout', options.timeout);
         options.timeout = options.timeout ?? this.timeout;
         const { bodyHeaders, body } = this.buildBody({ options });
-        const reqHeaders = this.buildHeaders({ options: inputOptions, method, bodyHeaders, retryCount });
+        const reqHeaders = await this.buildHeaders({ options: inputOptions, method, bodyHeaders, retryCount });
         const req = {
             method,
             headers: reqHeaders,
@@ -74002,7 +74248,7 @@ class BaseAnthropic {
         };
         return { req, url, timeout: options.timeout };
     }
-    buildHeaders({ options, method, bodyHeaders, retryCount, }) {
+    async buildHeaders({ options, method, bodyHeaders, retryCount, }) {
         let idempotencyHeaders = {};
         if (this.idempotencyHeader && method !== 'get') {
             if (!options.idempotencyKey)
@@ -74022,7 +74268,7 @@ class BaseAnthropic {
                     : undefined),
                 'anthropic-version': '2023-06-01',
             },
-            this.authHeaders(options),
+            await this.authHeaders(options),
             this._options.defaultHeaders,
             bodyHeaders,
             options.headers,
@@ -74063,7 +74309,9 @@ class BaseAnthropic {
         }
     }
 }
-sdk_client_a = BaseAnthropic, _BaseAnthropic_encoder = new WeakMap();
+sdk_client_a = BaseAnthropic, _BaseAnthropic_encoder = new WeakMap(), _BaseAnthropic_instances = new WeakSet(), _BaseAnthropic_baseURLOverridden = function _BaseAnthropic_baseURLOverridden() {
+    return this.baseURL !== 'https://api.anthropic.com';
+};
 BaseAnthropic.Anthropic = sdk_client_a;
 BaseAnthropic.HUMAN_PROMPT = '\n\nHuman:';
 BaseAnthropic.AI_PROMPT = '\n\nAssistant:';
@@ -74123,7 +74371,7 @@ const v6ToV1 = dist/* v6ToV1 */.JE;
 const v7 = dist.v7;
 const NIL = dist/* NIL */.wD;
 const MAX = dist/* MAX */.Zu;
-const wrapper_version = dist/* version */.rE;
+const version = dist/* version */.rE;
 const wrapper_validate = dist/* validate */.tf;
 const wrapper_stringify = dist/* stringify */.As;
 const wrapper_parse = dist/* parse */.qg;
@@ -74785,7 +75033,7 @@ class BaseMessage extends Serializable {
             writable: true,
             value: void 0
         });
-        /** Response metadata. For example: response headers, logprobs, token counts. */
+        /** Response metadata. For example: response headers, logprobs, token counts, model name. */
         Object.defineProperty(this, "response_metadata", {
             enumerable: true,
             configurable: true,
@@ -75024,6 +75272,12 @@ class tool_ToolMessage extends BaseMessage {
             writable: true,
             value: void 0
         });
+        Object.defineProperty(this, "metadata", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**
          * Artifact of the Tool execution which is not meant to be sent to the model.
          *
@@ -75041,6 +75295,7 @@ class tool_ToolMessage extends BaseMessage {
         this.tool_call_id = fields.tool_call_id;
         this.artifact = fields.artifact;
         this.status = fields.status;
+        this.metadata = fields.metadata;
     }
     _getType() {
         return "tool";
@@ -75301,29 +75556,42 @@ class ai_AIMessageChunk extends BaseMessageChunk {
             };
         }
         else {
+            const groupedToolCallChunk = fields.tool_call_chunks.reduce((acc, chunk) => {
+                // Assign a fallback ID if the chunk doesn't have one
+                // This can happen with tools that have empty schemas
+                const chunkId = chunk.id || `fallback-${chunk.index || 0}`;
+                acc[chunkId] = acc[chunkId] ?? [];
+                acc[chunkId].push(chunk);
+                return acc;
+            }, {});
             const toolCalls = [];
             const invalidToolCalls = [];
-            for (const toolCallChunk of fields.tool_call_chunks) {
+            for (const [id, chunks] of Object.entries(groupedToolCallChunk)) {
                 let parsedArgs = {};
+                const name = chunks[0]?.name ?? "";
+                const joinedArgs = chunks.map((c) => c.args || "").join("");
+                const argsStr = joinedArgs.length ? joinedArgs : "{}";
+                // Use the original ID from the first chunk if it exists, otherwise use the grouped ID
+                const originalId = chunks[0]?.id || id;
                 try {
-                    parsedArgs = parsePartialJson(toolCallChunk.args || "{}");
+                    parsedArgs = parsePartialJson(argsStr);
                     if (parsedArgs === null ||
                         typeof parsedArgs !== "object" ||
                         Array.isArray(parsedArgs)) {
                         throw new Error("Malformed tool call chunk args.");
                     }
                     toolCalls.push({
-                        name: toolCallChunk.name ?? "",
+                        name,
                         args: parsedArgs,
-                        id: toolCallChunk.id,
+                        id: originalId,
                         type: "tool_call",
                     });
                 }
                 catch (e) {
                     invalidToolCalls.push({
-                        name: toolCallChunk.name,
-                        args: toolCallChunk.args,
-                        id: toolCallChunk.id,
+                        name,
+                        args: argsStr,
+                        id: originalId,
                         error: "Malformed args.",
                         type: "invalid_tool_call",
                     });
@@ -80270,8 +80538,1007 @@ const NEVER = INVALID;
 
 // EXTERNAL MODULE: ./node_modules/p-retry/index.js
 var p_retry = __nccwpck_require__(2103);
-// EXTERNAL MODULE: ./node_modules/p-queue/dist/index.js
-var p_queue_dist = __nccwpck_require__(6459);
+;// CONCATENATED MODULE: ./node_modules/langsmith/dist/singletons/traceable.js
+class MockAsyncLocalStorage {
+    getStore() {
+        return undefined;
+    }
+    run(_, callback) {
+        return callback();
+    }
+}
+const TRACING_ALS_KEY = Symbol.for("ls:tracing_async_local_storage");
+const mockAsyncLocalStorage = new MockAsyncLocalStorage();
+class AsyncLocalStorageProvider {
+    getInstance() {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return globalThis[TRACING_ALS_KEY] ?? mockAsyncLocalStorage;
+    }
+    initializeGlobalInstance(instance) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (globalThis[TRACING_ALS_KEY] === undefined) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            globalThis[TRACING_ALS_KEY] = instance;
+        }
+    }
+}
+const AsyncLocalStorageProviderSingleton = new AsyncLocalStorageProvider();
+function getCurrentRunTree(permitAbsentRunTree = false) {
+    const runTree = AsyncLocalStorageProviderSingleton.getInstance().getStore();
+    if (!permitAbsentRunTree && runTree === undefined) {
+        throw new Error("Could not get the current run tree.\n\nPlease make sure you are calling this method within a traceable function and that tracing is enabled.");
+    }
+    return runTree;
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function withRunTree(runTree, fn) {
+    const storage = AsyncLocalStorageProviderSingleton.getInstance();
+    return new Promise((resolve, reject) => {
+        storage.run(runTree, () => void Promise.resolve(fn()).then(resolve).catch(reject));
+    });
+}
+const ROOT = Symbol.for("langsmith:traceable:root");
+function isTraceableFunction(x
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+) {
+    return typeof x === "function" && "langsmith:traceable" in x;
+}
+
+;// CONCATENATED MODULE: ./node_modules/langsmith/singletons/traceable.js
+
+;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/fast-json-patch/src/helpers.js
+// @ts-nocheck
+// Inlined because of ESM import issues
+/*!
+ * https://github.com/Starcounter-Jack/JSON-Patch
+ * (c) 2017-2022 Joachim Wester
+ * MIT licensed
+ */
+const _hasOwnProperty = Object.prototype.hasOwnProperty;
+function helpers_hasOwnProperty(obj, key) {
+    return _hasOwnProperty.call(obj, key);
+}
+function _objectKeys(obj) {
+    if (Array.isArray(obj)) {
+        const keys = new Array(obj.length);
+        for (let k = 0; k < keys.length; k++) {
+            keys[k] = "" + k;
+        }
+        return keys;
+    }
+    if (Object.keys) {
+        return Object.keys(obj);
+    }
+    let keys = [];
+    for (let i in obj) {
+        if (helpers_hasOwnProperty(obj, i)) {
+            keys.push(i);
+        }
+    }
+    return keys;
+}
+/**
+ * Deeply clone the object.
+ * https://jsperf.com/deep-copy-vs-json-stringify-json-parse/25 (recursiveDeepCopy)
+ * @param  {any} obj value to clone
+ * @return {any} cloned obj
+ */
+function helpers_deepClone(obj) {
+    switch (typeof obj) {
+        case "object":
+            return JSON.parse(JSON.stringify(obj)); //Faster than ES5 clone - http://jsperf.com/deep-cloning-of-objects/5
+        case "undefined":
+            return null; //this is how JSON.stringify behaves for array items
+        default:
+            return obj; //no need to clone primitives
+    }
+}
+//3x faster than cached /^\d+$/.test(str)
+function isInteger(str) {
+    let i = 0;
+    const len = str.length;
+    let charCode;
+    while (i < len) {
+        charCode = str.charCodeAt(i);
+        if (charCode >= 48 && charCode <= 57) {
+            i++;
+            continue;
+        }
+        return false;
+    }
+    return true;
+}
+/**
+ * Escapes a json pointer path
+ * @param path The raw pointer
+ * @return the Escaped path
+ */
+function escapePathComponent(path) {
+    if (path.indexOf("/") === -1 && path.indexOf("~") === -1)
+        return path;
+    return path.replace(/~/g, "~0").replace(/\//g, "~1");
+}
+/**
+ * Unescapes a json pointer path
+ * @param path The escaped pointer
+ * @return The unescaped path
+ */
+function unescapePathComponent(path) {
+    return path.replace(/~1/g, "/").replace(/~0/g, "~");
+}
+function _getPathRecursive(root, obj) {
+    let found;
+    for (let key in root) {
+        if (helpers_hasOwnProperty(root, key)) {
+            if (root[key] === obj) {
+                return escapePathComponent(key) + "/";
+            }
+            else if (typeof root[key] === "object") {
+                found = _getPathRecursive(root[key], obj);
+                if (found != "") {
+                    return escapePathComponent(key) + "/" + found;
+                }
+            }
+        }
+    }
+    return "";
+}
+function getPath(root, obj) {
+    if (root === obj) {
+        return "/";
+    }
+    const path = _getPathRecursive(root, obj);
+    if (path === "") {
+        throw new Error("Object not found in root");
+    }
+    return `/${path}`;
+}
+/**
+ * Recursively checks whether an object has any undefined values inside.
+ */
+function hasUndefined(obj) {
+    if (obj === undefined) {
+        return true;
+    }
+    if (obj) {
+        if (Array.isArray(obj)) {
+            for (let i = 0, len = obj.length; i < len; i++) {
+                if (hasUndefined(obj[i])) {
+                    return true;
+                }
+            }
+        }
+        else if (typeof obj === "object") {
+            const objKeys = _objectKeys(obj);
+            const objKeysLength = objKeys.length;
+            for (var i = 0; i < objKeysLength; i++) {
+                if (hasUndefined(obj[objKeys[i]])) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+function patchErrorMessageFormatter(message, args) {
+    const messageParts = [message];
+    for (const key in args) {
+        const value = typeof args[key] === "object"
+            ? JSON.stringify(args[key], null, 2)
+            : args[key]; // pretty print
+        if (typeof value !== "undefined") {
+            messageParts.push(`${key}: ${value}`);
+        }
+    }
+    return messageParts.join("\n");
+}
+class PatchError extends Error {
+    constructor(message, name, index, operation, tree) {
+        super(patchErrorMessageFormatter(message, { name, index, operation, tree }));
+        Object.defineProperty(this, "name", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: name
+        });
+        Object.defineProperty(this, "index", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: index
+        });
+        Object.defineProperty(this, "operation", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: operation
+        });
+        Object.defineProperty(this, "tree", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: tree
+        });
+        Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain, see https://stackoverflow.com/a/48342359
+        this.message = patchErrorMessageFormatter(message, {
+            name,
+            index,
+            operation,
+            tree,
+        });
+    }
+}
+
+;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/fast-json-patch/src/core.js
+// @ts-nocheck
+
+const JsonPatchError = PatchError;
+const deepClone = helpers_deepClone;
+/* We use a Javascript hash to store each
+ function. Each hash entry (property) uses
+ the operation identifiers specified in rfc6902.
+ In this way, we can map each patch operation
+ to its dedicated function in efficient way.
+ */
+/* The operations applicable to an object */
+const objOps = {
+    add: function (obj, key, document) {
+        obj[key] = this.value;
+        return { newDocument: document };
+    },
+    remove: function (obj, key, document) {
+        var removed = obj[key];
+        delete obj[key];
+        return { newDocument: document, removed };
+    },
+    replace: function (obj, key, document) {
+        var removed = obj[key];
+        obj[key] = this.value;
+        return { newDocument: document, removed };
+    },
+    move: function (obj, key, document) {
+        /* in case move target overwrites an existing value,
+        return the removed value, this can be taxing performance-wise,
+        and is potentially unneeded */
+        let removed = getValueByPointer(document, this.path);
+        if (removed) {
+            removed = helpers_deepClone(removed);
+        }
+        const originalValue = applyOperation(document, {
+            op: "remove",
+            path: this.from,
+        }).removed;
+        applyOperation(document, {
+            op: "add",
+            path: this.path,
+            value: originalValue,
+        });
+        return { newDocument: document, removed };
+    },
+    copy: function (obj, key, document) {
+        const valueToCopy = getValueByPointer(document, this.from);
+        // enforce copy by value so further operations don't affect source (see issue #177)
+        applyOperation(document, {
+            op: "add",
+            path: this.path,
+            value: helpers_deepClone(valueToCopy),
+        });
+        return { newDocument: document };
+    },
+    test: function (obj, key, document) {
+        return { newDocument: document, test: _areEquals(obj[key], this.value) };
+    },
+    _get: function (obj, key, document) {
+        this.value = obj[key];
+        return { newDocument: document };
+    },
+};
+/* The operations applicable to an array. Many are the same as for the object */
+var arrOps = {
+    add: function (arr, i, document) {
+        if (isInteger(i)) {
+            arr.splice(i, 0, this.value);
+        }
+        else {
+            // array props
+            arr[i] = this.value;
+        }
+        // this may be needed when using '-' in an array
+        return { newDocument: document, index: i };
+    },
+    remove: function (arr, i, document) {
+        var removedList = arr.splice(i, 1);
+        return { newDocument: document, removed: removedList[0] };
+    },
+    replace: function (arr, i, document) {
+        var removed = arr[i];
+        arr[i] = this.value;
+        return { newDocument: document, removed };
+    },
+    move: objOps.move,
+    copy: objOps.copy,
+    test: objOps.test,
+    _get: objOps._get,
+};
+/**
+ * Retrieves a value from a JSON document by a JSON pointer.
+ * Returns the value.
+ *
+ * @param document The document to get the value from
+ * @param pointer an escaped JSON pointer
+ * @return The retrieved value
+ */
+function getValueByPointer(document, pointer) {
+    if (pointer == "") {
+        return document;
+    }
+    var getOriginalDestination = { op: "_get", path: pointer };
+    applyOperation(document, getOriginalDestination);
+    return getOriginalDestination.value;
+}
+/**
+ * Apply a single JSON Patch Operation on a JSON document.
+ * Returns the {newDocument, result} of the operation.
+ * It modifies the `document` and `operation` objects - it gets the values by reference.
+ * If you would like to avoid touching your values, clone them:
+ * `jsonpatch.applyOperation(document, jsonpatch._deepClone(operation))`.
+ *
+ * @param document The document to patch
+ * @param operation The operation to apply
+ * @param validateOperation `false` is without validation, `true` to use default jsonpatch's validation, or you can pass a `validateOperation` callback to be used for validation.
+ * @param mutateDocument Whether to mutate the original document or clone it before applying
+ * @param banPrototypeModifications Whether to ban modifications to `__proto__`, defaults to `true`.
+ * @return `{newDocument, result}` after the operation
+ */
+function applyOperation(document, operation, validateOperation = false, mutateDocument = true, banPrototypeModifications = true, index = 0) {
+    if (validateOperation) {
+        if (typeof validateOperation == "function") {
+            validateOperation(operation, 0, document, operation.path);
+        }
+        else {
+            validator(operation, 0);
+        }
+    }
+    /* ROOT OPERATIONS */
+    if (operation.path === "") {
+        let returnValue = { newDocument: document };
+        if (operation.op === "add") {
+            returnValue.newDocument = operation.value;
+            return returnValue;
+        }
+        else if (operation.op === "replace") {
+            returnValue.newDocument = operation.value;
+            returnValue.removed = document; //document we removed
+            return returnValue;
+        }
+        else if (operation.op === "move" || operation.op === "copy") {
+            // it's a move or copy to root
+            returnValue.newDocument = getValueByPointer(document, operation.from); // get the value by json-pointer in `from` field
+            if (operation.op === "move") {
+                // report removed item
+                returnValue.removed = document;
+            }
+            return returnValue;
+        }
+        else if (operation.op === "test") {
+            returnValue.test = _areEquals(document, operation.value);
+            if (returnValue.test === false) {
+                throw new JsonPatchError("Test operation failed", "TEST_OPERATION_FAILED", index, operation, document);
+            }
+            returnValue.newDocument = document;
+            return returnValue;
+        }
+        else if (operation.op === "remove") {
+            // a remove on root
+            returnValue.removed = document;
+            returnValue.newDocument = null;
+            return returnValue;
+        }
+        else if (operation.op === "_get") {
+            operation.value = document;
+            return returnValue;
+        }
+        else {
+            /* bad operation */
+            if (validateOperation) {
+                throw new JsonPatchError("Operation `op` property is not one of operations defined in RFC-6902", "OPERATION_OP_INVALID", index, operation, document);
+            }
+            else {
+                return returnValue;
+            }
+        }
+    } /* END ROOT OPERATIONS */
+    else {
+        if (!mutateDocument) {
+            document = helpers_deepClone(document);
+        }
+        const path = operation.path || "";
+        const keys = path.split("/");
+        let obj = document;
+        let t = 1; //skip empty element - http://jsperf.com/to-shift-or-not-to-shift
+        let len = keys.length;
+        let existingPathFragment = undefined;
+        let key;
+        let validateFunction;
+        if (typeof validateOperation == "function") {
+            validateFunction = validateOperation;
+        }
+        else {
+            validateFunction = validator;
+        }
+        while (true) {
+            key = keys[t];
+            if (key && key.indexOf("~") != -1) {
+                key = unescapePathComponent(key);
+            }
+            if (banPrototypeModifications &&
+                (key == "__proto__" ||
+                    (key == "prototype" && t > 0 && keys[t - 1] == "constructor"))) {
+                throw new TypeError("JSON-Patch: modifying `__proto__` or `constructor/prototype` prop is banned for security reasons, if this was on purpose, please set `banPrototypeModifications` flag false and pass it to this function. More info in fast-json-patch README");
+            }
+            if (validateOperation) {
+                if (existingPathFragment === undefined) {
+                    if (obj[key] === undefined) {
+                        existingPathFragment = keys.slice(0, t).join("/");
+                    }
+                    else if (t == len - 1) {
+                        existingPathFragment = operation.path;
+                    }
+                    if (existingPathFragment !== undefined) {
+                        validateFunction(operation, 0, document, existingPathFragment);
+                    }
+                }
+            }
+            t++;
+            if (Array.isArray(obj)) {
+                if (key === "-") {
+                    key = obj.length;
+                }
+                else {
+                    if (validateOperation && !isInteger(key)) {
+                        throw new JsonPatchError("Expected an unsigned base-10 integer value, making the new referenced value the array element with the zero-based index", "OPERATION_PATH_ILLEGAL_ARRAY_INDEX", index, operation, document);
+                    } // only parse key when it's an integer for `arr.prop` to work
+                    else if (isInteger(key)) {
+                        key = ~~key;
+                    }
+                }
+                if (t >= len) {
+                    if (validateOperation && operation.op === "add" && key > obj.length) {
+                        throw new JsonPatchError("The specified index MUST NOT be greater than the number of elements in the array", "OPERATION_VALUE_OUT_OF_BOUNDS", index, operation, document);
+                    }
+                    const returnValue = arrOps[operation.op].call(operation, obj, key, document); // Apply patch
+                    if (returnValue.test === false) {
+                        throw new JsonPatchError("Test operation failed", "TEST_OPERATION_FAILED", index, operation, document);
+                    }
+                    return returnValue;
+                }
+            }
+            else {
+                if (t >= len) {
+                    const returnValue = objOps[operation.op].call(operation, obj, key, document); // Apply patch
+                    if (returnValue.test === false) {
+                        throw new JsonPatchError("Test operation failed", "TEST_OPERATION_FAILED", index, operation, document);
+                    }
+                    return returnValue;
+                }
+            }
+            obj = obj[key];
+            // If we have more keys in the path, but the next value isn't a non-null object,
+            // throw an OPERATION_PATH_UNRESOLVABLE error instead of iterating again.
+            if (validateOperation && t < len && (!obj || typeof obj !== "object")) {
+                throw new JsonPatchError("Cannot perform operation at the desired path", "OPERATION_PATH_UNRESOLVABLE", index, operation, document);
+            }
+        }
+    }
+}
+/**
+ * Apply a full JSON Patch array on a JSON document.
+ * Returns the {newDocument, result} of the patch.
+ * It modifies the `document` object and `patch` - it gets the values by reference.
+ * If you would like to avoid touching your values, clone them:
+ * `jsonpatch.applyPatch(document, jsonpatch._deepClone(patch))`.
+ *
+ * @param document The document to patch
+ * @param patch The patch to apply
+ * @param validateOperation `false` is without validation, `true` to use default jsonpatch's validation, or you can pass a `validateOperation` callback to be used for validation.
+ * @param mutateDocument Whether to mutate the original document or clone it before applying
+ * @param banPrototypeModifications Whether to ban modifications to `__proto__`, defaults to `true`.
+ * @return An array of `{newDocument, result}` after the patch
+ */
+function core_applyPatch(document, patch, validateOperation, mutateDocument = true, banPrototypeModifications = true) {
+    if (validateOperation) {
+        if (!Array.isArray(patch)) {
+            throw new JsonPatchError("Patch sequence must be an array", "SEQUENCE_NOT_AN_ARRAY");
+        }
+    }
+    if (!mutateDocument) {
+        document = helpers_deepClone(document);
+    }
+    const results = new Array(patch.length);
+    for (let i = 0, length = patch.length; i < length; i++) {
+        // we don't need to pass mutateDocument argument because if it was true, we already deep cloned the object, we'll just pass `true`
+        results[i] = applyOperation(document, patch[i], validateOperation, true, banPrototypeModifications, i);
+        document = results[i].newDocument; // in case root was replaced
+    }
+    results.newDocument = document;
+    return results;
+}
+/**
+ * Apply a single JSON Patch Operation on a JSON document.
+ * Returns the updated document.
+ * Suitable as a reducer.
+ *
+ * @param document The document to patch
+ * @param operation The operation to apply
+ * @return The updated document
+ */
+function applyReducer(document, operation, index) {
+    const operationResult = applyOperation(document, operation);
+    if (operationResult.test === false) {
+        // failed test
+        throw new JsonPatchError("Test operation failed", "TEST_OPERATION_FAILED", index, operation, document);
+    }
+    return operationResult.newDocument;
+}
+/**
+ * Validates a single operation. Called from `jsonpatch.validate`. Throws `JsonPatchError` in case of an error.
+ * @param {object} operation - operation object (patch)
+ * @param {number} index - index of operation in the sequence
+ * @param {object} [document] - object where the operation is supposed to be applied
+ * @param {string} [existingPathFragment] - comes along with `document`
+ */
+function validator(operation, index, document, existingPathFragment) {
+    if (typeof operation !== "object" ||
+        operation === null ||
+        Array.isArray(operation)) {
+        throw new JsonPatchError("Operation is not an object", "OPERATION_NOT_AN_OBJECT", index, operation, document);
+    }
+    else if (!objOps[operation.op]) {
+        throw new JsonPatchError("Operation `op` property is not one of operations defined in RFC-6902", "OPERATION_OP_INVALID", index, operation, document);
+    }
+    else if (typeof operation.path !== "string") {
+        throw new JsonPatchError("Operation `path` property is not a string", "OPERATION_PATH_INVALID", index, operation, document);
+    }
+    else if (operation.path.indexOf("/") !== 0 && operation.path.length > 0) {
+        // paths that aren't empty string should start with "/"
+        throw new JsonPatchError('Operation `path` property must start with "/"', "OPERATION_PATH_INVALID", index, operation, document);
+    }
+    else if ((operation.op === "move" || operation.op === "copy") &&
+        typeof operation.from !== "string") {
+        throw new JsonPatchError("Operation `from` property is not present (applicable in `move` and `copy` operations)", "OPERATION_FROM_REQUIRED", index, operation, document);
+    }
+    else if ((operation.op === "add" ||
+        operation.op === "replace" ||
+        operation.op === "test") &&
+        operation.value === undefined) {
+        throw new JsonPatchError("Operation `value` property is not present (applicable in `add`, `replace` and `test` operations)", "OPERATION_VALUE_REQUIRED", index, operation, document);
+    }
+    else if ((operation.op === "add" ||
+        operation.op === "replace" ||
+        operation.op === "test") &&
+        hasUndefined(operation.value)) {
+        throw new JsonPatchError("Operation `value` property is not present (applicable in `add`, `replace` and `test` operations)", "OPERATION_VALUE_CANNOT_CONTAIN_UNDEFINED", index, operation, document);
+    }
+    else if (document) {
+        if (operation.op == "add") {
+            var pathLen = operation.path.split("/").length;
+            var existingPathLen = existingPathFragment.split("/").length;
+            if (pathLen !== existingPathLen + 1 && pathLen !== existingPathLen) {
+                throw new JsonPatchError("Cannot perform an `add` operation at the desired path", "OPERATION_PATH_CANNOT_ADD", index, operation, document);
+            }
+        }
+        else if (operation.op === "replace" ||
+            operation.op === "remove" ||
+            operation.op === "_get") {
+            if (operation.path !== existingPathFragment) {
+                throw new JsonPatchError("Cannot perform the operation at a path that does not exist", "OPERATION_PATH_UNRESOLVABLE", index, operation, document);
+            }
+        }
+        else if (operation.op === "move" || operation.op === "copy") {
+            var existingValue = {
+                op: "_get",
+                path: operation.from,
+                value: undefined,
+            };
+            var error = core_validate([existingValue], document);
+            if (error && error.name === "OPERATION_PATH_UNRESOLVABLE") {
+                throw new JsonPatchError("Cannot perform the operation from a path that does not exist", "OPERATION_FROM_UNRESOLVABLE", index, operation, document);
+            }
+        }
+    }
+}
+/**
+ * Validates a sequence of operations. If `document` parameter is provided, the sequence is additionally validated against the object document.
+ * If error is encountered, returns a JsonPatchError object
+ * @param sequence
+ * @param document
+ * @returns {JsonPatchError|undefined}
+ */
+function core_validate(sequence, document, externalValidator) {
+    try {
+        if (!Array.isArray(sequence)) {
+            throw new JsonPatchError("Patch sequence must be an array", "SEQUENCE_NOT_AN_ARRAY");
+        }
+        if (document) {
+            //clone document and sequence so that we can safely try applying operations
+            core_applyPatch(helpers_deepClone(document), helpers_deepClone(sequence), externalValidator || true);
+        }
+        else {
+            externalValidator = externalValidator || validator;
+            for (var i = 0; i < sequence.length; i++) {
+                externalValidator(sequence[i], i, document, undefined);
+            }
+        }
+    }
+    catch (e) {
+        if (e instanceof JsonPatchError) {
+            return e;
+        }
+        else {
+            throw e;
+        }
+    }
+}
+// based on https://github.com/epoberezkin/fast-deep-equal
+// MIT License
+// Copyright (c) 2017 Evgeny Poberezkin
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+function _areEquals(a, b) {
+    if (a === b)
+        return true;
+    if (a && b && typeof a == "object" && typeof b == "object") {
+        var arrA = Array.isArray(a), arrB = Array.isArray(b), i, length, key;
+        if (arrA && arrB) {
+            length = a.length;
+            if (length != b.length)
+                return false;
+            for (i = length; i-- !== 0;)
+                if (!_areEquals(a[i], b[i]))
+                    return false;
+            return true;
+        }
+        if (arrA != arrB)
+            return false;
+        var keys = Object.keys(a);
+        length = keys.length;
+        if (length !== Object.keys(b).length)
+            return false;
+        for (i = length; i-- !== 0;)
+            if (!b.hasOwnProperty(keys[i]))
+                return false;
+        for (i = length; i-- !== 0;) {
+            key = keys[i];
+            if (!_areEquals(a[key], b[key]))
+                return false;
+        }
+        return true;
+    }
+    return a !== a && b !== b;
+}
+
+;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/fast-json-patch/src/duplex.js
+// @ts-nocheck
+// Inlined because of ESM import issues
+/*!
+ * https://github.com/Starcounter-Jack/JSON-Patch
+ * (c) 2013-2021 Joachim Wester
+ * MIT license
+ */
+
+
+var beforeDict = new WeakMap();
+class Mirror {
+    constructor(obj) {
+        Object.defineProperty(this, "obj", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "observers", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Map()
+        });
+        Object.defineProperty(this, "value", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        this.obj = obj;
+    }
+}
+class ObserverInfo {
+    constructor(callback, observer) {
+        Object.defineProperty(this, "callback", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "observer", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        this.callback = callback;
+        this.observer = observer;
+    }
+}
+function getMirror(obj) {
+    return beforeDict.get(obj);
+}
+function getObserverFromMirror(mirror, callback) {
+    return mirror.observers.get(callback);
+}
+function removeObserverFromMirror(mirror, observer) {
+    mirror.observers.delete(observer.callback);
+}
+/**
+ * Detach an observer from an object
+ */
+function unobserve(root, observer) {
+    observer.unobserve();
+}
+/**
+ * Observes changes made to an object, which can then be retrieved using generate
+ */
+function observe(obj, callback) {
+    var patches = [];
+    var observer;
+    var mirror = getMirror(obj);
+    if (!mirror) {
+        mirror = new Mirror(obj);
+        beforeDict.set(obj, mirror);
+    }
+    else {
+        const observerInfo = getObserverFromMirror(mirror, callback);
+        observer = observerInfo && observerInfo.observer;
+    }
+    if (observer) {
+        return observer;
+    }
+    observer = {};
+    mirror.value = _deepClone(obj);
+    if (callback) {
+        observer.callback = callback;
+        observer.next = null;
+        var dirtyCheck = () => {
+            duplex_generate(observer);
+        };
+        var fastCheck = () => {
+            clearTimeout(observer.next);
+            observer.next = setTimeout(dirtyCheck);
+        };
+        if (typeof window !== "undefined") {
+            //not Node
+            window.addEventListener("mouseup", fastCheck);
+            window.addEventListener("keyup", fastCheck);
+            window.addEventListener("mousedown", fastCheck);
+            window.addEventListener("keydown", fastCheck);
+            window.addEventListener("change", fastCheck);
+        }
+    }
+    observer.patches = patches;
+    observer.object = obj;
+    observer.unobserve = () => {
+        duplex_generate(observer);
+        clearTimeout(observer.next);
+        removeObserverFromMirror(mirror, observer);
+        if (typeof window !== "undefined") {
+            window.removeEventListener("mouseup", fastCheck);
+            window.removeEventListener("keyup", fastCheck);
+            window.removeEventListener("mousedown", fastCheck);
+            window.removeEventListener("keydown", fastCheck);
+            window.removeEventListener("change", fastCheck);
+        }
+    };
+    mirror.observers.set(callback, new ObserverInfo(callback, observer));
+    return observer;
+}
+/**
+ * Generate an array of patches from an observer
+ */
+function duplex_generate(observer, invertible = false) {
+    var mirror = beforeDict.get(observer.object);
+    _generate(mirror.value, observer.object, observer.patches, "", invertible);
+    if (observer.patches.length) {
+        applyPatch(mirror.value, observer.patches);
+    }
+    var temp = observer.patches;
+    if (temp.length > 0) {
+        observer.patches = [];
+        if (observer.callback) {
+            observer.callback(temp);
+        }
+    }
+    return temp;
+}
+// Dirty check if obj is different from mirror, generate patches and update mirror
+function _generate(mirror, obj, patches, path, invertible) {
+    if (obj === mirror) {
+        return;
+    }
+    if (typeof obj.toJSON === "function") {
+        obj = obj.toJSON();
+    }
+    var newKeys = _objectKeys(obj);
+    var oldKeys = _objectKeys(mirror);
+    var changed = false;
+    var deleted = false;
+    //if ever "move" operation is implemented here, make sure this test runs OK: "should not generate the same patch twice (move)"
+    for (var t = oldKeys.length - 1; t >= 0; t--) {
+        var key = oldKeys[t];
+        var oldVal = mirror[key];
+        if (helpers_hasOwnProperty(obj, key) &&
+            !(obj[key] === undefined &&
+                oldVal !== undefined &&
+                Array.isArray(obj) === false)) {
+            var newVal = obj[key];
+            if (typeof oldVal == "object" &&
+                oldVal != null &&
+                typeof newVal == "object" &&
+                newVal != null &&
+                Array.isArray(oldVal) === Array.isArray(newVal)) {
+                _generate(oldVal, newVal, patches, path + "/" + escapePathComponent(key), invertible);
+            }
+            else {
+                if (oldVal !== newVal) {
+                    changed = true;
+                    if (invertible) {
+                        patches.push({
+                            op: "test",
+                            path: path + "/" + escapePathComponent(key),
+                            value: helpers_deepClone(oldVal),
+                        });
+                    }
+                    patches.push({
+                        op: "replace",
+                        path: path + "/" + escapePathComponent(key),
+                        value: helpers_deepClone(newVal),
+                    });
+                }
+            }
+        }
+        else if (Array.isArray(mirror) === Array.isArray(obj)) {
+            if (invertible) {
+                patches.push({
+                    op: "test",
+                    path: path + "/" + escapePathComponent(key),
+                    value: helpers_deepClone(oldVal),
+                });
+            }
+            patches.push({
+                op: "remove",
+                path: path + "/" + escapePathComponent(key),
+            });
+            deleted = true; // property has been deleted
+        }
+        else {
+            if (invertible) {
+                patches.push({ op: "test", path, value: mirror });
+            }
+            patches.push({ op: "replace", path, value: obj });
+            changed = true;
+        }
+    }
+    if (!deleted && newKeys.length == oldKeys.length) {
+        return;
+    }
+    for (var t = 0; t < newKeys.length; t++) {
+        var key = newKeys[t];
+        if (!helpers_hasOwnProperty(mirror, key) && obj[key] !== undefined) {
+            patches.push({
+                op: "add",
+                path: path + "/" + escapePathComponent(key),
+                value: helpers_deepClone(obj[key]),
+            });
+        }
+    }
+}
+/**
+ * Create an array of patches from the differences in two objects
+ */
+function compare(tree1, tree2, invertible = false) {
+    var patches = [];
+    _generate(tree1, tree2, patches, "", invertible);
+    return patches;
+}
+
+;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/fast-json-patch/index.js
+
+
+
+/**
+ * Default export for backwards compat
+ */
+
+
+/* harmony default export */ const fast_json_patch = ({
+    ...src_core_namespaceObject,
+    // ...duplex,
+    JsonPatchError: PatchError,
+    deepClone: helpers_deepClone,
+    escapePathComponent: escapePathComponent,
+    unescapePathComponent: unescapePathComponent,
+});
+
+;// CONCATENATED MODULE: ./node_modules/langsmith/dist/experimental/otel/constants.js
+// OpenTelemetry GenAI semantic convention attribute names
+const GEN_AI_OPERATION_NAME = "gen_ai.operation.name";
+const GEN_AI_SYSTEM = "gen_ai.system";
+const GEN_AI_REQUEST_MODEL = "gen_ai.request.model";
+const GEN_AI_RESPONSE_MODEL = "gen_ai.response.model";
+const GEN_AI_USAGE_INPUT_TOKENS = "gen_ai.usage.input_tokens";
+const GEN_AI_USAGE_OUTPUT_TOKENS = "gen_ai.usage.output_tokens";
+const GEN_AI_USAGE_TOTAL_TOKENS = "gen_ai.usage.total_tokens";
+const GEN_AI_REQUEST_MAX_TOKENS = "gen_ai.request.max_tokens";
+const GEN_AI_REQUEST_TEMPERATURE = "gen_ai.request.temperature";
+const GEN_AI_REQUEST_TOP_P = "gen_ai.request.top_p";
+const GEN_AI_REQUEST_FREQUENCY_PENALTY = "gen_ai.request.frequency_penalty";
+const GEN_AI_REQUEST_PRESENCE_PENALTY = "gen_ai.request.presence_penalty";
+const GEN_AI_RESPONSE_FINISH_REASONS = "gen_ai.response.finish_reasons";
+const GENAI_PROMPT = "gen_ai.prompt";
+const GENAI_COMPLETION = "gen_ai.completion";
+const GEN_AI_REQUEST_EXTRA_QUERY = "gen_ai.request.extra_query";
+const GEN_AI_REQUEST_EXTRA_BODY = "gen_ai.request.extra_body";
+const GEN_AI_SERIALIZED_NAME = "gen_ai.serialized.name";
+const GEN_AI_SERIALIZED_SIGNATURE = "gen_ai.serialized.signature";
+const GEN_AI_SERIALIZED_DOC = "gen_ai.serialized.doc";
+const GEN_AI_RESPONSE_ID = "gen_ai.response.id";
+const GEN_AI_RESPONSE_SERVICE_TIER = "gen_ai.response.service_tier";
+const GEN_AI_RESPONSE_SYSTEM_FINGERPRINT = "gen_ai.response.system_fingerprint";
+const GEN_AI_USAGE_INPUT_TOKEN_DETAILS = "gen_ai.usage.input_token_details";
+const GEN_AI_USAGE_OUTPUT_TOKEN_DETAILS = "gen_ai.usage.output_token_details";
+// LangSmith custom attributes
+const LANGSMITH_SESSION_ID = "langsmith.trace.session_id";
+const LANGSMITH_SESSION_NAME = "langsmith.trace.session_name";
+const LANGSMITH_RUN_TYPE = "langsmith.span.kind";
+const LANGSMITH_NAME = "langsmith.trace.name";
+const LANGSMITH_METADATA = "langsmith.metadata";
+const LANGSMITH_TAGS = "langsmith.span.tags";
+const LANGSMITH_RUNTIME = "langsmith.span.runtime";
+const LANGSMITH_REQUEST_STREAMING = "langsmith.request.streaming";
+const LANGSMITH_REQUEST_HEADERS = "langsmith.request.headers";
+const LANGSMITH_RUN_ID = "langsmith.span.id";
+const LANGSMITH_TRACE_ID = "langsmith.trace.id";
+const LANGSMITH_DOTTED_ORDER = "langsmith.span.dotted_order";
+const LANGSMITH_PARENT_RUN_ID = "langsmith.span.parent_id";
+const LANGSMITH_USAGE_METADATA = "langsmith.usage_metadata";
+const LANGSMITH_REFERENCE_EXAMPLE_ID = "langsmith.reference_example_id";
+const LANGSMITH_TRACEABLE = "langsmith.traceable";
+const LANGSMITH_IS_ROOT = "langsmith.is_root";
+const LANGSMITH_TRACEABLE_PARENT_OTEL_SPAN_ID = "langsmith.traceable_parent_otel_span_id";
+// GenAI event names
+const GEN_AI_SYSTEM_MESSAGE = "gen_ai.system.message";
+const GEN_AI_USER_MESSAGE = "gen_ai.user.message";
+const GEN_AI_ASSISTANT_MESSAGE = "gen_ai.assistant.message";
+const GEN_AI_CHOICE = "gen_ai.choice";
+const AI_SDK_LLM_OPERATIONS = (/* unused pure expression or super */ null && ([
+    "ai.generateText.doGenerate",
+    "ai.streamText.doStream",
+    "ai.generateObject.doGenerate",
+    "ai.streamObject.doStream",
+]));
+const AI_SDK_TOOL_OPERATIONS = (/* unused pure expression or super */ null && (["ai.toolCall"]));
+
 ;// CONCATENATED MODULE: ./node_modules/langsmith/dist/singletons/fetch.js
 
 // Wrap the default fetch call due to issues with illegal invocations
@@ -80317,6 +81584,806 @@ const _getFetchImplementation = (debug) => {
     };
 };
 
+;// CONCATENATED MODULE: ./node_modules/langsmith/dist/utils/project.js
+
+const getDefaultProjectName = () => {
+    return (getLangSmithEnvironmentVariable("PROJECT") ??
+        getEnvironmentVariable("LANGCHAIN_SESSION") ?? // TODO: Deprecate
+        "default");
+};
+
+;// CONCATENATED MODULE: ./node_modules/langsmith/dist/index.js
+
+
+
+
+// Update using yarn bump-version
+const __version__ = "0.3.55";
+
+;// CONCATENATED MODULE: ./node_modules/langsmith/dist/utils/env.js
+// Inlined from https://github.com/flexdinesh/browser-or-node
+
+let globalEnv;
+const isBrowser = () => typeof window !== "undefined" && typeof window.document !== "undefined";
+const isWebWorker = () => typeof globalThis === "object" &&
+    globalThis.constructor &&
+    globalThis.constructor.name === "DedicatedWorkerGlobalScope";
+const isJsDom = () => (typeof window !== "undefined" && window.name === "nodejs") ||
+    (typeof navigator !== "undefined" && navigator.userAgent.includes("jsdom"));
+// Supabase Edge Function provides a `Deno` global object
+// without `version` property
+const isDeno = () => typeof Deno !== "undefined";
+// Mark not-as-node if in Supabase Edge Function
+const isNode = () => typeof process !== "undefined" &&
+    typeof process.versions !== "undefined" &&
+    typeof process.versions.node !== "undefined" &&
+    !isDeno();
+const getEnv = () => {
+    if (globalEnv) {
+        return globalEnv;
+    }
+    if (isBrowser()) {
+        globalEnv = "browser";
+    }
+    else if (isNode()) {
+        globalEnv = "node";
+    }
+    else if (isWebWorker()) {
+        globalEnv = "webworker";
+    }
+    else if (isJsDom()) {
+        globalEnv = "jsdom";
+    }
+    else if (isDeno()) {
+        globalEnv = "deno";
+    }
+    else {
+        globalEnv = "other";
+    }
+    return globalEnv;
+};
+let runtimeEnvironment;
+function getRuntimeEnvironment() {
+    if (runtimeEnvironment === undefined) {
+        const env = getEnv();
+        const releaseEnv = getShas();
+        runtimeEnvironment = {
+            library: "langsmith",
+            runtime: env,
+            sdk: "langsmith-js",
+            sdk_version: __version__,
+            ...releaseEnv,
+        };
+    }
+    return runtimeEnvironment;
+}
+/**
+ * Retrieves the LangChain-specific environment variables from the current runtime environment.
+ * Sensitive keys (containing the word "key", "token", or "secret") have their values redacted for security.
+ *
+ * @returns {Record<string, string>}
+ *  - A record of LangChain-specific environment variables.
+ */
+function getLangChainEnvVars() {
+    const allEnvVars = getEnvironmentVariables() || {};
+    const envVars = {};
+    for (const [key, value] of Object.entries(allEnvVars)) {
+        if (key.startsWith("LANGCHAIN_") && typeof value === "string") {
+            envVars[key] = value;
+        }
+    }
+    for (const key in envVars) {
+        if ((key.toLowerCase().includes("key") ||
+            key.toLowerCase().includes("secret") ||
+            key.toLowerCase().includes("token")) &&
+            typeof envVars[key] === "string") {
+            const value = envVars[key];
+            envVars[key] =
+                value.slice(0, 2) + "*".repeat(value.length - 4) + value.slice(-2);
+        }
+    }
+    return envVars;
+}
+/**
+ * Retrieves the LangChain-specific metadata from the current runtime environment.
+ *
+ * @returns {Record<string, string>}
+ *  - A record of LangChain-specific metadata environment variables.
+ */
+function getLangChainEnvVarsMetadata() {
+    const allEnvVars = getEnvironmentVariables() || {};
+    const envVars = {};
+    const excluded = [
+        "LANGCHAIN_API_KEY",
+        "LANGCHAIN_ENDPOINT",
+        "LANGCHAIN_TRACING_V2",
+        "LANGCHAIN_PROJECT",
+        "LANGCHAIN_SESSION",
+        "LANGSMITH_API_KEY",
+        "LANGSMITH_ENDPOINT",
+        "LANGSMITH_TRACING_V2",
+        "LANGSMITH_PROJECT",
+        "LANGSMITH_SESSION",
+    ];
+    for (const [key, value] of Object.entries(allEnvVars)) {
+        if ((key.startsWith("LANGCHAIN_") || key.startsWith("LANGSMITH_")) &&
+            typeof value === "string" &&
+            !excluded.includes(key) &&
+            !key.toLowerCase().includes("key") &&
+            !key.toLowerCase().includes("secret") &&
+            !key.toLowerCase().includes("token")) {
+            if (key === "LANGCHAIN_REVISION_ID") {
+                envVars["revision_id"] = value;
+            }
+            else {
+                envVars[key] = value;
+            }
+        }
+    }
+    return envVars;
+}
+/**
+ * Retrieves the environment variables from the current runtime environment.
+ *
+ * This function is designed to operate in a variety of JS environments,
+ * including Node.js, Deno, browsers, etc.
+ *
+ * @returns {Record<string, string> | undefined}
+ *  - A record of environment variables if available.
+ *  - `undefined` if the environment does not support or allows access to environment variables.
+ */
+function getEnvironmentVariables() {
+    try {
+        // Check for Node.js environment
+        // eslint-disable-next-line no-process-env
+        if (typeof process !== "undefined" && process.env) {
+            // eslint-disable-next-line no-process-env
+            return Object.entries(process.env).reduce((acc, [key, value]) => {
+                acc[key] = String(value);
+                return acc;
+            }, {});
+        }
+        // For browsers and other environments, we may not have direct access to env variables
+        // Return undefined or any other fallback as required.
+        return undefined;
+    }
+    catch (e) {
+        // Catch any errors that might occur while trying to access environment variables
+        return undefined;
+    }
+}
+function getEnvironmentVariable(name) {
+    // Certain Deno setups will throw an error if you try to access environment variables
+    // https://github.com/hwchase17/langchainjs/issues/1412
+    try {
+        return typeof process !== "undefined"
+            ? // eslint-disable-next-line no-process-env
+                process.env?.[name]
+            : undefined;
+    }
+    catch (e) {
+        return undefined;
+    }
+}
+function getLangSmithEnvironmentVariable(name) {
+    return (getEnvironmentVariable(`LANGSMITH_${name}`) ||
+        getEnvironmentVariable(`LANGCHAIN_${name}`));
+}
+function setEnvironmentVariable(name, value) {
+    if (typeof process !== "undefined") {
+        // eslint-disable-next-line no-process-env
+        process.env[name] = value;
+    }
+}
+let cachedCommitSHAs;
+/**
+ * Get the Git commit SHA from common environment variables
+ * used by different CI/CD platforms.
+ * @returns {string | undefined} The Git commit SHA or undefined if not found.
+ */
+function getShas() {
+    if (cachedCommitSHAs !== undefined) {
+        return cachedCommitSHAs;
+    }
+    const common_release_envs = [
+        "VERCEL_GIT_COMMIT_SHA",
+        "NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA",
+        "COMMIT_REF",
+        "RENDER_GIT_COMMIT",
+        "CI_COMMIT_SHA",
+        "CIRCLE_SHA1",
+        "CF_PAGES_COMMIT_SHA",
+        "REACT_APP_GIT_SHA",
+        "SOURCE_VERSION",
+        "GITHUB_SHA",
+        "TRAVIS_COMMIT",
+        "GIT_COMMIT",
+        "BUILD_VCS_NUMBER",
+        "bamboo_planRepository_revision",
+        "Build.SourceVersion",
+        "BITBUCKET_COMMIT",
+        "DRONE_COMMIT_SHA",
+        "SEMAPHORE_GIT_SHA",
+        "BUILDKITE_COMMIT",
+    ];
+    const shas = {};
+    for (const env of common_release_envs) {
+        const envVar = getEnvironmentVariable(env);
+        if (envVar !== undefined) {
+            shas[env] = envVar;
+        }
+    }
+    cachedCommitSHAs = shas;
+    return shas;
+}
+function getOtelEnabled() {
+    return (getEnvironmentVariable("OTEL_ENABLED") === "true" ||
+        getLangSmithEnvironmentVariable("OTEL_ENABLED") === "true");
+}
+
+;// CONCATENATED MODULE: ./node_modules/langsmith/dist/singletons/otel.js
+// Should not import any OTEL packages to avoid pulling in optional deps.
+
+class MockTracer {
+    constructor() {
+        Object.defineProperty(this, "hasWarned", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+    }
+    startActiveSpan(_name, ...args) {
+        if (!this.hasWarned && getOtelEnabled()) {
+            console.warn("You have enabled OTEL export via the `OTEL_ENABLED` or `LANGSMITH_OTEL_ENABLED` environment variable, but have not initialized the required OTEL instances. " +
+                'Please add:\n```\nimport { initializeOTEL } from "langsmith/experimental/otel/setup";\ninitializeOTEL();\n```\nat the beginning of your code.');
+            this.hasWarned = true;
+        }
+        // Handle different overloads:
+        // startActiveSpan(name, fn)
+        // startActiveSpan(name, options, fn)
+        // startActiveSpan(name, options, context, fn)
+        let fn;
+        if (args.length === 1 && typeof args[0] === "function") {
+            fn = args[0];
+        }
+        else if (args.length === 2 && typeof args[1] === "function") {
+            fn = args[1];
+        }
+        else if (args.length === 3 && typeof args[2] === "function") {
+            fn = args[2];
+        }
+        if (typeof fn === "function") {
+            return fn();
+        }
+        return undefined;
+    }
+}
+class MockOTELTrace {
+    constructor() {
+        Object.defineProperty(this, "mockTracer", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new MockTracer()
+        });
+    }
+    getTracer(_name, _version) {
+        return this.mockTracer;
+    }
+    getActiveSpan() {
+        return undefined;
+    }
+    setSpan(context, _span) {
+        return context;
+    }
+    getSpan(_context) {
+        return undefined;
+    }
+    setSpanContext(context, _spanContext) {
+        return context;
+    }
+    getTracerProvider() {
+        return undefined;
+    }
+    setGlobalTracerProvider(_tracerProvider) {
+        return false;
+    }
+}
+class MockOTELContext {
+    active() {
+        return {};
+    }
+    with(_context, fn) {
+        return fn();
+    }
+}
+const OTEL_TRACE_KEY = Symbol.for("ls:otel_trace");
+const OTEL_CONTEXT_KEY = Symbol.for("ls:otel_context");
+const OTEL_GET_DEFAULT_OTLP_TRACER_PROVIDER_KEY = Symbol.for("ls:otel_get_default_otlp_tracer_provider");
+const mockOTELTrace = new MockOTELTrace();
+const mockOTELContext = new MockOTELContext();
+class OTELProvider {
+    getTraceInstance() {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return globalThis[OTEL_TRACE_KEY] ?? mockOTELTrace;
+    }
+    getContextInstance() {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return globalThis[OTEL_CONTEXT_KEY] ?? mockOTELContext;
+    }
+    initializeGlobalInstances(otel) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (globalThis[OTEL_TRACE_KEY] === undefined) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            globalThis[OTEL_TRACE_KEY] = otel.trace;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (globalThis[OTEL_CONTEXT_KEY] === undefined) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            globalThis[OTEL_CONTEXT_KEY] = otel.context;
+        }
+    }
+    setDefaultOTLPTracerComponents(components) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        globalThis[OTEL_GET_DEFAULT_OTLP_TRACER_PROVIDER_KEY] = components;
+    }
+    getDefaultOTLPTracerComponents() {
+        return (globalThis[OTEL_GET_DEFAULT_OTLP_TRACER_PROVIDER_KEY] ??
+            undefined);
+    }
+}
+const OTELProviderSingleton = new OTELProvider();
+/**
+ * Get the current OTEL trace instance.
+ * Returns a mock implementation if OTEL is not available.
+ */
+function getOTELTrace() {
+    return OTELProviderSingleton.getTraceInstance();
+}
+/**
+ * Get the current OTEL context instance.
+ * Returns a mock implementation if OTEL is not available.
+ */
+function getOTELContext() {
+    return OTELProviderSingleton.getContextInstance();
+}
+/**
+ * Initialize the global OTEL instances.
+ * Should be called once when OTEL packages are available.
+ */
+function setOTELInstances(otel) {
+    OTELProviderSingleton.initializeGlobalInstances(otel);
+}
+/**
+ * Set a getter function for the default OTLP tracer provider.
+ * This allows lazy initialization of the tracer provider.
+ */
+function setDefaultOTLPTracerComponents(components) {
+    OTELProviderSingleton.setDefaultOTLPTracerComponents(components);
+}
+/**
+ * Get the default OTLP tracer provider instance.
+ * Returns undefined if not set.
+ */
+function getDefaultOTLPTracerComponents() {
+    return OTELProviderSingleton.getDefaultOTLPTracerComponents();
+}
+
+;// CONCATENATED MODULE: ./node_modules/langsmith/dist/experimental/otel/translator.js
+
+
+const WELL_KNOWN_OPERATION_NAMES = {
+    llm: "chat",
+    tool: "execute_tool",
+    retriever: "embeddings",
+    embedding: "embeddings",
+    prompt: "chat",
+};
+function getOperationName(runType) {
+    return WELL_KNOWN_OPERATION_NAMES[runType] || runType;
+}
+class LangSmithToOTELTranslator {
+    constructor() {
+        Object.defineProperty(this, "spans", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Map()
+        });
+    }
+    exportBatch(operations, otelContextMap) {
+        for (const op of operations) {
+            try {
+                if (!op.run) {
+                    continue;
+                }
+                if (op.operation === "post") {
+                    const span = this.createSpanForRun(op, op.run, otelContextMap.get(op.id));
+                    if (span && !op.run.end_time) {
+                        this.spans.set(op.id, span);
+                    }
+                }
+                else {
+                    this.updateSpanForRun(op, op.run);
+                }
+            }
+            catch (e) {
+                console.error(`Error processing operation ${op.id}:`, e);
+            }
+        }
+    }
+    createSpanForRun(op, runInfo, otelContext) {
+        const activeSpan = otelContext && getOTELTrace().getSpan(otelContext);
+        if (!activeSpan) {
+            return;
+        }
+        try {
+            return this.finishSpanSetup(activeSpan, runInfo, op);
+        }
+        catch (e) {
+            console.error(`Failed to create span for run ${op.id}:`, e);
+            return undefined;
+        }
+    }
+    finishSpanSetup(span, runInfo, op) {
+        // Set all attributes
+        this.setSpanAttributes(span, runInfo, op);
+        // Set status based on error
+        if (runInfo.error) {
+            span.setStatus({ code: 2 }); // ERROR status
+            span.recordException(new Error(runInfo.error));
+        }
+        else {
+            span.setStatus({ code: 1 }); // OK status
+        }
+        // End the span if end_time is present
+        if (runInfo.end_time) {
+            span.end(new Date(runInfo.end_time));
+        }
+        return span;
+    }
+    updateSpanForRun(op, runInfo) {
+        try {
+            const span = this.spans.get(op.id);
+            if (!span) {
+                console.debug(`No span found for run ${op.id} during update`);
+                return;
+            }
+            // Update attributes
+            this.setSpanAttributes(span, runInfo, op);
+            // Update status based on error
+            if (runInfo.error) {
+                span.setStatus({ code: 2 }); // ERROR status
+                span.recordException(new Error(runInfo.error));
+            }
+            else {
+                span.setStatus({ code: 1 }); // OK status
+            }
+            // End the span if end_time is present
+            const endTime = runInfo.end_time;
+            if (endTime) {
+                span.end(new Date(endTime));
+                this.spans.delete(op.id);
+            }
+        }
+        catch (e) {
+            console.error(`Failed to update span for run ${op.id}:`, e);
+        }
+    }
+    extractModelName(runInfo) {
+        // Try to get model name from metadata
+        if (runInfo.extra?.metadata) {
+            const metadata = runInfo.extra.metadata;
+            // First check for ls_model_name in metadata
+            if (metadata.ls_model_name) {
+                return metadata.ls_model_name;
+            }
+            // Then check invocation_params for model info
+            if (metadata.invocation_params) {
+                const invocationParams = metadata.invocation_params;
+                if (invocationParams.model) {
+                    return invocationParams.model;
+                }
+                else if (invocationParams.model_name) {
+                    return invocationParams.model_name;
+                }
+            }
+        }
+        return;
+    }
+    setSpanAttributes(span, runInfo, op) {
+        if ("run_type" in runInfo && runInfo.run_type) {
+            span.setAttribute(LANGSMITH_RUN_TYPE, runInfo.run_type);
+            // Set GenAI attributes according to OTEL semantic conventions
+            const operationName = getOperationName(runInfo.run_type || "chain");
+            span.setAttribute(GEN_AI_OPERATION_NAME, operationName);
+        }
+        if ("name" in runInfo && runInfo.name) {
+            span.setAttribute(LANGSMITH_NAME, runInfo.name);
+        }
+        if ("session_id" in runInfo && runInfo.session_id) {
+            span.setAttribute(LANGSMITH_SESSION_ID, runInfo.session_id);
+        }
+        if ("session_name" in runInfo && runInfo.session_name) {
+            span.setAttribute(LANGSMITH_SESSION_NAME, runInfo.session_name);
+        }
+        // Set gen_ai.system
+        this.setGenAiSystem(span, runInfo);
+        // Set model name if available
+        const modelName = this.extractModelName(runInfo);
+        if (modelName) {
+            span.setAttribute(GEN_AI_REQUEST_MODEL, modelName);
+        }
+        // Set token usage information
+        if ("prompt_tokens" in runInfo &&
+            typeof runInfo.prompt_tokens === "number") {
+            span.setAttribute(GEN_AI_USAGE_INPUT_TOKENS, runInfo.prompt_tokens);
+        }
+        if ("completion_tokens" in runInfo &&
+            typeof runInfo.completion_tokens === "number") {
+            span.setAttribute(GEN_AI_USAGE_OUTPUT_TOKENS, runInfo.completion_tokens);
+        }
+        if ("total_tokens" in runInfo && typeof runInfo.total_tokens === "number") {
+            span.setAttribute(GEN_AI_USAGE_TOTAL_TOKENS, runInfo.total_tokens);
+        }
+        // Set other parameters from invocation_params
+        this.setInvocationParameters(span, runInfo);
+        // Set metadata and tags if available
+        const metadata = runInfo.extra?.metadata || {};
+        for (const [key, value] of Object.entries(metadata)) {
+            if (value !== null && value !== undefined) {
+                span.setAttribute(`${LANGSMITH_METADATA}.${key}`, String(value));
+            }
+        }
+        const tags = runInfo.tags;
+        if (tags && Array.isArray(tags)) {
+            span.setAttribute(LANGSMITH_TAGS, tags.join(", "));
+        }
+        else if (tags) {
+            span.setAttribute(LANGSMITH_TAGS, String(tags));
+        }
+        // Support additional serialized attributes, if present
+        if ("serialized" in runInfo && typeof runInfo.serialized === "object") {
+            const serialized = runInfo.serialized;
+            if (serialized.name) {
+                span.setAttribute(GEN_AI_SERIALIZED_NAME, String(serialized.name));
+            }
+            if (serialized.signature) {
+                span.setAttribute(GEN_AI_SERIALIZED_SIGNATURE, String(serialized.signature));
+            }
+            if (serialized.doc) {
+                span.setAttribute(GEN_AI_SERIALIZED_DOC, String(serialized.doc));
+            }
+        }
+        // Set inputs/outputs if available
+        this.setIOAttributes(span, op);
+    }
+    setGenAiSystem(span, runInfo) {
+        // Default to "langchain" if we can't determine the system
+        let system = "langchain";
+        // Extract model name to determine the system
+        const modelName = this.extractModelName(runInfo);
+        if (modelName) {
+            const modelLower = modelName.toLowerCase();
+            if (modelLower.includes("anthropic") || modelLower.startsWith("claude")) {
+                system = "anthropic";
+            }
+            else if (modelLower.includes("bedrock")) {
+                system = "aws.bedrock";
+            }
+            else if (modelLower.includes("azure") &&
+                modelLower.includes("openai")) {
+                system = "az.ai.openai";
+            }
+            else if (modelLower.includes("azure") &&
+                modelLower.includes("inference")) {
+                system = "az.ai.inference";
+            }
+            else if (modelLower.includes("cohere")) {
+                system = "cohere";
+            }
+            else if (modelLower.includes("deepseek")) {
+                system = "deepseek";
+            }
+            else if (modelLower.includes("gemini")) {
+                system = "gemini";
+            }
+            else if (modelLower.includes("groq")) {
+                system = "groq";
+            }
+            else if (modelLower.includes("watson") || modelLower.includes("ibm")) {
+                system = "ibm.watsonx.ai";
+            }
+            else if (modelLower.includes("mistral")) {
+                system = "mistral_ai";
+            }
+            else if (modelLower.includes("gpt") || modelLower.includes("openai")) {
+                system = "openai";
+            }
+            else if (modelLower.includes("perplexity") ||
+                modelLower.includes("sonar")) {
+                system = "perplexity";
+            }
+            else if (modelLower.includes("vertex")) {
+                system = "vertex_ai";
+            }
+            else if (modelLower.includes("xai") || modelLower.includes("grok")) {
+                system = "xai";
+            }
+        }
+        span.setAttribute(GEN_AI_SYSTEM, system);
+    }
+    setInvocationParameters(span, runInfo) {
+        if (!runInfo.extra?.metadata?.invocation_params) {
+            return;
+        }
+        const invocationParams = runInfo.extra.metadata.invocation_params;
+        // Set relevant invocation parameters
+        if (invocationParams.max_tokens !== undefined) {
+            span.setAttribute(GEN_AI_REQUEST_MAX_TOKENS, invocationParams.max_tokens);
+        }
+        if (invocationParams.temperature !== undefined) {
+            span.setAttribute(GEN_AI_REQUEST_TEMPERATURE, invocationParams.temperature);
+        }
+        if (invocationParams.top_p !== undefined) {
+            span.setAttribute(GEN_AI_REQUEST_TOP_P, invocationParams.top_p);
+        }
+        if (invocationParams.frequency_penalty !== undefined) {
+            span.setAttribute(GEN_AI_REQUEST_FREQUENCY_PENALTY, invocationParams.frequency_penalty);
+        }
+        if (invocationParams.presence_penalty !== undefined) {
+            span.setAttribute(GEN_AI_REQUEST_PRESENCE_PENALTY, invocationParams.presence_penalty);
+        }
+    }
+    setIOAttributes(span, op) {
+        if (op.run.inputs) {
+            try {
+                const inputs = op.run.inputs;
+                if (typeof inputs === "object" && inputs !== null) {
+                    if (inputs.model && Array.isArray(inputs.messages)) {
+                        span.setAttribute(GEN_AI_REQUEST_MODEL, inputs.model);
+                    }
+                    // Set additional request attributes if available
+                    if (inputs.stream !== undefined) {
+                        span.setAttribute(LANGSMITH_REQUEST_STREAMING, inputs.stream);
+                    }
+                    if (inputs.extra_headers) {
+                        span.setAttribute(LANGSMITH_REQUEST_HEADERS, JSON.stringify(inputs.extra_headers));
+                    }
+                    if (inputs.extra_query) {
+                        span.setAttribute(GEN_AI_REQUEST_EXTRA_QUERY, JSON.stringify(inputs.extra_query));
+                    }
+                    if (inputs.extra_body) {
+                        span.setAttribute(GEN_AI_REQUEST_EXTRA_BODY, JSON.stringify(inputs.extra_body));
+                    }
+                }
+                span.setAttribute(GENAI_PROMPT, JSON.stringify(inputs));
+            }
+            catch (e) {
+                console.debug(`Failed to process inputs for run ${op.id}`, e);
+            }
+        }
+        if (op.run.outputs) {
+            try {
+                const outputs = op.run.outputs;
+                // Extract token usage from outputs (for LLM runs)
+                const tokenUsage = this.getUnifiedRunTokens(outputs);
+                if (tokenUsage) {
+                    span.setAttribute(GEN_AI_USAGE_INPUT_TOKENS, tokenUsage[0]);
+                    span.setAttribute(GEN_AI_USAGE_OUTPUT_TOKENS, tokenUsage[1]);
+                    span.setAttribute(GEN_AI_USAGE_TOTAL_TOKENS, tokenUsage[0] + tokenUsage[1]);
+                }
+                if (outputs && typeof outputs === "object") {
+                    if (outputs.model) {
+                        span.setAttribute(GEN_AI_RESPONSE_MODEL, String(outputs.model));
+                    }
+                    // Extract additional response attributes
+                    if (outputs.id) {
+                        span.setAttribute(GEN_AI_RESPONSE_ID, outputs.id);
+                    }
+                    if (outputs.choices && Array.isArray(outputs.choices)) {
+                        const finishReasons = outputs.choices
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            .map((choice) => choice.finish_reason)
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            .filter((reason) => reason)
+                            .map(String);
+                        if (finishReasons.length > 0) {
+                            span.setAttribute(GEN_AI_RESPONSE_FINISH_REASONS, finishReasons.join(", "));
+                        }
+                    }
+                    if (outputs.service_tier) {
+                        span.setAttribute(GEN_AI_RESPONSE_SERVICE_TIER, outputs.service_tier);
+                    }
+                    if (outputs.system_fingerprint) {
+                        span.setAttribute(GEN_AI_RESPONSE_SYSTEM_FINGERPRINT, outputs.system_fingerprint);
+                    }
+                    if (outputs.usage_metadata &&
+                        typeof outputs.usage_metadata === "object") {
+                        const usageMetadata = outputs.usage_metadata;
+                        if (usageMetadata.input_token_details) {
+                            span.setAttribute(GEN_AI_USAGE_INPUT_TOKEN_DETAILS, JSON.stringify(usageMetadata.input_token_details));
+                        }
+                        if (usageMetadata.output_token_details) {
+                            span.setAttribute(GEN_AI_USAGE_OUTPUT_TOKEN_DETAILS, JSON.stringify(usageMetadata.output_token_details));
+                        }
+                    }
+                }
+                span.setAttribute(GENAI_COMPLETION, JSON.stringify(outputs));
+            }
+            catch (e) {
+                console.debug(`Failed to process outputs for run ${op.id}`, e);
+            }
+        }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getUnifiedRunTokens(outputs) {
+        if (!outputs) {
+            return null;
+        }
+        // Search in non-generations lists
+        let tokenUsage = this.extractUnifiedRunTokens(outputs.usage_metadata);
+        if (tokenUsage) {
+            return tokenUsage;
+        }
+        // Find if direct kwarg in outputs
+        const keys = Object.keys(outputs);
+        for (const key of keys) {
+            const haystack = outputs[key];
+            if (!haystack || typeof haystack !== "object") {
+                continue;
+            }
+            tokenUsage = this.extractUnifiedRunTokens(haystack.usage_metadata);
+            if (tokenUsage) {
+                return tokenUsage;
+            }
+            if (haystack.lc === 1 &&
+                haystack.kwargs &&
+                typeof haystack.kwargs === "object") {
+                tokenUsage = this.extractUnifiedRunTokens(haystack.kwargs.usage_metadata);
+                if (tokenUsage) {
+                    return tokenUsage;
+                }
+            }
+        }
+        // Find in generations
+        const generations = outputs.generations || [];
+        if (!Array.isArray(generations)) {
+            return null;
+        }
+        const flatGenerations = Array.isArray(generations[0])
+            ? generations.flat()
+            : generations;
+        for (const generation of flatGenerations) {
+            if (typeof generation === "object" &&
+                generation.message &&
+                typeof generation.message === "object" &&
+                generation.message.kwargs &&
+                typeof generation.message.kwargs === "object") {
+                tokenUsage = this.extractUnifiedRunTokens(generation.message.kwargs.usage_metadata);
+                if (tokenUsage) {
+                    return tokenUsage;
+                }
+            }
+        }
+        return null;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    extractUnifiedRunTokens(outputs) {
+        if (!outputs || typeof outputs !== "object") {
+            return null;
+        }
+        if (typeof outputs.input_tokens !== "number" ||
+            typeof outputs.output_tokens !== "number") {
+            return null;
+        }
+        return [outputs.input_tokens, outputs.output_tokens];
+    }
+}
+
+// EXTERNAL MODULE: ./node_modules/p-queue/dist/index.js
+var p_queue_dist = __nccwpck_require__(6459);
 ;// CONCATENATED MODULE: ./node_modules/langsmith/dist/utils/async_caller.js
 
 
@@ -80478,9 +82545,12 @@ function convertLangChainMessageToExample(message) {
 }
 
 ;// CONCATENATED MODULE: ./node_modules/langsmith/dist/utils/_uuid.js
-
+// Relaxed UUID validation regex (allows any valid UUID format including nil UUIDs)
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function assertUuid(str, which) {
-    if (!wrapper_validate(str)) {
+    // Use relaxed regex validation instead of strict uuid.validate()
+    // This allows edge cases like nil UUIDs or test UUIDs that might not pass strict validation
+    if (!UUID_REGEX.test(str)) {
         const msg = which !== undefined
             ? `Invalid UUID for ${which}: ${str}`
             : `Invalid UUID: ${str}`;
@@ -80628,10 +82698,30 @@ async function raiseForStatus(response, context, consume) {
     err.status = response.status;
     throw err;
 }
+const ERR_CONFLICTING_ENDPOINTS = "ERR_CONFLICTING_ENDPOINTS";
+class ConflictingEndpointsError extends Error {
+    constructor() {
+        super("You cannot provide both LANGSMITH_ENDPOINT / LANGCHAIN_ENDPOINT " +
+            "and LANGSMITH_RUNS_ENDPOINTS.");
+        Object.defineProperty(this, "code", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ERR_CONFLICTING_ENDPOINTS
+        });
+        this.name = "ConflictingEndpointsError"; // helpful in logs
+    }
+}
+function isConflictingEndpointsError(err) {
+    return (typeof err === "object" &&
+        err !== null &&
+        err.code === ERR_CONFLICTING_ENDPOINTS);
+}
 
 ;// CONCATENATED MODULE: ./node_modules/langsmith/dist/utils/fast-safe-stringify/index.js
 /* eslint-disable */
 // @ts-nocheck
+
 var LIMIT_REPLACE_NODE = "[...]";
 var CIRCULAR_REPLACE_NODE = { result: "[Circular]" };
 var arr = [];
@@ -80646,10 +82736,52 @@ function defaultOptions() {
 function encodeString(str) {
     return encoder.encode(str);
 }
+// Shared function to handle well-known types
+function serializeWellKnownTypes(val) {
+    if (val && typeof val === "object" && val !== null) {
+        if (val instanceof Map) {
+            return Object.fromEntries(val);
+        }
+        else if (val instanceof Set) {
+            return Array.from(val);
+        }
+        else if (val instanceof Date) {
+            return val.toISOString();
+        }
+        else if (val instanceof RegExp) {
+            return val.toString();
+        }
+        else if (val instanceof Error) {
+            return {
+                name: val.name,
+                message: val.message,
+            };
+        }
+    }
+    else if (typeof val === "bigint") {
+        return val.toString();
+    }
+    return val;
+}
+// Default replacer function to handle well-known types
+function createDefaultReplacer(userReplacer) {
+    return function (key, val) {
+        // Apply user replacer first if provided
+        if (userReplacer) {
+            const userResult = userReplacer.call(this, key, val);
+            // If user replacer returned undefined, fall back to our serialization
+            if (userResult !== undefined) {
+                return userResult;
+            }
+        }
+        // Fall back to our well-known type handling
+        return serializeWellKnownTypes(val);
+    };
+}
 // Regular stringify
 function serialize(obj, errorContext, replacer, spacer, options) {
     try {
-        const str = JSON.stringify(obj, replacer, spacer);
+        const str = JSON.stringify(obj, createDefaultReplacer(replacer), spacer);
         return encodeString(str);
     }
     catch (e) {
@@ -80658,7 +82790,9 @@ function serialize(obj, errorContext, replacer, spacer, options) {
             console.warn(`[WARNING]: LangSmith received unserializable value.${errorContext ? `\nContext: ${errorContext}` : ""}`);
             return encodeString("[Unserializable]");
         }
-        console.warn(`[WARNING]: LangSmith received circular JSON. This will decrease tracer performance. ${errorContext ? `\nContext: ${errorContext}` : ""}`);
+        getLangSmithEnvironmentVariable("SUPPRESS_CIRCULAR_JSON_WARNINGS") !==
+            "true" &&
+            console.warn(`[WARNING]: LangSmith received circular JSON. This will decrease tracer performance. ${errorContext ? `\nContext: ${errorContext}` : ""}`);
         if (typeof options === "undefined") {
             options = defaultOptions();
         }
@@ -80733,6 +82867,8 @@ function decirc(val, k, edgeIndex, stack, parent, depth, options) {
             }
         }
         else {
+            // Handle well-known types before Object.keys iteration
+            val = serializeWellKnownTypes(val);
             var keys = Object.keys(val);
             for (i = 0; i < keys.length; i++) {
                 var key = keys[i];
@@ -80819,6 +82955,8 @@ function deterministicDecirc(val, k, edgeIndex, stack, parent, depth, options) {
             }
         }
         else {
+            // Handle well-known types before Object.keys iteration
+            val = serializeWellKnownTypes(val);
             // Create a temporary object in the required way
             var tmp = {};
             var keys = Object.keys(val).sort(compareFunction);
@@ -80874,7 +83012,9 @@ function replaceGetterValues(replacer) {
 
 
 
-function mergeRuntimeEnvIntoRunCreate(run) {
+
+
+function mergeRuntimeEnvIntoRun(run) {
     const runtimeEnv = getRuntimeEnvironment();
     const envVars = getLangChainEnvVarsMetadata();
     const extra = run.extra ?? {};
@@ -80887,8 +83027,11 @@ function mergeRuntimeEnvIntoRunCreate(run) {
         },
         metadata: {
             ...envVars,
-            ...(envVars.revision_id || run.revision_id
-                ? { revision_id: run.revision_id ?? envVars.revision_id }
+            ...(envVars.revision_id || ("revision_id" in run && run.revision_id)
+                ? {
+                    revision_id: ("revision_id" in run ? run.revision_id : undefined) ??
+                        envVars.revision_id,
+                }
                 : {}),
             ...metadata,
         },
@@ -80977,6 +83120,9 @@ class AutoBatchQueue {
         this.items.push({
             action: item.action,
             payload: item.item,
+            otelContext: item.otelContext,
+            apiKey: item.apiKey,
+            apiUrl: item.apiUrl,
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             itemPromiseResolve: itemPromiseResolve,
             itemPromise,
@@ -81010,7 +83156,13 @@ class AutoBatchQueue {
             this.sizeBytes -= item.size;
         }
         return [
-            popped.map((it) => ({ action: it.action, item: it.payload })),
+            popped.map((it) => ({
+                action: it.action,
+                item: it.payload,
+                otelContext: it.otelContext,
+                apiKey: it.apiKey,
+                apiUrl: it.apiUrl,
+            })),
             () => popped.forEach((it) => it.itemPromiseResolve()),
         ];
     }
@@ -81018,6 +83170,7 @@ class AutoBatchQueue {
 // 20 MB
 const DEFAULT_BATCH_SIZE_LIMIT_BYTES = 20_971_520;
 const SERVER_INFO_REQUEST_TIMEOUT = 2500;
+const DEFAULT_API_URL = "https://api.smith.langchain.com";
 class Client {
     constructor(config = {}) {
         Object.defineProperty(this, "apiKey", {
@@ -81159,6 +83312,18 @@ class Client {
             writable: true,
             value: false
         });
+        Object.defineProperty(this, "langSmithToOTELTranslator", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "multipartStreamingDisabled", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
         Object.defineProperty(this, "debug", {
             enumerable: true,
             configurable: true,
@@ -81204,11 +83369,13 @@ class Client {
         this.batchSizeBytesLimit = config.batchSizeBytesLimit;
         this.fetchOptions = config.fetchOptions || {};
         this.manualFlushMode = config.manualFlushMode ?? this.manualFlushMode;
+        if (getOtelEnabled()) {
+            this.langSmithToOTELTranslator = new LangSmithToOTELTranslator();
+        }
     }
     static getDefaultClientConfig() {
         const apiKey = getLangSmithEnvironmentVariable("API_KEY");
-        const apiUrl = getLangSmithEnvironmentVariable("ENDPOINT") ??
-            "https://api.smith.langchain.com";
+        const apiUrl = getLangSmithEnvironmentVariable("ENDPOINT") ?? DEFAULT_API_URL;
         const hideInputs = getLangSmithEnvironmentVariable("HIDE_INPUTS") === "true";
         const hideOutputs = getLangSmithEnvironmentVariable("HIDE_OUTPUTS") === "true";
         return {
@@ -81261,6 +83428,11 @@ class Client {
             headers["x-api-key"] = `${this.apiKey}`;
         }
         return headers;
+    }
+    _getPlatformEndpointPath(path) {
+        // Check if apiUrl already ends with /v1 or /v1/ to avoid double /v1/v1/ paths
+        const needsV1Prefix = this.apiUrl.slice(-3) !== "/v1" && this.apiUrl.slice(-4) !== "/v1/";
+        return needsV1Prefix ? `/v1/platform/${path}` : `/platform/${path}`;
     }
     async processInputs(inputs) {
         if (this.hideInputs === false) {
@@ -81381,11 +83553,11 @@ class Client {
         if (patch) {
             const sampled = [];
             for (const run of runs) {
-                if (!this.filteredPostUuids.has(run.id)) {
+                if (!this.filteredPostUuids.has(run.trace_id)) {
                     sampled.push(run);
                 }
-                else {
-                    this.filteredPostUuids.delete(run.id);
+                else if (run.id === run.trace_id) {
+                    this.filteredPostUuids.delete(run.trace_id);
                 }
             }
             return sampled;
@@ -81434,43 +83606,93 @@ class Client {
                 done();
                 break;
             }
-            const batchPromise = this._processBatch(batch, done).catch(console.error);
-            promises.push(batchPromise);
+            const batchesByDestination = batch.reduce((acc, item) => {
+                const apiUrl = item.apiUrl ?? this.apiUrl;
+                const apiKey = item.apiKey ?? this.apiKey;
+                const isDefault = item.apiKey === this.apiKey && item.apiUrl === this.apiUrl;
+                const batchKey = isDefault ? "default" : `${apiUrl}|${apiKey}`;
+                if (!acc[batchKey]) {
+                    acc[batchKey] = [];
+                }
+                acc[batchKey].push(item);
+                return acc;
+            }, {});
+            const batchPromises = [];
+            for (const [batchKey, batch] of Object.entries(batchesByDestination)) {
+                const batchPromise = this._processBatch(batch, {
+                    apiUrl: batchKey === "default" ? undefined : batchKey.split("|")[0],
+                    apiKey: batchKey === "default" ? undefined : batchKey.split("|")[1],
+                });
+                batchPromises.push(batchPromise);
+            }
+            // Wait for all batches to complete, then call the overall done callback
+            const allBatchesPromise = Promise.all(batchPromises).finally(done);
+            promises.push(allBatchesPromise);
         }
         return Promise.all(promises);
     }
-    async _processBatch(batch, done) {
+    async _processBatch(batch, options) {
         if (!batch.length) {
-            done();
             return;
         }
         try {
-            const ingestParams = {
-                runCreates: batch
-                    .filter((item) => item.action === "create")
-                    .map((item) => item.item),
-                runUpdates: batch
-                    .filter((item) => item.action === "update")
-                    .map((item) => item.item),
-            };
-            const serverInfo = await this._ensureServerInfo();
-            if (serverInfo?.batch_ingest_config?.use_multipart_endpoint) {
-                await this.multipartIngestRuns(ingestParams);
+            if (this.langSmithToOTELTranslator !== undefined) {
+                this._sendBatchToOTELTranslator(batch);
             }
             else {
-                await this.batchIngestRuns(ingestParams);
+                const ingestParams = {
+                    runCreates: batch
+                        .filter((item) => item.action === "create")
+                        .map((item) => item.item),
+                    runUpdates: batch
+                        .filter((item) => item.action === "update")
+                        .map((item) => item.item),
+                };
+                const serverInfo = await this._ensureServerInfo();
+                if (serverInfo?.batch_ingest_config?.use_multipart_endpoint) {
+                    await this.multipartIngestRuns(ingestParams, options);
+                }
+                else {
+                    await this.batchIngestRuns(ingestParams, options);
+                }
             }
         }
-        finally {
-            done();
+        catch (e) {
+            console.error("Error exporting batch:", e);
+        }
+    }
+    _sendBatchToOTELTranslator(batch) {
+        if (this.langSmithToOTELTranslator !== undefined) {
+            const otelContextMap = new Map();
+            const operations = [];
+            for (const item of batch) {
+                if (item.item.id && item.otelContext) {
+                    otelContextMap.set(item.item.id, item.otelContext);
+                    if (item.action === "create") {
+                        operations.push({
+                            operation: "post",
+                            id: item.item.id,
+                            trace_id: item.item.trace_id ?? item.item.id,
+                            run: item.item,
+                        });
+                    }
+                    else {
+                        operations.push({
+                            operation: "patch",
+                            id: item.item.id,
+                            trace_id: item.item.trace_id ?? item.item.id,
+                            run: item.item,
+                        });
+                    }
+                }
+            }
+            this.langSmithToOTELTranslator.exportBatch(operations, otelContextMap);
         }
     }
     async processRunOperation(item) {
         clearTimeout(this.autoBatchTimeout);
         this.autoBatchTimeout = undefined;
-        if (item.action === "create") {
-            item.item = mergeRuntimeEnvIntoRunCreate(item.item);
-        }
+        item.item = mergeRuntimeEnvIntoRun(item.item);
         const itemPromise = this.autoBatchQueue.push(item);
         if (this.manualFlushMode) {
             // Rely on manual flushing in serverless environments
@@ -81538,11 +83760,25 @@ class Client {
         const sizeLimitBytes = await this._getBatchSizeLimitBytes();
         await this.drainAutoBatchQueue(sizeLimitBytes);
     }
-    async createRun(run) {
+    _cloneCurrentOTELContext() {
+        const otel_trace = getOTELTrace();
+        const otel_context = getOTELContext();
+        if (this.langSmithToOTELTranslator !== undefined) {
+            const currentSpan = otel_trace.getActiveSpan();
+            if (currentSpan) {
+                return otel_trace.setSpan(otel_context.active(), currentSpan);
+            }
+        }
+        return undefined;
+    }
+    async createRun(run, options) {
         if (!this._filterForSampling([run]).length) {
             return;
         }
-        const headers = { ...this.headers, "Content-Type": "application/json" };
+        const headers = {
+            ...this.headers,
+            "Content-Type": "application/json",
+        };
         const session_name = run.project_name;
         delete run.project_name;
         const runCreate = await this.prepareRunCreateOrUpdateInputs({
@@ -81553,14 +83789,21 @@ class Client {
         if (this.autoBatchTracing &&
             runCreate.trace_id !== undefined &&
             runCreate.dotted_order !== undefined) {
+            const otelContext = this._cloneCurrentOTELContext();
             void this.processRunOperation({
                 action: "create",
                 item: runCreate,
+                otelContext,
+                apiKey: options?.apiKey,
+                apiUrl: options?.apiUrl,
             }).catch(console.error);
             return;
         }
-        const mergedRunCreateParam = mergeRuntimeEnvIntoRunCreate(runCreate);
-        const response = await this.caller.call(_getFetchImplementation(this.debug), `${this.apiUrl}/runs`, {
+        const mergedRunCreateParam = mergeRuntimeEnvIntoRun(runCreate);
+        if (options?.apiKey !== undefined) {
+            headers["x-api-key"] = options.apiKey;
+        }
+        const response = await this.caller.call(_getFetchImplementation(this.debug), `${options?.apiUrl ?? this.apiUrl}/runs`, {
             method: "POST",
             headers,
             body: serialize(mergedRunCreateParam, `Creating run with id: ${mergedRunCreateParam.id}`),
@@ -81573,7 +83816,7 @@ class Client {
      * Batch ingest/upsert multiple runs in the Langsmith system.
      * @param runs
      */
-    async batchIngestRuns({ runCreates, runUpdates, }) {
+    async batchIngestRuns({ runCreates, runUpdates, }, options) {
         if (runCreates === undefined && runUpdates === undefined) {
             return;
         }
@@ -81628,16 +83871,19 @@ class Client {
                 .map((item) => item.id)
                 .concat(batchChunks.patch.map((item) => item.id))
                 .join(",");
-            await this._postBatchIngestRuns(serialize(batchChunks, `Ingesting runs with ids: ${runIds}`));
+            await this._postBatchIngestRuns(serialize(batchChunks, `Ingesting runs with ids: ${runIds}`), options);
         }
     }
-    async _postBatchIngestRuns(body) {
+    async _postBatchIngestRuns(body, options) {
         const headers = {
             ...this.headers,
             "Content-Type": "application/json",
             Accept: "application/json",
         };
-        const response = await this.batchIngestCaller.call(_getFetchImplementation(this.debug), `${this.apiUrl}/runs/batch`, {
+        if (options?.apiKey !== undefined) {
+            headers["x-api-key"] = options.apiKey;
+        }
+        const response = await this.batchIngestCaller.call(_getFetchImplementation(this.debug), `${options?.apiUrl ?? this.apiUrl}/runs/batch`, {
             method: "POST",
             headers,
             body: body,
@@ -81650,7 +83896,7 @@ class Client {
      * Batch ingest/upsert multiple runs in the Langsmith system.
      * @param runs
      */
-    async multipartIngestRuns({ runCreates, runUpdates, }) {
+    async multipartIngestRuns({ runCreates, runUpdates, }, options) {
         if (runCreates === undefined && runUpdates === undefined) {
             return;
         }
@@ -81777,7 +84023,7 @@ class Client {
                 accumulatedContext.push(`trace=${payload.trace_id},id=${payload.id}`);
             }
         }
-        await this._sendMultipartRequest(accumulatedParts, accumulatedContext.join("; "));
+        await this._sendMultipartRequest(accumulatedParts, accumulatedContext.join("; "), options);
     }
     async _createNodeFetchBody(parts, boundary) {
         // Create multipart form data manually using Blobs
@@ -81842,24 +84088,53 @@ class Client {
         });
         return stream;
     }
-    async _sendMultipartRequest(parts, context) {
-        try {
-            // Create multipart form data boundary
-            const boundary = "----LangSmithFormBoundary" + Math.random().toString(36).slice(2);
-            const body = await (_globalFetchImplementationIsNodeFetch()
-                ? this._createNodeFetchBody(parts, boundary)
-                : this._createMultipartStream(parts, boundary));
-            const res = await this.batchIngestCaller.call(_getFetchImplementation(this.debug), `${this.apiUrl}/runs/multipart`, {
+    async _sendMultipartRequest(parts, context, options) {
+        // Create multipart form data boundary
+        const boundary = "----LangSmithFormBoundary" + Math.random().toString(36).slice(2);
+        const isNodeFetch = _globalFetchImplementationIsNodeFetch();
+        const buildBuffered = () => this._createNodeFetchBody(parts, boundary);
+        const buildStream = () => this._createMultipartStream(parts, boundary);
+        const send = async (body) => {
+            const headers = {
+                ...this.headers,
+                "Content-Type": `multipart/form-data; boundary=${boundary}`,
+            };
+            if (options?.apiKey !== undefined) {
+                headers["x-api-key"] = options.apiKey;
+            }
+            return this.batchIngestCaller.call(_getFetchImplementation(this.debug), `${options?.apiUrl ?? this.apiUrl}/runs/multipart`, {
                 method: "POST",
-                headers: {
-                    ...this.headers,
-                    "Content-Type": `multipart/form-data; boundary=${boundary}`,
-                },
+                headers,
                 body,
                 duplex: "half",
                 signal: AbortSignal.timeout(this.timeout_ms),
                 ...this.fetchOptions,
             });
+        };
+        try {
+            let res;
+            let streamedAttempt = false;
+            // attempt stream only if not disabled and not using node-fetch
+            if (!isNodeFetch && !this.multipartStreamingDisabled) {
+                streamedAttempt = true;
+                res = await send(await buildStream());
+            }
+            else {
+                res = await send(await buildBuffered());
+            }
+            // if stream fails, fallback to buffered body
+            if ((!this.multipartStreamingDisabled || streamedAttempt) &&
+                res.status === 422 &&
+                (options?.apiUrl ?? this.apiUrl) !== DEFAULT_API_URL) {
+                console.warn(`Streaming multipart upload to ${options?.apiUrl ?? this.apiUrl}/runs/multipart failed. ` +
+                    `This usually means the host does not support chunked uploads. ` +
+                    `Retrying with a buffered upload for operation "${context}".`);
+                // Disable streaming for future requests
+                this.multipartStreamingDisabled = true;
+                // retry with fully-buffered body
+                res = await send(await buildBuffered());
+            }
+            // raise if still failing
             await raiseForStatus(res, "ingest multipart runs", true);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }
@@ -81867,7 +84142,7 @@ class Client {
             console.warn(`${e.message.trim()}\n\nContext: ${context}`);
         }
     }
-    async updateRun(runId, run) {
+    async updateRun(runId, run, options) {
         assertUuid(runId);
         if (run.inputs) {
             run.inputs = await this.processInputs(run.inputs);
@@ -81883,22 +84158,41 @@ class Client {
         if (this.autoBatchTracing &&
             data.trace_id !== undefined &&
             data.dotted_order !== undefined) {
+            const otelContext = this._cloneCurrentOTELContext();
             if (run.end_time !== undefined &&
                 data.parent_run_id === undefined &&
                 this.blockOnRootRunFinalization &&
                 !this.manualFlushMode) {
                 // Trigger batches as soon as a root trace ends and wait to ensure trace finishes
                 // in serverless environments.
-                await this.processRunOperation({ action: "update", item: data }).catch(console.error);
+                await this.processRunOperation({
+                    action: "update",
+                    item: data,
+                    otelContext,
+                    apiKey: options?.apiKey,
+                    apiUrl: options?.apiUrl,
+                }).catch(console.error);
                 return;
             }
             else {
-                void this.processRunOperation({ action: "update", item: data }).catch(console.error);
+                void this.processRunOperation({
+                    action: "update",
+                    item: data,
+                    otelContext,
+                    apiKey: options?.apiKey,
+                    apiUrl: options?.apiUrl,
+                }).catch(console.error);
             }
             return;
         }
-        const headers = { ...this.headers, "Content-Type": "application/json" };
-        const response = await this.caller.call(_getFetchImplementation(this.debug), `${this.apiUrl}/runs/${runId}`, {
+        const headers = {
+            ...this.headers,
+            "Content-Type": "application/json",
+        };
+        if (options?.apiKey !== undefined) {
+            headers["x-api-key"] = options.apiKey;
+        }
+        const response = await this.caller.call(_getFetchImplementation(this.debug), `${options?.apiUrl ?? this.apiUrl}/runs/${runId}`, {
             method: "PATCH",
             headers,
             body: serialize(run, `Serializing payload to update run with id: ${runId}`),
@@ -82653,14 +84947,14 @@ class Client {
         let path = "/datasets";
         // limit to 1 result
         const params = new URLSearchParams({ limit: "1" });
-        if (datasetId !== undefined && datasetName !== undefined) {
+        if (datasetId && datasetName) {
             throw new Error("Must provide either datasetName or datasetId, not both");
         }
-        else if (datasetId !== undefined) {
+        else if (datasetId) {
             assertUuid(datasetId);
             path += `/${datasetId}`;
         }
-        else if (datasetName !== undefined) {
+        else if (datasetName) {
             params.append("name", datasetName);
         }
         else {
@@ -83825,7 +86119,7 @@ class Client {
         const settings = await this._getSettings();
         if (options?.isPublic && !settings.tenant_handle) {
             throw new Error(`Cannot create a public prompt without first\n
-        creating a LangChain Hub handle. 
+        creating a LangChain Hub handle.
         You can add a handle by creating a public prompt at:\n
         https://smith.langchain.com/prompts`);
         }
@@ -83943,7 +86237,7 @@ class Client {
             }
         }
         const datasetIdToUse = datasetId ?? updates[0]?.dataset_id;
-        const response = await this.caller.call(_getFetchImplementation(this.debug), `${this.apiUrl}/v1/platform/datasets/${datasetIdToUse}/examples`, {
+        const response = await this.caller.call(_getFetchImplementation(this.debug), `${this.apiUrl}${this._getPlatformEndpointPath(`datasets/${datasetIdToUse}/examples`)}`, {
             method: "PATCH",
             headers: this.headers,
             body: formData,
@@ -84021,7 +86315,7 @@ class Client {
                 }
             }
         }
-        const response = await this.caller.call(_getFetchImplementation(this.debug), `${this.apiUrl}/v1/platform/datasets/${datasetId}/examples`, {
+        const response = await this.caller.call(_getFetchImplementation(this.debug), `${this.apiUrl}${this._getPlatformEndpointPath(`datasets/${datasetId}/examples`)}`, {
             method: "POST",
             headers: this.headers,
             body: formData,
@@ -84243,243 +86537,22 @@ class Client {
      *
      * @returns A promise that resolves once all currently pending traces have sent.
      */
-    awaitPendingTraceBatches() {
+    async awaitPendingTraceBatches() {
         if (this.manualFlushMode) {
             console.warn("[WARNING]: When tracing in manual flush mode, you must call `await client.flush()` manually to submit trace batches.");
             return Promise.resolve();
         }
-        return Promise.all([
+        await Promise.all([
             ...this.autoBatchQueue.items.map(({ itemPromise }) => itemPromise),
             this.batchIngestCaller.queue.onIdle(),
         ]);
+        if (this.langSmithToOTELTranslator !== undefined) {
+            await getDefaultOTLPTracerComponents()?.DEFAULT_LANGSMITH_SPAN_PROCESSOR?.forceFlush();
+        }
     }
 }
 function isExampleCreate(input) {
     return "dataset_id" in input || "dataset_name" in input;
-}
-
-;// CONCATENATED MODULE: ./node_modules/langsmith/dist/index.js
-
-
-
-// Update using yarn bump-version
-const __version__ = "0.3.31";
-
-;// CONCATENATED MODULE: ./node_modules/langsmith/dist/utils/env.js
-// Inlined from https://github.com/flexdinesh/browser-or-node
-
-let globalEnv;
-const isBrowser = () => typeof window !== "undefined" && typeof window.document !== "undefined";
-const isWebWorker = () => typeof globalThis === "object" &&
-    globalThis.constructor &&
-    globalThis.constructor.name === "DedicatedWorkerGlobalScope";
-const isJsDom = () => (typeof window !== "undefined" && window.name === "nodejs") ||
-    (typeof navigator !== "undefined" && navigator.userAgent.includes("jsdom"));
-// Supabase Edge Function provides a `Deno` global object
-// without `version` property
-const isDeno = () => typeof Deno !== "undefined";
-// Mark not-as-node if in Supabase Edge Function
-const isNode = () => typeof process !== "undefined" &&
-    typeof process.versions !== "undefined" &&
-    typeof process.versions.node !== "undefined" &&
-    !isDeno();
-const getEnv = () => {
-    if (globalEnv) {
-        return globalEnv;
-    }
-    if (isBrowser()) {
-        globalEnv = "browser";
-    }
-    else if (isNode()) {
-        globalEnv = "node";
-    }
-    else if (isWebWorker()) {
-        globalEnv = "webworker";
-    }
-    else if (isJsDom()) {
-        globalEnv = "jsdom";
-    }
-    else if (isDeno()) {
-        globalEnv = "deno";
-    }
-    else {
-        globalEnv = "other";
-    }
-    return globalEnv;
-};
-let runtimeEnvironment;
-function getRuntimeEnvironment() {
-    if (runtimeEnvironment === undefined) {
-        const env = getEnv();
-        const releaseEnv = getShas();
-        runtimeEnvironment = {
-            library: "langsmith",
-            runtime: env,
-            sdk: "langsmith-js",
-            sdk_version: __version__,
-            ...releaseEnv,
-        };
-    }
-    return runtimeEnvironment;
-}
-/**
- * Retrieves the LangChain-specific environment variables from the current runtime environment.
- * Sensitive keys (containing the word "key", "token", or "secret") have their values redacted for security.
- *
- * @returns {Record<string, string>}
- *  - A record of LangChain-specific environment variables.
- */
-function getLangChainEnvVars() {
-    const allEnvVars = getEnvironmentVariables() || {};
-    const envVars = {};
-    for (const [key, value] of Object.entries(allEnvVars)) {
-        if (key.startsWith("LANGCHAIN_") && typeof value === "string") {
-            envVars[key] = value;
-        }
-    }
-    for (const key in envVars) {
-        if ((key.toLowerCase().includes("key") ||
-            key.toLowerCase().includes("secret") ||
-            key.toLowerCase().includes("token")) &&
-            typeof envVars[key] === "string") {
-            const value = envVars[key];
-            envVars[key] =
-                value.slice(0, 2) + "*".repeat(value.length - 4) + value.slice(-2);
-        }
-    }
-    return envVars;
-}
-/**
- * Retrieves the LangChain-specific metadata from the current runtime environment.
- *
- * @returns {Record<string, string>}
- *  - A record of LangChain-specific metadata environment variables.
- */
-function getLangChainEnvVarsMetadata() {
-    const allEnvVars = getEnvironmentVariables() || {};
-    const envVars = {};
-    const excluded = [
-        "LANGCHAIN_API_KEY",
-        "LANGCHAIN_ENDPOINT",
-        "LANGCHAIN_TRACING_V2",
-        "LANGCHAIN_PROJECT",
-        "LANGCHAIN_SESSION",
-        "LANGSMITH_API_KEY",
-        "LANGSMITH_ENDPOINT",
-        "LANGSMITH_TRACING_V2",
-        "LANGSMITH_PROJECT",
-        "LANGSMITH_SESSION",
-    ];
-    for (const [key, value] of Object.entries(allEnvVars)) {
-        if ((key.startsWith("LANGCHAIN_") || key.startsWith("LANGSMITH_")) &&
-            typeof value === "string" &&
-            !excluded.includes(key) &&
-            !key.toLowerCase().includes("key") &&
-            !key.toLowerCase().includes("secret") &&
-            !key.toLowerCase().includes("token")) {
-            if (key === "LANGCHAIN_REVISION_ID") {
-                envVars["revision_id"] = value;
-            }
-            else {
-                envVars[key] = value;
-            }
-        }
-    }
-    return envVars;
-}
-/**
- * Retrieves the environment variables from the current runtime environment.
- *
- * This function is designed to operate in a variety of JS environments,
- * including Node.js, Deno, browsers, etc.
- *
- * @returns {Record<string, string> | undefined}
- *  - A record of environment variables if available.
- *  - `undefined` if the environment does not support or allows access to environment variables.
- */
-function getEnvironmentVariables() {
-    try {
-        // Check for Node.js environment
-        // eslint-disable-next-line no-process-env
-        if (typeof process !== "undefined" && process.env) {
-            // eslint-disable-next-line no-process-env
-            return Object.entries(process.env).reduce((acc, [key, value]) => {
-                acc[key] = String(value);
-                return acc;
-            }, {});
-        }
-        // For browsers and other environments, we may not have direct access to env variables
-        // Return undefined or any other fallback as required.
-        return undefined;
-    }
-    catch (e) {
-        // Catch any errors that might occur while trying to access environment variables
-        return undefined;
-    }
-}
-function getEnvironmentVariable(name) {
-    // Certain Deno setups will throw an error if you try to access environment variables
-    // https://github.com/hwchase17/langchainjs/issues/1412
-    try {
-        return typeof process !== "undefined"
-            ? // eslint-disable-next-line no-process-env
-                process.env?.[name]
-            : undefined;
-    }
-    catch (e) {
-        return undefined;
-    }
-}
-function getLangSmithEnvironmentVariable(name) {
-    return (getEnvironmentVariable(`LANGSMITH_${name}`) ||
-        getEnvironmentVariable(`LANGCHAIN_${name}`));
-}
-function setEnvironmentVariable(name, value) {
-    if (typeof process !== "undefined") {
-        // eslint-disable-next-line no-process-env
-        process.env[name] = value;
-    }
-}
-let cachedCommitSHAs;
-/**
- * Get the Git commit SHA from common environment variables
- * used by different CI/CD platforms.
- * @returns {string | undefined} The Git commit SHA or undefined if not found.
- */
-function getShas() {
-    if (cachedCommitSHAs !== undefined) {
-        return cachedCommitSHAs;
-    }
-    const common_release_envs = [
-        "VERCEL_GIT_COMMIT_SHA",
-        "NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA",
-        "COMMIT_REF",
-        "RENDER_GIT_COMMIT",
-        "CI_COMMIT_SHA",
-        "CIRCLE_SHA1",
-        "CF_PAGES_COMMIT_SHA",
-        "REACT_APP_GIT_SHA",
-        "SOURCE_VERSION",
-        "GITHUB_SHA",
-        "TRAVIS_COMMIT",
-        "GIT_COMMIT",
-        "BUILD_VCS_NUMBER",
-        "bamboo_planRepository_revision",
-        "Build.SourceVersion",
-        "BITBUCKET_COMMIT",
-        "DRONE_COMMIT_SHA",
-        "SEMAPHORE_GIT_SHA",
-        "BUILDKITE_COMMIT",
-    ];
-    const shas = {};
-    for (const env of common_release_envs) {
-        const envVar = getEnvironmentVariable(env);
-        if (envVar !== undefined) {
-            shas[env] = envVar;
-        }
-    }
-    cachedCommitSHAs = shas;
-    return shas;
 }
 
 ;// CONCATENATED MODULE: ./node_modules/langsmith/dist/env.js
@@ -84502,6 +86575,9 @@ const _LC_CONTEXT_VARIABLES_KEY = Symbol.for("lc:context_variables");
 
 
 
+
+
+
 function stripNonAlphanumeric(input) {
     return input.replace(/[-:.]/g, "");
 }
@@ -84509,13 +86585,19 @@ function convertToDottedOrderFormat(epoch, runId, executionOrder = 1) {
     // Date only has millisecond precision, so we use the microseconds to break
     // possible ties, avoiding incorrect run order
     const paddedOrder = executionOrder.toFixed(0).slice(0, 3).padStart(3, "0");
-    return (stripNonAlphanumeric(`${new Date(epoch).toISOString().slice(0, -1)}${paddedOrder}Z`) + runId);
+    const microsecondPrecisionDatestring = `${new Date(epoch)
+        .toISOString()
+        .slice(0, -1)}${paddedOrder}Z`;
+    return {
+        dottedOrder: stripNonAlphanumeric(microsecondPrecisionDatestring) + runId,
+        microsecondPrecisionDatestring,
+    };
 }
 /**
  * Baggage header information
  */
 class Baggage {
-    constructor(metadata, tags, project_name) {
+    constructor(metadata, tags, project_name, replicas) {
         Object.defineProperty(this, "metadata", {
             enumerable: true,
             configurable: true,
@@ -84534,15 +86616,23 @@ class Baggage {
             writable: true,
             value: void 0
         });
+        Object.defineProperty(this, "replicas", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         this.metadata = metadata;
         this.tags = tags;
         this.project_name = project_name;
+        this.replicas = replicas;
     }
     static fromHeader(value) {
         const items = value.split(",");
         let metadata = {};
         let tags = [];
         let project_name;
+        let replicas;
         for (const item of items) {
             const [key, uriValue] = item.split("=");
             const value = decodeURIComponent(uriValue);
@@ -84555,8 +86645,11 @@ class Baggage {
             else if (key === "langsmith-project") {
                 project_name = value;
             }
+            else if (key === "langsmith-replicas") {
+                replicas = JSON.parse(value);
+            }
         }
-        return new Baggage(metadata, tags, project_name);
+        return new Baggage(metadata, tags, project_name, replicas);
     }
     toHeader() {
         const items = [];
@@ -84599,6 +86692,12 @@ class run_trees_RunTree {
             value: void 0
         });
         Object.defineProperty(this, "parent_run", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "parent_run_id", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -84716,6 +86815,21 @@ class run_trees_RunTree {
             writable: true,
             value: void 0
         });
+        /**
+         * Projects to replicate this run to with optional updates.
+         */
+        Object.defineProperty(this, "replicas", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_serialized_start_time", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         // If you pass in a run tree directly, return a shallow clone
         if (run_trees_isRunTree(originalConfig)) {
             Object.assign(this, { ...originalConfig });
@@ -84738,17 +86852,18 @@ class run_trees_RunTree {
                 this.trace_id = this.id;
             }
         }
+        this.replicas = _ensureWriteReplicas(this.replicas);
         this.execution_order ??= 1;
         this.child_execution_order ??= 1;
         if (!this.dotted_order) {
-            const currentDottedOrder = convertToDottedOrderFormat(this.start_time, this.id, this.execution_order);
+            const { dottedOrder, microsecondPrecisionDatestring } = convertToDottedOrderFormat(this.start_time, this.id, this.execution_order);
             if (this.parent_run) {
-                this.dotted_order =
-                    this.parent_run.dotted_order + "." + currentDottedOrder;
+                this.dotted_order = this.parent_run.dotted_order + "." + dottedOrder;
             }
             else {
-                this.dotted_order = currentDottedOrder;
+                this.dotted_order = dottedOrder;
             }
+            this._serialized_start_time = microsecondPrecisionDatestring;
         }
     }
     set metadata(metadata) {
@@ -84767,9 +86882,7 @@ class run_trees_RunTree {
         return {
             id: v4(),
             run_type: "chain",
-            project_name: getLangSmithEnvironmentVariable("PROJECT") ??
-                getEnvironmentVariable("LANGCHAIN_SESSION") ?? // TODO: Deprecate
-                "default",
+            project_name: getDefaultProjectName(),
             child_runs: [],
             api_url: getEnvironmentVariable("LANGCHAIN_ENDPOINT") ?? "http://localhost:1984",
             api_key: getEnvironmentVariable("LANGCHAIN_API_KEY"),
@@ -84792,6 +86905,7 @@ class run_trees_RunTree {
             ...config,
             parent_run: this,
             project_name: this.project_name,
+            replicas: this.replicas,
             client: this.client,
             tracingEnabled: this.tracingEnabled,
             execution_order: child_execution_order,
@@ -84846,13 +86960,16 @@ class run_trees_RunTree {
     }
     _convertToCreate(run, runtimeEnv, excludeChildRuns = true) {
         const runExtra = run.extra ?? {};
-        if (!runExtra.runtime) {
-            runExtra.runtime = {};
-        }
-        if (runtimeEnv) {
-            for (const [k, v] of Object.entries(runtimeEnv)) {
-                if (!runExtra.runtime[k]) {
-                    runExtra.runtime[k] = v;
+        // Avoid overwriting the runtime environment if it's already set
+        if (runExtra?.runtime?.library === undefined) {
+            if (!runExtra.runtime) {
+                runExtra.runtime = {};
+            }
+            if (runtimeEnv) {
+                for (const [k, v] of Object.entries(runtimeEnv)) {
+                    if (!runExtra.runtime[k]) {
+                        runExtra.runtime[k] = v;
+                    }
                 }
             }
         }
@@ -84863,13 +86980,13 @@ class run_trees_RunTree {
             parent_run_id = undefined;
         }
         else {
-            parent_run_id = run.parent_run?.id;
+            parent_run_id = run.parent_run?.id ?? run.parent_run_id;
             child_runs = [];
         }
-        const persistedRun = {
+        return {
             id: run.id,
             name: run.name,
-            start_time: run.start_time,
+            start_time: run._serialized_start_time ?? run.start_time,
             end_time: run.end_time,
             run_type: run.run_type,
             reference_example_id: run.reference_example_id,
@@ -84885,14 +87002,72 @@ class run_trees_RunTree {
             dotted_order: run.dotted_order,
             tags: run.tags,
             attachments: run.attachments,
+            events: run.events,
         };
-        return persistedRun;
+    }
+    _remapForProject(projectName, runtimeEnv, excludeChildRuns = true) {
+        const baseRun = this._convertToCreate(this, runtimeEnv, excludeChildRuns);
+        if (projectName === this.project_name) {
+            return baseRun;
+        }
+        // Create a deterministic UUID mapping for this project
+        const createRemappedId = (originalId) => {
+            return v5(`${originalId}:${projectName}`, v5.DNS);
+        };
+        // Remap the current run's ID
+        const newId = createRemappedId(baseRun.id);
+        const newTraceId = baseRun.trace_id
+            ? createRemappedId(baseRun.trace_id)
+            : undefined;
+        const newParentRunId = baseRun.parent_run_id
+            ? createRemappedId(baseRun.parent_run_id)
+            : undefined;
+        let newDottedOrder;
+        if (baseRun.dotted_order) {
+            const segments = _parseDottedOrder(baseRun.dotted_order);
+            const rebuilt = [];
+            // Process all segments except the last one
+            for (let i = 0; i < segments.length - 1; i++) {
+                const [timestamp, segmentId] = segments[i];
+                const remappedId = createRemappedId(segmentId);
+                rebuilt.push(timestamp.toISOString().replace(/[-:]/g, "").replace(".", "") +
+                    remappedId);
+            }
+            // Process the last segment with the new run ID
+            const [lastTimestamp] = segments[segments.length - 1];
+            rebuilt.push(lastTimestamp.toISOString().replace(/[-:]/g, "").replace(".", "") +
+                newId);
+            newDottedOrder = rebuilt.join(".");
+        }
+        else {
+            newDottedOrder = undefined;
+        }
+        const remappedRun = {
+            ...baseRun,
+            id: newId,
+            trace_id: newTraceId,
+            parent_run_id: newParentRunId,
+            dotted_order: newDottedOrder,
+            session_name: projectName,
+        };
+        return remappedRun;
     }
     async postRun(excludeChildRuns = true) {
         try {
             const runtimeEnv = getRuntimeEnvironment();
-            const runCreate = await this._convertToCreate(this, runtimeEnv, true);
-            await this.client.createRun(runCreate);
+            if (this.replicas && this.replicas.length > 0) {
+                for (const { projectName, apiKey, apiUrl } of this.replicas) {
+                    const runCreate = this._remapForProject(projectName ?? this.project_name, runtimeEnv, true);
+                    await this.client.createRun(runCreate, {
+                        apiKey,
+                        apiUrl,
+                    });
+                }
+            }
+            else {
+                const runCreate = this._convertToCreate(this, runtimeEnv, excludeChildRuns);
+                await this.client.createRun(runCreate);
+            }
             if (!excludeChildRuns) {
                 warnOnce("Posting with excludeChildRuns=false is deprecated and will be removed in a future version.");
                 for (const childRun of this.child_runs) {
@@ -84905,26 +87080,52 @@ class run_trees_RunTree {
         }
     }
     async patchRun() {
-        try {
-            const runUpdate = {
-                end_time: this.end_time,
-                error: this.error,
-                inputs: this.inputs,
-                outputs: this.outputs,
-                parent_run_id: this.parent_run?.id,
-                reference_example_id: this.reference_example_id,
-                extra: this.extra,
-                events: this.events,
-                dotted_order: this.dotted_order,
-                trace_id: this.trace_id,
-                tags: this.tags,
-                attachments: this.attachments,
-                session_name: this.project_name,
-            };
-            await this.client.updateRun(this.id, runUpdate);
+        if (this.replicas && this.replicas.length > 0) {
+            for (const { projectName, apiKey, apiUrl, updates } of this.replicas) {
+                const runData = this._remapForProject(projectName ?? this.project_name);
+                await this.client.updateRun(runData.id, {
+                    inputs: runData.inputs,
+                    outputs: runData.outputs,
+                    error: runData.error,
+                    parent_run_id: runData.parent_run_id,
+                    session_name: runData.session_name,
+                    reference_example_id: runData.reference_example_id,
+                    end_time: runData.end_time,
+                    dotted_order: runData.dotted_order,
+                    trace_id: runData.trace_id,
+                    events: runData.events,
+                    tags: runData.tags,
+                    extra: runData.extra,
+                    attachments: this.attachments,
+                    ...updates,
+                }, {
+                    apiKey,
+                    apiUrl,
+                });
+            }
         }
-        catch (error) {
-            console.error(`Error in patchRun for run ${this.id}`, error);
+        else {
+            try {
+                const runUpdate = {
+                    end_time: this.end_time,
+                    error: this.error,
+                    inputs: this.inputs,
+                    outputs: this.outputs,
+                    parent_run_id: this.parent_run?.id ?? this.parent_run_id,
+                    reference_example_id: this.reference_example_id,
+                    extra: this.extra,
+                    events: this.events,
+                    dotted_order: this.dotted_order,
+                    trace_id: this.trace_id,
+                    tags: this.tags,
+                    attachments: this.attachments,
+                    session_name: this.project_name,
+                };
+                await this.client.updateRun(this.id, runUpdate);
+            }
+            catch (error) {
+                console.error(`Error in patchRun for run ${this.id}`, error);
+            }
         }
     }
     toJSON() {
@@ -85028,13 +87229,14 @@ class run_trees_RunTree {
             config.metadata = baggage.metadata;
             config.tags = baggage.tags;
             config.project_name = baggage.project_name;
+            config.replicas = baggage.replicas;
         }
         return new run_trees_RunTree(config);
     }
     toHeaders(headers) {
         const result = {
             "langsmith-trace": this.dotted_order,
-            baggage: new Baggage(this.extra?.metadata, this.tags, this.project_name).toHeader(),
+            baggage: new Baggage(this.extra?.metadata, this.tags, this.project_name, this.replicas).toHeader(),
         };
         if (headers) {
             for (const [key, value] of Object.entries(result)) {
@@ -85080,949 +87282,112 @@ function isRunnableConfigLike(x) {
             // Or it's an array with a LangChainTracerLike object within it
             containsLangChainTracerLike(x.callbacks)));
 }
-
-;// CONCATENATED MODULE: ./node_modules/langsmith/dist/singletons/traceable.js
-
-class MockAsyncLocalStorage {
-    getStore() {
-        return undefined;
-    }
-    run(_, callback) {
-        return callback();
-    }
-}
-const TRACING_ALS_KEY = Symbol.for("ls:tracing_async_local_storage");
-const mockAsyncLocalStorage = new MockAsyncLocalStorage();
-class AsyncLocalStorageProvider {
-    getInstance() {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return globalThis[TRACING_ALS_KEY] ?? mockAsyncLocalStorage;
-    }
-    initializeGlobalInstance(instance) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (globalThis[TRACING_ALS_KEY] === undefined) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            globalThis[TRACING_ALS_KEY] = instance;
-        }
-    }
-}
-const AsyncLocalStorageProviderSingleton = new AsyncLocalStorageProvider();
-function getCurrentRunTree(permitAbsentRunTree = false) {
-    const runTree = AsyncLocalStorageProviderSingleton.getInstance().getStore();
-    if (!permitAbsentRunTree && !run_trees_isRunTree(runTree)) {
-        throw new Error("Could not get the current run tree.\n\nPlease make sure you are calling this method within a traceable function and that tracing is enabled.");
-    }
-    return runTree;
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function withRunTree(runTree, fn) {
-    const storage = AsyncLocalStorageProviderSingleton.getInstance();
-    return new Promise((resolve, reject) => {
-        storage.run(runTree, () => void Promise.resolve(fn()).then(resolve).catch(reject));
+function _parseDottedOrder(dottedOrder) {
+    const parts = dottedOrder.split(".");
+    return parts.map((part) => {
+        const timestampStr = part.slice(0, -36);
+        const uuidStr = part.slice(-36);
+        // Parse timestamp: "%Y%m%dT%H%M%S%fZ" format
+        // Example: "20231215T143045123456Z"
+        const year = parseInt(timestampStr.slice(0, 4));
+        const month = parseInt(timestampStr.slice(4, 6)) - 1; // JS months are 0-indexed
+        const day = parseInt(timestampStr.slice(6, 8));
+        const hour = parseInt(timestampStr.slice(9, 11));
+        const minute = parseInt(timestampStr.slice(11, 13));
+        const second = parseInt(timestampStr.slice(13, 15));
+        const microsecond = parseInt(timestampStr.slice(15, 21));
+        const timestamp = new Date(year, month, day, hour, minute, second, microsecond / 1000);
+        return [timestamp, uuidStr];
     });
 }
-const ROOT = Symbol.for("langsmith:traceable:root");
-function isTraceableFunction(x
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-) {
-    return typeof x === "function" && "langsmith:traceable" in x;
-}
-
-;// CONCATENATED MODULE: ./node_modules/langsmith/singletons/traceable.js
-
-;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/fast-json-patch/src/helpers.js
-// @ts-nocheck
-// Inlined because of ESM import issues
-/*!
- * https://github.com/Starcounter-Jack/JSON-Patch
- * (c) 2017-2022 Joachim Wester
- * MIT licensed
- */
-const _hasOwnProperty = Object.prototype.hasOwnProperty;
-function helpers_hasOwnProperty(obj, key) {
-    return _hasOwnProperty.call(obj, key);
-}
-function _objectKeys(obj) {
-    if (Array.isArray(obj)) {
-        const keys = new Array(obj.length);
-        for (let k = 0; k < keys.length; k++) {
-            keys[k] = "" + k;
-        }
-        return keys;
-    }
-    if (Object.keys) {
-        return Object.keys(obj);
-    }
-    let keys = [];
-    for (let i in obj) {
-        if (helpers_hasOwnProperty(obj, i)) {
-            keys.push(i);
-        }
-    }
-    return keys;
-}
-/**
- * Deeply clone the object.
- * https://jsperf.com/deep-copy-vs-json-stringify-json-parse/25 (recursiveDeepCopy)
- * @param  {any} obj value to clone
- * @return {any} cloned obj
- */
-function helpers_deepClone(obj) {
-    switch (typeof obj) {
-        case "object":
-            return JSON.parse(JSON.stringify(obj)); //Faster than ES5 clone - http://jsperf.com/deep-cloning-of-objects/5
-        case "undefined":
-            return null; //this is how JSON.stringify behaves for array items
-        default:
-            return obj; //no need to clone primitives
-    }
-}
-//3x faster than cached /^\d+$/.test(str)
-function isInteger(str) {
-    let i = 0;
-    const len = str.length;
-    let charCode;
-    while (i < len) {
-        charCode = str.charCodeAt(i);
-        if (charCode >= 48 && charCode <= 57) {
-            i++;
-            continue;
-        }
-        return false;
-    }
-    return true;
-}
-/**
- * Escapes a json pointer path
- * @param path The raw pointer
- * @return the Escaped path
- */
-function escapePathComponent(path) {
-    if (path.indexOf("/") === -1 && path.indexOf("~") === -1)
-        return path;
-    return path.replace(/~/g, "~0").replace(/\//g, "~1");
-}
-/**
- * Unescapes a json pointer path
- * @param path The escaped pointer
- * @return The unescaped path
- */
-function unescapePathComponent(path) {
-    return path.replace(/~1/g, "/").replace(/~0/g, "~");
-}
-function _getPathRecursive(root, obj) {
-    let found;
-    for (let key in root) {
-        if (helpers_hasOwnProperty(root, key)) {
-            if (root[key] === obj) {
-                return escapePathComponent(key) + "/";
-            }
-            else if (typeof root[key] === "object") {
-                found = _getPathRecursive(root[key], obj);
-                if (found != "") {
-                    return escapePathComponent(key) + "/" + found;
+function _getWriteReplicasFromEnv() {
+    const envVar = getEnvironmentVariable("LANGSMITH_RUNS_ENDPOINTS");
+    if (!envVar)
+        return [];
+    try {
+        const parsed = JSON.parse(envVar);
+        if (Array.isArray(parsed)) {
+            const replicas = [];
+            for (const item of parsed) {
+                if (typeof item !== "object" || item === null) {
+                    console.warn(`Invalid item type in LANGSMITH_RUNS_ENDPOINTS: ` +
+                        `expected object, got ${typeof item}`);
+                    continue;
                 }
-            }
-        }
-    }
-    return "";
-}
-function getPath(root, obj) {
-    if (root === obj) {
-        return "/";
-    }
-    const path = _getPathRecursive(root, obj);
-    if (path === "") {
-        throw new Error("Object not found in root");
-    }
-    return `/${path}`;
-}
-/**
- * Recursively checks whether an object has any undefined values inside.
- */
-function hasUndefined(obj) {
-    if (obj === undefined) {
-        return true;
-    }
-    if (obj) {
-        if (Array.isArray(obj)) {
-            for (let i = 0, len = obj.length; i < len; i++) {
-                if (hasUndefined(obj[i])) {
-                    return true;
+                if (typeof item.api_url !== "string") {
+                    console.warn(`Invalid api_url type in LANGSMITH_RUNS_ENDPOINTS: ` +
+                        `expected string, got ${typeof item.api_url}`);
+                    continue;
                 }
-            }
-        }
-        else if (typeof obj === "object") {
-            const objKeys = _objectKeys(obj);
-            const objKeysLength = objKeys.length;
-            for (var i = 0; i < objKeysLength; i++) {
-                if (hasUndefined(obj[objKeys[i]])) {
-                    return true;
+                if (typeof item.api_key !== "string") {
+                    console.warn(`Invalid api_key type in LANGSMITH_RUNS_ENDPOINTS: ` +
+                        `expected string, got ${typeof item.api_key}`);
+                    continue;
                 }
+                replicas.push({
+                    apiUrl: item.api_url.replace(/\/$/, ""),
+                    apiKey: item.api_key,
+                });
             }
+            return replicas;
         }
-    }
-    return false;
-}
-function patchErrorMessageFormatter(message, args) {
-    const messageParts = [message];
-    for (const key in args) {
-        const value = typeof args[key] === "object"
-            ? JSON.stringify(args[key], null, 2)
-            : args[key]; // pretty print
-        if (typeof value !== "undefined") {
-            messageParts.push(`${key}: ${value}`);
-        }
-    }
-    return messageParts.join("\n");
-}
-class PatchError extends Error {
-    constructor(message, name, index, operation, tree) {
-        super(patchErrorMessageFormatter(message, { name, index, operation, tree }));
-        Object.defineProperty(this, "name", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: name
-        });
-        Object.defineProperty(this, "index", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: index
-        });
-        Object.defineProperty(this, "operation", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: operation
-        });
-        Object.defineProperty(this, "tree", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: tree
-        });
-        Object.setPrototypeOf(this, new.target.prototype); // restore prototype chain, see https://stackoverflow.com/a/48342359
-        this.message = patchErrorMessageFormatter(message, {
-            name,
-            index,
-            operation,
-            tree,
-        });
-    }
-}
-
-;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/fast-json-patch/src/core.js
-// @ts-nocheck
-
-const JsonPatchError = PatchError;
-const deepClone = helpers_deepClone;
-/* We use a Javascript hash to store each
- function. Each hash entry (property) uses
- the operation identifiers specified in rfc6902.
- In this way, we can map each patch operation
- to its dedicated function in efficient way.
- */
-/* The operations applicable to an object */
-const objOps = {
-    add: function (obj, key, document) {
-        obj[key] = this.value;
-        return { newDocument: document };
-    },
-    remove: function (obj, key, document) {
-        var removed = obj[key];
-        delete obj[key];
-        return { newDocument: document, removed };
-    },
-    replace: function (obj, key, document) {
-        var removed = obj[key];
-        obj[key] = this.value;
-        return { newDocument: document, removed };
-    },
-    move: function (obj, key, document) {
-        /* in case move target overwrites an existing value,
-        return the removed value, this can be taxing performance-wise,
-        and is potentially unneeded */
-        let removed = getValueByPointer(document, this.path);
-        if (removed) {
-            removed = helpers_deepClone(removed);
-        }
-        const originalValue = applyOperation(document, {
-            op: "remove",
-            path: this.from,
-        }).removed;
-        applyOperation(document, {
-            op: "add",
-            path: this.path,
-            value: originalValue,
-        });
-        return { newDocument: document, removed };
-    },
-    copy: function (obj, key, document) {
-        const valueToCopy = getValueByPointer(document, this.from);
-        // enforce copy by value so further operations don't affect source (see issue #177)
-        applyOperation(document, {
-            op: "add",
-            path: this.path,
-            value: helpers_deepClone(valueToCopy),
-        });
-        return { newDocument: document };
-    },
-    test: function (obj, key, document) {
-        return { newDocument: document, test: _areEquals(obj[key], this.value) };
-    },
-    _get: function (obj, key, document) {
-        this.value = obj[key];
-        return { newDocument: document };
-    },
-};
-/* The operations applicable to an array. Many are the same as for the object */
-var arrOps = {
-    add: function (arr, i, document) {
-        if (isInteger(i)) {
-            arr.splice(i, 0, this.value);
-        }
-        else {
-            // array props
-            arr[i] = this.value;
-        }
-        // this may be needed when using '-' in an array
-        return { newDocument: document, index: i };
-    },
-    remove: function (arr, i, document) {
-        var removedList = arr.splice(i, 1);
-        return { newDocument: document, removed: removedList[0] };
-    },
-    replace: function (arr, i, document) {
-        var removed = arr[i];
-        arr[i] = this.value;
-        return { newDocument: document, removed };
-    },
-    move: objOps.move,
-    copy: objOps.copy,
-    test: objOps.test,
-    _get: objOps._get,
-};
-/**
- * Retrieves a value from a JSON document by a JSON pointer.
- * Returns the value.
- *
- * @param document The document to get the value from
- * @param pointer an escaped JSON pointer
- * @return The retrieved value
- */
-function getValueByPointer(document, pointer) {
-    if (pointer == "") {
-        return document;
-    }
-    var getOriginalDestination = { op: "_get", path: pointer };
-    applyOperation(document, getOriginalDestination);
-    return getOriginalDestination.value;
-}
-/**
- * Apply a single JSON Patch Operation on a JSON document.
- * Returns the {newDocument, result} of the operation.
- * It modifies the `document` and `operation` objects - it gets the values by reference.
- * If you would like to avoid touching your values, clone them:
- * `jsonpatch.applyOperation(document, jsonpatch._deepClone(operation))`.
- *
- * @param document The document to patch
- * @param operation The operation to apply
- * @param validateOperation `false` is without validation, `true` to use default jsonpatch's validation, or you can pass a `validateOperation` callback to be used for validation.
- * @param mutateDocument Whether to mutate the original document or clone it before applying
- * @param banPrototypeModifications Whether to ban modifications to `__proto__`, defaults to `true`.
- * @return `{newDocument, result}` after the operation
- */
-function applyOperation(document, operation, validateOperation = false, mutateDocument = true, banPrototypeModifications = true, index = 0) {
-    if (validateOperation) {
-        if (typeof validateOperation == "function") {
-            validateOperation(operation, 0, document, operation.path);
-        }
-        else {
-            validator(operation, 0);
-        }
-    }
-    /* ROOT OPERATIONS */
-    if (operation.path === "") {
-        let returnValue = { newDocument: document };
-        if (operation.op === "add") {
-            returnValue.newDocument = operation.value;
-            return returnValue;
-        }
-        else if (operation.op === "replace") {
-            returnValue.newDocument = operation.value;
-            returnValue.removed = document; //document we removed
-            return returnValue;
-        }
-        else if (operation.op === "move" || operation.op === "copy") {
-            // it's a move or copy to root
-            returnValue.newDocument = getValueByPointer(document, operation.from); // get the value by json-pointer in `from` field
-            if (operation.op === "move") {
-                // report removed item
-                returnValue.removed = document;
-            }
-            return returnValue;
-        }
-        else if (operation.op === "test") {
-            returnValue.test = _areEquals(document, operation.value);
-            if (returnValue.test === false) {
-                throw new JsonPatchError("Test operation failed", "TEST_OPERATION_FAILED", index, operation, document);
-            }
-            returnValue.newDocument = document;
-            return returnValue;
-        }
-        else if (operation.op === "remove") {
-            // a remove on root
-            returnValue.removed = document;
-            returnValue.newDocument = null;
-            return returnValue;
-        }
-        else if (operation.op === "_get") {
-            operation.value = document;
-            return returnValue;
-        }
-        else {
-            /* bad operation */
-            if (validateOperation) {
-                throw new JsonPatchError("Operation `op` property is not one of operations defined in RFC-6902", "OPERATION_OP_INVALID", index, operation, document);
-            }
-            else {
-                return returnValue;
-            }
-        }
-    } /* END ROOT OPERATIONS */
-    else {
-        if (!mutateDocument) {
-            document = helpers_deepClone(document);
-        }
-        const path = operation.path || "";
-        const keys = path.split("/");
-        let obj = document;
-        let t = 1; //skip empty element - http://jsperf.com/to-shift-or-not-to-shift
-        let len = keys.length;
-        let existingPathFragment = undefined;
-        let key;
-        let validateFunction;
-        if (typeof validateOperation == "function") {
-            validateFunction = validateOperation;
-        }
-        else {
-            validateFunction = validator;
-        }
-        while (true) {
-            key = keys[t];
-            if (key && key.indexOf("~") != -1) {
-                key = unescapePathComponent(key);
-            }
-            if (banPrototypeModifications &&
-                (key == "__proto__" ||
-                    (key == "prototype" && t > 0 && keys[t - 1] == "constructor"))) {
-                throw new TypeError("JSON-Patch: modifying `__proto__` or `constructor/prototype` prop is banned for security reasons, if this was on purpose, please set `banPrototypeModifications` flag false and pass it to this function. More info in fast-json-patch README");
-            }
-            if (validateOperation) {
-                if (existingPathFragment === undefined) {
-                    if (obj[key] === undefined) {
-                        existingPathFragment = keys.slice(0, t).join("/");
-                    }
-                    else if (t == len - 1) {
-                        existingPathFragment = operation.path;
-                    }
-                    if (existingPathFragment !== undefined) {
-                        validateFunction(operation, 0, document, existingPathFragment);
-                    }
-                }
-            }
-            t++;
-            if (Array.isArray(obj)) {
-                if (key === "-") {
-                    key = obj.length;
+        else if (typeof parsed === "object" && parsed !== null) {
+            _checkEndpointEnvUnset(parsed);
+            const replicas = [];
+            for (const [url, key] of Object.entries(parsed)) {
+                const cleanUrl = url.replace(/\/$/, "");
+                if (typeof key === "string") {
+                    replicas.push({
+                        apiUrl: cleanUrl,
+                        apiKey: key,
+                    });
                 }
                 else {
-                    if (validateOperation && !isInteger(key)) {
-                        throw new JsonPatchError("Expected an unsigned base-10 integer value, making the new referenced value the array element with the zero-based index", "OPERATION_PATH_ILLEGAL_ARRAY_INDEX", index, operation, document);
-                    } // only parse key when it's an integer for `arr.prop` to work
-                    else if (isInteger(key)) {
-                        key = ~~key;
-                    }
-                }
-                if (t >= len) {
-                    if (validateOperation && operation.op === "add" && key > obj.length) {
-                        throw new JsonPatchError("The specified index MUST NOT be greater than the number of elements in the array", "OPERATION_VALUE_OUT_OF_BOUNDS", index, operation, document);
-                    }
-                    const returnValue = arrOps[operation.op].call(operation, obj, key, document); // Apply patch
-                    if (returnValue.test === false) {
-                        throw new JsonPatchError("Test operation failed", "TEST_OPERATION_FAILED", index, operation, document);
-                    }
-                    return returnValue;
+                    console.warn(`Invalid value type in LANGSMITH_RUNS_ENDPOINTS for URL ${url}: ` +
+                        `expected string, got ${typeof key}`);
+                    continue;
                 }
             }
-            else {
-                if (t >= len) {
-                    const returnValue = objOps[operation.op].call(operation, obj, key, document); // Apply patch
-                    if (returnValue.test === false) {
-                        throw new JsonPatchError("Test operation failed", "TEST_OPERATION_FAILED", index, operation, document);
-                    }
-                    return returnValue;
-                }
-            }
-            obj = obj[key];
-            // If we have more keys in the path, but the next value isn't a non-null object,
-            // throw an OPERATION_PATH_UNRESOLVABLE error instead of iterating again.
-            if (validateOperation && t < len && (!obj || typeof obj !== "object")) {
-                throw new JsonPatchError("Cannot perform operation at the desired path", "OPERATION_PATH_UNRESOLVABLE", index, operation, document);
-            }
-        }
-    }
-}
-/**
- * Apply a full JSON Patch array on a JSON document.
- * Returns the {newDocument, result} of the patch.
- * It modifies the `document` object and `patch` - it gets the values by reference.
- * If you would like to avoid touching your values, clone them:
- * `jsonpatch.applyPatch(document, jsonpatch._deepClone(patch))`.
- *
- * @param document The document to patch
- * @param patch The patch to apply
- * @param validateOperation `false` is without validation, `true` to use default jsonpatch's validation, or you can pass a `validateOperation` callback to be used for validation.
- * @param mutateDocument Whether to mutate the original document or clone it before applying
- * @param banPrototypeModifications Whether to ban modifications to `__proto__`, defaults to `true`.
- * @return An array of `{newDocument, result}` after the patch
- */
-function core_applyPatch(document, patch, validateOperation, mutateDocument = true, banPrototypeModifications = true) {
-    if (validateOperation) {
-        if (!Array.isArray(patch)) {
-            throw new JsonPatchError("Patch sequence must be an array", "SEQUENCE_NOT_AN_ARRAY");
-        }
-    }
-    if (!mutateDocument) {
-        document = helpers_deepClone(document);
-    }
-    const results = new Array(patch.length);
-    for (let i = 0, length = patch.length; i < length; i++) {
-        // we don't need to pass mutateDocument argument because if it was true, we already deep cloned the object, we'll just pass `true`
-        results[i] = applyOperation(document, patch[i], validateOperation, true, banPrototypeModifications, i);
-        document = results[i].newDocument; // in case root was replaced
-    }
-    results.newDocument = document;
-    return results;
-}
-/**
- * Apply a single JSON Patch Operation on a JSON document.
- * Returns the updated document.
- * Suitable as a reducer.
- *
- * @param document The document to patch
- * @param operation The operation to apply
- * @return The updated document
- */
-function applyReducer(document, operation, index) {
-    const operationResult = applyOperation(document, operation);
-    if (operationResult.test === false) {
-        // failed test
-        throw new JsonPatchError("Test operation failed", "TEST_OPERATION_FAILED", index, operation, document);
-    }
-    return operationResult.newDocument;
-}
-/**
- * Validates a single operation. Called from `jsonpatch.validate`. Throws `JsonPatchError` in case of an error.
- * @param {object} operation - operation object (patch)
- * @param {number} index - index of operation in the sequence
- * @param {object} [document] - object where the operation is supposed to be applied
- * @param {string} [existingPathFragment] - comes along with `document`
- */
-function validator(operation, index, document, existingPathFragment) {
-    if (typeof operation !== "object" ||
-        operation === null ||
-        Array.isArray(operation)) {
-        throw new JsonPatchError("Operation is not an object", "OPERATION_NOT_AN_OBJECT", index, operation, document);
-    }
-    else if (!objOps[operation.op]) {
-        throw new JsonPatchError("Operation `op` property is not one of operations defined in RFC-6902", "OPERATION_OP_INVALID", index, operation, document);
-    }
-    else if (typeof operation.path !== "string") {
-        throw new JsonPatchError("Operation `path` property is not a string", "OPERATION_PATH_INVALID", index, operation, document);
-    }
-    else if (operation.path.indexOf("/") !== 0 && operation.path.length > 0) {
-        // paths that aren't empty string should start with "/"
-        throw new JsonPatchError('Operation `path` property must start with "/"', "OPERATION_PATH_INVALID", index, operation, document);
-    }
-    else if ((operation.op === "move" || operation.op === "copy") &&
-        typeof operation.from !== "string") {
-        throw new JsonPatchError("Operation `from` property is not present (applicable in `move` and `copy` operations)", "OPERATION_FROM_REQUIRED", index, operation, document);
-    }
-    else if ((operation.op === "add" ||
-        operation.op === "replace" ||
-        operation.op === "test") &&
-        operation.value === undefined) {
-        throw new JsonPatchError("Operation `value` property is not present (applicable in `add`, `replace` and `test` operations)", "OPERATION_VALUE_REQUIRED", index, operation, document);
-    }
-    else if ((operation.op === "add" ||
-        operation.op === "replace" ||
-        operation.op === "test") &&
-        hasUndefined(operation.value)) {
-        throw new JsonPatchError("Operation `value` property is not present (applicable in `add`, `replace` and `test` operations)", "OPERATION_VALUE_CANNOT_CONTAIN_UNDEFINED", index, operation, document);
-    }
-    else if (document) {
-        if (operation.op == "add") {
-            var pathLen = operation.path.split("/").length;
-            var existingPathLen = existingPathFragment.split("/").length;
-            if (pathLen !== existingPathLen + 1 && pathLen !== existingPathLen) {
-                throw new JsonPatchError("Cannot perform an `add` operation at the desired path", "OPERATION_PATH_CANNOT_ADD", index, operation, document);
-            }
-        }
-        else if (operation.op === "replace" ||
-            operation.op === "remove" ||
-            operation.op === "_get") {
-            if (operation.path !== existingPathFragment) {
-                throw new JsonPatchError("Cannot perform the operation at a path that does not exist", "OPERATION_PATH_UNRESOLVABLE", index, operation, document);
-            }
-        }
-        else if (operation.op === "move" || operation.op === "copy") {
-            var existingValue = {
-                op: "_get",
-                path: operation.from,
-                value: undefined,
-            };
-            var error = core_validate([existingValue], document);
-            if (error && error.name === "OPERATION_PATH_UNRESOLVABLE") {
-                throw new JsonPatchError("Cannot perform the operation from a path that does not exist", "OPERATION_FROM_UNRESOLVABLE", index, operation, document);
-            }
-        }
-    }
-}
-/**
- * Validates a sequence of operations. If `document` parameter is provided, the sequence is additionally validated against the object document.
- * If error is encountered, returns a JsonPatchError object
- * @param sequence
- * @param document
- * @returns {JsonPatchError|undefined}
- */
-function core_validate(sequence, document, externalValidator) {
-    try {
-        if (!Array.isArray(sequence)) {
-            throw new JsonPatchError("Patch sequence must be an array", "SEQUENCE_NOT_AN_ARRAY");
-        }
-        if (document) {
-            //clone document and sequence so that we can safely try applying operations
-            core_applyPatch(helpers_deepClone(document), helpers_deepClone(sequence), externalValidator || true);
+            return replicas;
         }
         else {
-            externalValidator = externalValidator || validator;
-            for (var i = 0; i < sequence.length; i++) {
-                externalValidator(sequence[i], i, document, undefined);
-            }
+            console.warn("Invalid LANGSMITH_RUNS_ENDPOINTS – must be valid JSON array of " +
+                `objects with api_url and api_key properties, or object mapping url->apiKey, got ${typeof parsed}`);
+            return [];
         }
     }
     catch (e) {
-        if (e instanceof JsonPatchError) {
-            return e;
-        }
-        else {
+        if (isConflictingEndpointsError(e)) {
             throw e;
         }
+        console.warn("Invalid LANGSMITH_RUNS_ENDPOINTS – must be valid JSON array of " +
+            "objects with api_url and api_key properties, or object mapping url->apiKey");
+        return [];
     }
 }
-// based on https://github.com/epoberezkin/fast-deep-equal
-// MIT License
-// Copyright (c) 2017 Evgeny Poberezkin
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-function _areEquals(a, b) {
-    if (a === b)
-        return true;
-    if (a && b && typeof a == "object" && typeof b == "object") {
-        var arrA = Array.isArray(a), arrB = Array.isArray(b), i, length, key;
-        if (arrA && arrB) {
-            length = a.length;
-            if (length != b.length)
-                return false;
-            for (i = length; i-- !== 0;)
-                if (!_areEquals(a[i], b[i]))
-                    return false;
-            return true;
-        }
-        if (arrA != arrB)
-            return false;
-        var keys = Object.keys(a);
-        length = keys.length;
-        if (length !== Object.keys(b).length)
-            return false;
-        for (i = length; i-- !== 0;)
-            if (!b.hasOwnProperty(keys[i]))
-                return false;
-        for (i = length; i-- !== 0;) {
-            key = keys[i];
-            if (!_areEquals(a[key], b[key]))
-                return false;
-        }
-        return true;
-    }
-    return a !== a && b !== b;
-}
-
-;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/fast-json-patch/src/duplex.js
-// @ts-nocheck
-// Inlined because of ESM import issues
-/*!
- * https://github.com/Starcounter-Jack/JSON-Patch
- * (c) 2013-2021 Joachim Wester
- * MIT license
- */
-
-
-var beforeDict = new WeakMap();
-class Mirror {
-    constructor(obj) {
-        Object.defineProperty(this, "obj", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "observers", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: new Map()
-        });
-        Object.defineProperty(this, "value", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        this.obj = obj;
-    }
-}
-class ObserverInfo {
-    constructor(callback, observer) {
-        Object.defineProperty(this, "callback", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "observer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        this.callback = callback;
-        this.observer = observer;
-    }
-}
-function getMirror(obj) {
-    return beforeDict.get(obj);
-}
-function getObserverFromMirror(mirror, callback) {
-    return mirror.observers.get(callback);
-}
-function removeObserverFromMirror(mirror, observer) {
-    mirror.observers.delete(observer.callback);
-}
-/**
- * Detach an observer from an object
- */
-function unobserve(root, observer) {
-    observer.unobserve();
-}
-/**
- * Observes changes made to an object, which can then be retrieved using generate
- */
-function observe(obj, callback) {
-    var patches = [];
-    var observer;
-    var mirror = getMirror(obj);
-    if (!mirror) {
-        mirror = new Mirror(obj);
-        beforeDict.set(obj, mirror);
-    }
-    else {
-        const observerInfo = getObserverFromMirror(mirror, callback);
-        observer = observerInfo && observerInfo.observer;
-    }
-    if (observer) {
-        return observer;
-    }
-    observer = {};
-    mirror.value = _deepClone(obj);
-    if (callback) {
-        observer.callback = callback;
-        observer.next = null;
-        var dirtyCheck = () => {
-            duplex_generate(observer);
-        };
-        var fastCheck = () => {
-            clearTimeout(observer.next);
-            observer.next = setTimeout(dirtyCheck);
-        };
-        if (typeof window !== "undefined") {
-            //not Node
-            window.addEventListener("mouseup", fastCheck);
-            window.addEventListener("keyup", fastCheck);
-            window.addEventListener("mousedown", fastCheck);
-            window.addEventListener("keydown", fastCheck);
-            window.addEventListener("change", fastCheck);
-        }
-    }
-    observer.patches = patches;
-    observer.object = obj;
-    observer.unobserve = () => {
-        duplex_generate(observer);
-        clearTimeout(observer.next);
-        removeObserverFromMirror(mirror, observer);
-        if (typeof window !== "undefined") {
-            window.removeEventListener("mouseup", fastCheck);
-            window.removeEventListener("keyup", fastCheck);
-            window.removeEventListener("mousedown", fastCheck);
-            window.removeEventListener("keydown", fastCheck);
-            window.removeEventListener("change", fastCheck);
-        }
-    };
-    mirror.observers.set(callback, new ObserverInfo(callback, observer));
-    return observer;
-}
-/**
- * Generate an array of patches from an observer
- */
-function duplex_generate(observer, invertible = false) {
-    var mirror = beforeDict.get(observer.object);
-    _generate(mirror.value, observer.object, observer.patches, "", invertible);
-    if (observer.patches.length) {
-        applyPatch(mirror.value, observer.patches);
-    }
-    var temp = observer.patches;
-    if (temp.length > 0) {
-        observer.patches = [];
-        if (observer.callback) {
-            observer.callback(temp);
-        }
-    }
-    return temp;
-}
-// Dirty check if obj is different from mirror, generate patches and update mirror
-function _generate(mirror, obj, patches, path, invertible) {
-    if (obj === mirror) {
-        return;
-    }
-    if (typeof obj.toJSON === "function") {
-        obj = obj.toJSON();
-    }
-    var newKeys = _objectKeys(obj);
-    var oldKeys = _objectKeys(mirror);
-    var changed = false;
-    var deleted = false;
-    //if ever "move" operation is implemented here, make sure this test runs OK: "should not generate the same patch twice (move)"
-    for (var t = oldKeys.length - 1; t >= 0; t--) {
-        var key = oldKeys[t];
-        var oldVal = mirror[key];
-        if (helpers_hasOwnProperty(obj, key) &&
-            !(obj[key] === undefined &&
-                oldVal !== undefined &&
-                Array.isArray(obj) === false)) {
-            var newVal = obj[key];
-            if (typeof oldVal == "object" &&
-                oldVal != null &&
-                typeof newVal == "object" &&
-                newVal != null &&
-                Array.isArray(oldVal) === Array.isArray(newVal)) {
-                _generate(oldVal, newVal, patches, path + "/" + escapePathComponent(key), invertible);
+function _ensureWriteReplicas(replicas) {
+    // If null -> fetch from env
+    if (replicas) {
+        return replicas.map((replica) => {
+            if (Array.isArray(replica)) {
+                return {
+                    projectName: replica[0],
+                    updates: replica[1],
+                };
             }
-            else {
-                if (oldVal !== newVal) {
-                    changed = true;
-                    if (invertible) {
-                        patches.push({
-                            op: "test",
-                            path: path + "/" + escapePathComponent(key),
-                            value: helpers_deepClone(oldVal),
-                        });
-                    }
-                    patches.push({
-                        op: "replace",
-                        path: path + "/" + escapePathComponent(key),
-                        value: helpers_deepClone(newVal),
-                    });
-                }
-            }
-        }
-        else if (Array.isArray(mirror) === Array.isArray(obj)) {
-            if (invertible) {
-                patches.push({
-                    op: "test",
-                    path: path + "/" + escapePathComponent(key),
-                    value: helpers_deepClone(oldVal),
-                });
-            }
-            patches.push({
-                op: "remove",
-                path: path + "/" + escapePathComponent(key),
-            });
-            deleted = true; // property has been deleted
-        }
-        else {
-            if (invertible) {
-                patches.push({ op: "test", path, value: mirror });
-            }
-            patches.push({ op: "replace", path, value: obj });
-            changed = true;
-        }
+            return replica;
+        });
     }
-    if (!deleted && newKeys.length == oldKeys.length) {
-        return;
-    }
-    for (var t = 0; t < newKeys.length; t++) {
-        var key = newKeys[t];
-        if (!helpers_hasOwnProperty(mirror, key) && obj[key] !== undefined) {
-            patches.push({
-                op: "add",
-                path: path + "/" + escapePathComponent(key),
-                value: helpers_deepClone(obj[key]),
-            });
-        }
+    return _getWriteReplicasFromEnv();
+}
+function _checkEndpointEnvUnset(parsed) {
+    if (Object.keys(parsed).length > 0 &&
+        getLangSmithEnvironmentVariable("ENDPOINT")) {
+        throw new ConflictingEndpointsError();
     }
 }
-/**
- * Create an array of patches from the differences in two objects
- */
-function compare(tree1, tree2, invertible = false) {
-    var patches = [];
-    _generate(tree1, tree2, patches, "", invertible);
-    return patches;
-}
 
-;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/fast-json-patch/index.js
-
-
-
-/**
- * Default export for backwards compat
- */
-
-
-/* harmony default export */ const fast_json_patch = ({
-    ...src_core_namespaceObject,
-    // ...duplex,
-    JsonPatchError: PatchError,
-    deepClone: helpers_deepClone,
-    escapePathComponent: escapePathComponent,
-    unescapePathComponent: unescapePathComponent,
-});
+;// CONCATENATED MODULE: ./node_modules/langsmith/run_trees.js
 
 ;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/env.js
 const env_isBrowser = () => typeof window !== "undefined" && typeof window.document !== "undefined";
@@ -86062,7 +87427,13 @@ const env_getEnv = () => {
     return env;
 };
 let env_runtimeEnvironment;
+/**
+ * @deprecated Use getRuntimeEnvironmentSync instead
+ */
 async function env_getRuntimeEnvironment() {
+    return getRuntimeEnvironmentSync();
+}
+function getRuntimeEnvironmentSync() {
     if (env_runtimeEnvironment === undefined) {
         const env = env_getEnv();
         env_runtimeEnvironment = {
@@ -86250,18 +87621,46 @@ const isBaseCallbackHandler = (x) => {
 
 ;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/tracers/base.js
 
+
+
+// TODO: Remove and just use base LangSmith Run type
+const convertRunTreeToRun = (runTree) => {
+    if (!runTree) {
+        return undefined;
+    }
+    // Important that we return the raw run tree object since the reference
+    // is mutated in other places.
+    // TODO: Remove places where this is being done.
+    // eslint-disable-next-line no-param-reassign
+    runTree.events = runTree.events ?? [];
+    // eslint-disable-next-line no-param-reassign
+    runTree.child_runs = runTree.child_runs ?? [];
+    // TODO: Remove this cast and just use the LangSmith RunTree type.
+    return runTree;
+};
+function convertRunToRunTree(run, parentRun) {
+    if (!run) {
+        return undefined;
+    }
+    return new run_trees_RunTree({
+        ...run,
+        start_time: run._serialized_start_time ?? run.start_time,
+        parent_run: convertRunToRunTree(parentRun),
+        child_runs: run.child_runs
+            .map((r) => convertRunToRunTree(r))
+            .filter((r) => r !== undefined),
+        extra: {
+            ...run.extra,
+            runtime: getRuntimeEnvironmentSync(),
+        },
+        tracingEnabled: false,
+    });
+}
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function _coerceToDict(value, defaultKey) {
     return value && !Array.isArray(value) && typeof value === "object"
         ? value
         : { [defaultKey]: value };
-}
-function base_stripNonAlphanumeric(input) {
-    return input.replace(/[-:.]/g, "");
-}
-function base_convertToDottedOrderFormat(epoch, runId, executionOrder) {
-    const paddedOrder = executionOrder.toFixed(0).slice(0, 3).padStart(3, "0");
-    return (base_stripNonAlphanumeric(`${new Date(epoch).toISOString().slice(0, -1)}${paddedOrder}Z`) + runId);
 }
 function isBaseTracer(x) {
     return typeof x._addRunToRunMap === "function";
@@ -86269,15 +87668,36 @@ function isBaseTracer(x) {
 class BaseTracer extends BaseCallbackHandler {
     constructor(_fields) {
         super(...arguments);
+        /** @deprecated Use `runTreeMap` instead. */
         Object.defineProperty(this, "runMap", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: new Map()
         });
+        Object.defineProperty(this, "runTreeMap", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Map()
+        });
+        Object.defineProperty(this, "usesRunTreeMap", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
     }
     copy() {
         return this;
+    }
+    getRunById(runId) {
+        if (runId === undefined) {
+            return undefined;
+        }
+        return this.usesRunTreeMap
+            ? convertRunTreeToRun(this.runTreeMap.get(runId))
+            : this.runMap.get(runId);
     }
     stringifyError(error) {
         // eslint-disable-next-line no-instanceof/no-instanceof
@@ -86293,10 +87713,10 @@ class BaseTracer extends BaseCallbackHandler {
         parentRun.child_runs.push(childRun);
     }
     _addRunToRunMap(run) {
-        const currentDottedOrder = base_convertToDottedOrderFormat(run.start_time, run.id, run.execution_order);
+        const { dottedOrder: currentDottedOrder, microsecondPrecisionDatestring } = convertToDottedOrderFormat(new Date(run.start_time).getTime(), run.id, run.execution_order);
         const storedRun = { ...run };
+        const parentRun = this.getRunById(storedRun.parent_run_id);
         if (storedRun.parent_run_id !== undefined) {
-            const parentRun = this.runMap.get(storedRun.parent_run_id);
             if (parentRun) {
                 this._addChildRun(parentRun, storedRun);
                 parentRun.child_execution_order = Math.max(parentRun.child_execution_order, storedRun.child_execution_order);
@@ -86306,6 +87726,7 @@ class BaseTracer extends BaseCallbackHandler {
                         parentRun.dotted_order,
                         currentDottedOrder,
                     ].join(".");
+                    storedRun._serialized_start_time = microsecondPrecisionDatestring;
                 }
                 else {
                     // This can happen naturally for callbacks added within a run
@@ -86322,23 +87743,37 @@ class BaseTracer extends BaseCallbackHandler {
         else {
             storedRun.trace_id = storedRun.id;
             storedRun.dotted_order = currentDottedOrder;
+            storedRun._serialized_start_time = microsecondPrecisionDatestring;
         }
-        this.runMap.set(storedRun.id, storedRun);
+        if (this.usesRunTreeMap) {
+            const runTree = convertRunToRunTree(storedRun, parentRun);
+            if (runTree !== undefined) {
+                this.runTreeMap.set(storedRun.id, runTree);
+            }
+        }
+        else {
+            this.runMap.set(storedRun.id, storedRun);
+        }
         return storedRun;
     }
     async _endTrace(run) {
-        const parentRun = run.parent_run_id !== undefined && this.runMap.get(run.parent_run_id);
+        const parentRun = run.parent_run_id !== undefined && this.getRunById(run.parent_run_id);
         if (parentRun) {
             parentRun.child_execution_order = Math.max(parentRun.child_execution_order, run.child_execution_order);
         }
         else {
             await this.persistRun(run);
         }
-        this.runMap.delete(run.id);
         await this.onRunUpdate?.(run);
+        if (this.usesRunTreeMap) {
+            this.runTreeMap.delete(run.id);
+        }
+        else {
+            this.runMap.delete(run.id);
+        }
     }
     _getExecutionOrder(parentRunId) {
-        const parentRun = parentRunId !== undefined && this.runMap.get(parentRunId);
+        const parentRun = parentRunId !== undefined && this.getRunById(parentRunId);
         // If a run has no parent then execution order is 1
         if (!parentRun) {
             return 1;
@@ -86379,7 +87814,7 @@ class BaseTracer extends BaseCallbackHandler {
         return this._addRunToRunMap(run);
     }
     async handleLLMStart(llm, prompts, runId, parentRunId, extraParams, tags, metadata, name) {
-        const run = this.runMap.get(runId) ??
+        const run = this.getRunById(runId) ??
             this._createRunForLLMStart(llm, prompts, runId, parentRunId, extraParams, tags, metadata, name);
         await this.onRunCreate?.(run);
         await this.onLLMStart?.(run);
@@ -86419,14 +87854,14 @@ class BaseTracer extends BaseCallbackHandler {
         return this._addRunToRunMap(run);
     }
     async handleChatModelStart(llm, messages, runId, parentRunId, extraParams, tags, metadata, name) {
-        const run = this.runMap.get(runId) ??
+        const run = this.getRunById(runId) ??
             this._createRunForChatModelStart(llm, messages, runId, parentRunId, extraParams, tags, metadata, name);
         await this.onRunCreate?.(run);
         await this.onLLMStart?.(run);
         return run;
     }
     async handleLLMEnd(output, runId, _parentRunId, _tags, extraParams) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run || run?.run_type !== "llm") {
             throw new Error("No LLM run to end.");
         }
@@ -86442,7 +87877,7 @@ class BaseTracer extends BaseCallbackHandler {
         return run;
     }
     async handleLLMError(error, runId, _parentRunId, _tags, extraParams) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run || run?.run_type !== "llm") {
             throw new Error("No LLM run to end.");
         }
@@ -86488,14 +87923,14 @@ class BaseTracer extends BaseCallbackHandler {
         return this._addRunToRunMap(run);
     }
     async handleChainStart(chain, inputs, runId, parentRunId, tags, metadata, runType, name) {
-        const run = this.runMap.get(runId) ??
+        const run = this.getRunById(runId) ??
             this._createRunForChainStart(chain, inputs, runId, parentRunId, tags, metadata, runType, name);
         await this.onRunCreate?.(run);
         await this.onChainStart?.(run);
         return run;
     }
     async handleChainEnd(outputs, runId, _parentRunId, _tags, kwargs) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run) {
             throw new Error("No chain run to end.");
         }
@@ -86513,7 +87948,7 @@ class BaseTracer extends BaseCallbackHandler {
         return run;
     }
     async handleChainError(error, runId, _parentRunId, _tags, kwargs) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run) {
             throw new Error("No chain run to end.");
         }
@@ -86561,7 +87996,7 @@ class BaseTracer extends BaseCallbackHandler {
         return this._addRunToRunMap(run);
     }
     async handleToolStart(tool, input, runId, parentRunId, tags, metadata, name) {
-        const run = this.runMap.get(runId) ??
+        const run = this.getRunById(runId) ??
             this._createRunForToolStart(tool, input, runId, parentRunId, tags, metadata, name);
         await this.onRunCreate?.(run);
         await this.onToolStart?.(run);
@@ -86569,7 +88004,7 @@ class BaseTracer extends BaseCallbackHandler {
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async handleToolEnd(output, runId) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run || run?.run_type !== "tool") {
             throw new Error("No tool run to end");
         }
@@ -86584,7 +88019,7 @@ class BaseTracer extends BaseCallbackHandler {
         return run;
     }
     async handleToolError(error, runId) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run || run?.run_type !== "tool") {
             throw new Error("No tool run to end");
         }
@@ -86599,7 +88034,7 @@ class BaseTracer extends BaseCallbackHandler {
         return run;
     }
     async handleAgentAction(action, runId) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run || run?.run_type !== "chain") {
             return;
         }
@@ -86614,7 +88049,7 @@ class BaseTracer extends BaseCallbackHandler {
         await this.onAgentAction?.(run);
     }
     async handleAgentEnd(action, runId) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run || run?.run_type !== "chain") {
             return;
         }
@@ -86656,14 +88091,14 @@ class BaseTracer extends BaseCallbackHandler {
         return this._addRunToRunMap(run);
     }
     async handleRetrieverStart(retriever, query, runId, parentRunId, tags, metadata, name) {
-        const run = this.runMap.get(runId) ??
+        const run = this.getRunById(runId) ??
             this._createRunForRetrieverStart(retriever, query, runId, parentRunId, tags, metadata, name);
         await this.onRunCreate?.(run);
         await this.onRetrieverStart?.(run);
         return run;
     }
     async handleRetrieverEnd(documents, runId) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run || run?.run_type !== "retriever") {
             throw new Error("No retriever run to end");
         }
@@ -86678,7 +88113,7 @@ class BaseTracer extends BaseCallbackHandler {
         return run;
     }
     async handleRetrieverError(error, runId) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run || run?.run_type !== "retriever") {
             throw new Error("No retriever run to end");
         }
@@ -86693,7 +88128,7 @@ class BaseTracer extends BaseCallbackHandler {
         return run;
     }
     async handleText(text, runId) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run || run?.run_type !== "chain") {
             return;
         }
@@ -86705,7 +88140,7 @@ class BaseTracer extends BaseCallbackHandler {
         await this.onText?.(run);
     }
     async handleLLMNewToken(token, idx, runId, _parentRunId, _tags, fields) {
-        const run = this.runMap.get(runId);
+        const run = this.getRunById(runId);
         if (!run || run?.run_type !== "llm") {
             throw new Error(`Invalid "runId" provided to "handleLLMNewToken" callback.`);
         }
@@ -86949,15 +88384,13 @@ class ConsoleCallbackHandler extends BaseTracer {
     }
 }
 
-;// CONCATENATED MODULE: ./node_modules/langsmith/run_trees.js
-
 ;// CONCATENATED MODULE: ./node_modules/langsmith/index.js
 
 ;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/singletons/tracer.js
 
 
 let client;
-const getDefaultLangChainClientSingleton = () => {
+const tracer_getDefaultLangChainClientSingleton = () => {
     if (client === undefined) {
         const clientParams = env_getEnvironmentVariable("LANGCHAIN_CALLBACKS_BACKGROUND") === "false"
             ? {
@@ -87006,52 +88439,39 @@ class tracer_langchain_LangChainTracer extends BaseTracer {
             writable: true,
             value: void 0
         });
-        const { exampleId, projectName, client } = fields;
-        this.projectName =
-            projectName ??
-                env_getEnvironmentVariable("LANGCHAIN_PROJECT") ??
-                env_getEnvironmentVariable("LANGCHAIN_SESSION");
+        Object.defineProperty(this, "replicas", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "usesRunTreeMap", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: true
+        });
+        const { exampleId, projectName, client, replicas } = fields;
+        this.projectName = projectName ?? getDefaultProjectName();
+        this.replicas = replicas;
         this.exampleId = exampleId;
-        this.client = client ?? getDefaultLangChainClientSingleton();
+        this.client = client ?? tracer_getDefaultLangChainClientSingleton();
         const traceableTree = tracer_langchain_LangChainTracer.getTraceableRunTree();
         if (traceableTree) {
             this.updateFromRunTree(traceableTree);
         }
     }
-    async _convertToCreate(run, example_id = undefined) {
-        return {
-            ...run,
-            extra: {
-                ...run.extra,
-                runtime: await env_getRuntimeEnvironment(),
-            },
-            child_runs: undefined,
-            session_name: this.projectName,
-            reference_example_id: run.parent_run_id ? undefined : example_id,
-        };
-    }
     async persistRun(_run) { }
     async onRunCreate(run) {
-        const persistedRun = await this._convertToCreate(run, this.exampleId);
-        await this.client.createRun(persistedRun);
+        const runTree = this.getRunTreeWithTracingConfig(run.id);
+        await runTree?.postRun();
     }
     async onRunUpdate(run) {
-        const runUpdate = {
-            end_time: run.end_time,
-            error: run.error,
-            outputs: run.outputs,
-            events: run.events,
-            inputs: run.inputs,
-            trace_id: run.trace_id,
-            dotted_order: run.dotted_order,
-            parent_run_id: run.parent_run_id,
-            extra: run.extra,
-            session_name: this.projectName,
-        };
-        await this.client.updateRun(run.id, runUpdate);
+        const runTree = this.getRunTreeWithTracingConfig(run.id);
+        await runTree?.patchRun();
     }
     getRun(id) {
-        return this.runMap.get(id);
+        return this.runTreeMap.get(id);
     }
     updateFromRunTree(runTree) {
         let rootRun = runTree;
@@ -87071,56 +88491,28 @@ class tracer_langchain_LangChainTracer extends BaseTracer {
             if (!current || visited.has(current.id))
                 continue;
             visited.add(current.id);
-            // @ts-expect-error Types of property 'events' are incompatible.
-            this.runMap.set(current.id, current);
+            this.runTreeMap.set(current.id, current);
             if (current.child_runs) {
                 queue.push(...current.child_runs);
             }
         }
         this.client = runTree.client ?? this.client;
+        this.replicas = runTree.replicas ?? this.replicas;
         this.projectName = runTree.project_name ?? this.projectName;
         this.exampleId = runTree.reference_example_id ?? this.exampleId;
     }
-    convertToRunTree(id) {
-        const runTreeMap = {};
-        const runTreeList = [];
-        for (const [id, run] of this.runMap) {
-            // by converting the run map to a run tree, we are doing a copy
-            // thus, any mutation performed on the run tree will not be reflected
-            // back in the run map
-            // TODO: Stop using `this.runMap` in favour of LangSmith's `RunTree`
-            const runTree = new run_trees_RunTree({
-                ...run,
-                child_runs: [],
-                parent_run: undefined,
-                // inherited properties
-                client: this.client,
-                project_name: this.projectName,
-                reference_example_id: this.exampleId,
-                tracingEnabled: true,
-            });
-            runTreeMap[id] = runTree;
-            runTreeList.push([id, run.dotted_order]);
-        }
-        runTreeList.sort((a, b) => {
-            if (!a[1] || !b[1])
-                return 0;
-            return a[1].localeCompare(b[1]);
+    getRunTreeWithTracingConfig(id) {
+        const runTree = this.runTreeMap.get(id);
+        if (!runTree)
+            return undefined;
+        return new run_trees_RunTree({
+            ...runTree,
+            client: this.client,
+            project_name: this.projectName,
+            replicas: this.replicas,
+            reference_example_id: this.exampleId,
+            tracingEnabled: true,
         });
-        for (const [id] of runTreeList) {
-            const run = this.runMap.get(id);
-            const runTree = runTreeMap[id];
-            if (!run || !runTree)
-                continue;
-            if (run.parent_run_id) {
-                const parentRunTree = runTreeMap[run.parent_run_id];
-                if (parentRunTree) {
-                    parentRunTree.child_runs.push(runTree);
-                    runTree.parent_run = parentRunTree;
-                }
-            }
-        }
-        return runTreeMap[id];
     }
     static getTraceableRunTree() {
         try {
@@ -87147,6 +88539,7 @@ const globals_getGlobalAsyncLocalStorageInstance = () => {
 
 ;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/singletons/callbacks.js
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 
 
 let queue;
@@ -87202,8 +88595,12 @@ async function consumeCallback(promiseFn, wait) {
  * Waits for all promises in the queue to resolve. If the queue is
  * undefined, it immediately resolves a promise.
  */
-function awaitAllCallbacks() {
-    return typeof queue !== "undefined" ? queue.onIdle() : Promise.resolve();
+async function awaitAllCallbacks() {
+    const defaultClient = getDefaultLangChainClientSingleton();
+    await Promise.allSettled([
+        typeof queue !== "undefined" ? queue.onIdle() : Promise.resolve(),
+        defaultClient.awaitPendingTraceBatches(),
+    ]);
 }
 
 ;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/callbacks/promises.js
@@ -87783,7 +89180,7 @@ class CallbackManagerForToolRun extends BaseRunManager {
  *
  * // Example of using LLMChain with OpenAI and a simple prompt
  * const chain = new LLMChain({
- *   llm: new ChatOpenAI({ temperature: 0.9 }),
+ *   llm: new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0.9 }),
  *   prompt,
  * });
  *
@@ -88324,7 +89721,7 @@ class async_local_storage_AsyncLocalStorageProvider {
         const langChainTracer = callbackManager?.handlers?.find((handler) => handler?.name === "langchain_tracer");
         let runTree;
         if (langChainTracer && parentRunId) {
-            runTree = langChainTracer.convertToRunTree(parentRunId);
+            runTree = langChainTracer.getRunTreeWithTracingConfig(parentRunId);
         }
         else if (!avoidCreatingRootRunTree) {
             runTree = new run_trees_RunTree({
@@ -89894,14 +91291,14 @@ class EventStreamCallbackHandler extends BaseTracer {
 
 
 const async_caller_STATUS_NO_RETRY = [
-    400,
-    401,
-    402,
-    403,
-    404,
-    405,
-    406,
-    407,
+    400, // Bad Request
+    401, // Unauthorized
+    402, // Payment Required
+    403, // Forbidden
+    404, // Not Found
+    405, // Method Not Allowed
+    406, // Not Acceptable
+    407, // Proxy Authentication Required
     409, // Conflict
 ];
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -89971,7 +91368,7 @@ class async_caller_AsyncCaller {
         this.maxRetries = params.maxRetries ?? 6;
         this.onFailedAttempt =
             params.onFailedAttempt ?? defaultFailedAttemptHandler;
-        const PQueue =  true ? p_queue_dist["default"] : p_queue_dist;
+        const PQueue = ( true ? p_queue_dist["default"] : p_queue_dist);
         this.queue = new PQueue({ concurrency: this.maxConcurrency });
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -91116,7 +92513,7 @@ const _safeParse = (_Err) => (schema, value, _ctx) => {
         }
         : { success: true, data: result.value };
 };
-const parse_safeParse = /* @__PURE__*/ _safeParse($ZodRealError);
+const safeParse = /* @__PURE__*/ _safeParse($ZodRealError);
 const _safeParseAsync = (_Err) => async (schema, value, _ctx) => {
     const ctx = _ctx ? Object.assign(_ctx, { async: true }) : { async: true };
     let result = schema._zod.run({ value, issues: [] }, ctx);
@@ -91129,7 +92526,7 @@ const _safeParseAsync = (_Err) => async (schema, value, _ctx) => {
         }
         : { success: true, data: result.value };
 };
-const parse_safeParseAsync = /* @__PURE__*/ _safeParseAsync($ZodRealError);
+const safeParseAsync = /* @__PURE__*/ _safeParseAsync($ZodRealError);
 
 ;// CONCATENATED MODULE: ./node_modules/zod/dist/esm/v4/core/regexes.js
 const cuid = /^[cC][^\s-]{8,}$/;
@@ -91799,14 +93196,14 @@ const versions_version = {
 
 
 
-const $ZodType = /*@__PURE__*/ (/* unused pure expression or super */ null && (core.$constructor("$ZodType", (inst, def) => {
+const $ZodType = /*@__PURE__*/ $constructor("$ZodType", (inst, def) => {
     var _a;
     inst ?? (inst = {});
     // avoids issues with using Math.random() in Next.js caching
-    util.defineLazy(inst._zod, "id", () => def.type + "_" + util.randomString(10));
+    defineLazy(inst._zod, "id", () => def.type + "_" + randomString(10));
     inst._zod.def = def; // set _def property
     inst._zod.bag = inst._zod.bag || {}; // initialize _bag object
-    inst._zod.version = version;
+    inst._zod.version = versions_version;
     const checks = [...(inst._zod.def.checks ?? [])];
     // if inst is itself a checks.$ZodCheck, run it as a check
     if (inst._zod.traits.has("$ZodCheck")) {
@@ -91828,7 +93225,7 @@ const $ZodType = /*@__PURE__*/ (/* unused pure expression or super */ null && (c
     }
     else {
         const runChecks = (payload, checks, ctx) => {
-            let isAborted = util.aborted(payload);
+            let isAborted = aborted(payload);
             let asyncResult;
             for (const ch of checks) {
                 if (ch._zod.when) {
@@ -91842,7 +93239,7 @@ const $ZodType = /*@__PURE__*/ (/* unused pure expression or super */ null && (c
                 const currLen = payload.issues.length;
                 const _ = ch._zod.check(payload);
                 if (_ instanceof Promise && ctx?.async === false) {
-                    throw new core.$ZodAsyncError();
+                    throw new $ZodAsyncError();
                 }
                 if (asyncResult || _ instanceof Promise) {
                     asyncResult = (asyncResult ?? Promise.resolve()).then(async () => {
@@ -91851,7 +93248,7 @@ const $ZodType = /*@__PURE__*/ (/* unused pure expression or super */ null && (c
                         if (nextLen === currLen)
                             return;
                         if (!isAborted)
-                            isAborted = util.aborted(payload, currLen);
+                            isAborted = aborted(payload, currLen);
                     });
                 }
                 else {
@@ -91859,7 +93256,7 @@ const $ZodType = /*@__PURE__*/ (/* unused pure expression or super */ null && (c
                     if (nextLen === currLen)
                         continue;
                     if (!isAborted)
-                        isAborted = util.aborted(payload, currLen);
+                        isAborted = aborted(payload, currLen);
                 }
             }
             if (asyncResult) {
@@ -91873,7 +93270,7 @@ const $ZodType = /*@__PURE__*/ (/* unused pure expression or super */ null && (c
             const result = inst._zod.parse(payload, ctx);
             if (result instanceof Promise) {
                 if (ctx.async === false)
-                    throw new core.$ZodAsyncError();
+                    throw new $ZodAsyncError();
                 return result.then((result) => runChecks(result, checks, ctx));
             }
             return runChecks(result, checks, ctx);
@@ -91892,7 +93289,7 @@ const $ZodType = /*@__PURE__*/ (/* unused pure expression or super */ null && (c
         vendor: "zod",
         version: 1,
     };
-})));
+});
 
 const $ZodString = /*@__PURE__*/ (/* unused pure expression or super */ null && (core.$constructor("$ZodString", (inst, def) => {
     $ZodType.init(inst, def);
@@ -92334,7 +93731,7 @@ const schemas_$ZodUnknown = /*@__PURE__*/ (/* unused pure expression or super */
     $ZodType.init(inst, def);
     inst._zod.parse = (payload) => payload;
 })));
-const $ZodNever = /*@__PURE__*/ (/* unused pure expression or super */ null && (core.$constructor("$ZodNever", (inst, def) => {
+const $ZodNever = /*@__PURE__*/ $constructor("$ZodNever", (inst, def) => {
     $ZodType.init(inst, def);
     inst._zod.parse = (payload, _ctx) => {
         payload.issues.push({
@@ -92345,7 +93742,7 @@ const $ZodNever = /*@__PURE__*/ (/* unused pure expression or super */ null && (
         });
         return payload;
     };
-})));
+});
 const $ZodVoid = /*@__PURE__*/ (/* unused pure expression or super */ null && (core.$constructor("$ZodVoid", (inst, def) => {
     $ZodType.init(inst, def);
     inst._zod.parse = (payload, _ctx) => {
@@ -98204,7 +99601,7 @@ class $ZodRegistry {
 function registry() {
     return new $ZodRegistry();
 }
-const globalRegistry = /*@__PURE__*/ registry();
+const registries_globalRegistry = /*@__PURE__*/ registry();
 
 ;// CONCATENATED MODULE: ./node_modules/zod/dist/esm/v4/core/api.js
 
@@ -98602,7 +99999,7 @@ function api_unknown(Class) {
 function _never(Class, params) {
     return new Class({
         type: "never",
-        ...util.normalizeParams(params),
+        ...normalizeParams(params),
     });
 }
 function _void(Class, params) {
@@ -99176,7 +100573,7 @@ function _function(params) {
 class JSONSchemaGenerator {
     constructor(params) {
         this.counter = 0;
-        this.metadataRegistry = params?.metadata ?? globalRegistry;
+        this.metadataRegistry = params?.metadata ?? registries_globalRegistry;
         this.target = params?.target ?? "draft-2020-12";
         this.unrepresentable = params?.unrepresentable ?? "throw";
         this.override = params?.override ?? (() => { });
@@ -100053,6 +101450,7 @@ const Options_defaultOptions = {
     emailStrategy: "format:email",
     base64Strategy: "contentEncoding:base64",
     nameStrategy: "ref",
+    openAiAnyTypeName: "OpenAiAnyType"
 };
 const getDefaultOptions = (options) => (typeof options === "string"
     ? {
@@ -100073,6 +101471,7 @@ const getRefs = (options) => {
         : _options.basePath;
     return {
         ..._options,
+        flags: { hasReferencedOpenAiAnyType: false },
         currentPath: currentPath,
         propertyPath: undefined,
         seen: new Map(Object.entries(_options.definitions).map(([name, def]) => [
@@ -100087,9 +101486,33 @@ const getRefs = (options) => {
     };
 };
 
+;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/getRelativePath.js
+const getRelativePath = (pathA, pathB) => {
+    let i = 0;
+    for (; i < pathA.length && i < pathB.length; i++) {
+        if (pathA[i] !== pathB[i])
+            break;
+    }
+    return [(pathA.length - i).toString(), ...pathB.slice(i)].join("/");
+};
+
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/any.js
-function parseAnyDef() {
-    return {};
+
+function parseAnyDef(refs) {
+    if (refs.target !== "openAi") {
+        return {};
+    }
+    const anyDefinitionPath = [
+        ...refs.basePath,
+        refs.definitionPath,
+        refs.openAiAnyTypeName,
+    ];
+    refs.flags.hasReferencedOpenAiAnyType = true;
+    return {
+        $ref: refs.$refStrategy === "relative"
+            ? getRelativePath(anyDefinitionPath, refs.currentPath)
+            : anyDefinitionPath.join("/"),
+    };
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/errorMessages.js
@@ -100265,10 +101688,11 @@ function parseDefaultDef(_def, refs) {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/effects.js
 
+
 function parseEffectsDef(_def, refs) {
     return refs.effectStrategy === "input"
         ? parseDef(_def.schema._def, refs)
-        : {};
+        : parseAnyDef(refs);
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/enum.js
@@ -100716,6 +102140,7 @@ function stringifyRegExpWithFlags(regex, refs) {
 
 
 
+
 function parseRecordDef(def, refs) {
     if (refs.target === "openAi") {
         console.warn("Warning: OpenAI may not support records in schemas! Try an array of key-value pairs instead.");
@@ -100730,7 +102155,7 @@ function parseRecordDef(def, refs) {
                 [key]: parseDef(def.valueType._def, {
                     ...refs,
                     currentPath: [...refs.currentPath, "properties", key],
-                }) ?? {},
+                }) ?? parseAnyDef(refs),
             }), {}),
             additionalProperties: refs.rejectedAdditionalProperties,
         };
@@ -100776,6 +102201,7 @@ function parseRecordDef(def, refs) {
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/map.js
 
 
+
 function parseMapDef(def, refs) {
     if (refs.mapStrategy === "record") {
         return parseRecordDef(def, refs);
@@ -100783,11 +102209,11 @@ function parseMapDef(def, refs) {
     const keys = parseDef(def.keyType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "items", "items", "0"],
-    }) || {};
+    }) || parseAnyDef(refs);
     const values = parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "items", "items", "1"],
-    }) || {};
+    }) || parseAnyDef(refs);
     return {
         type: "array",
         maxItems: 125,
@@ -100819,10 +102245,16 @@ function parseNativeEnumDef(def) {
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/never.js
-function parseNeverDef() {
-    return {
-        not: {},
-    };
+
+function parseNeverDef(refs) {
+    return refs.target === "openAi"
+        ? undefined
+        : {
+            not: parseAnyDef({
+                ...refs,
+                currentPath: [...refs.currentPath, "not"],
+            }),
+        };
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/null.js
@@ -101010,7 +102442,6 @@ function parseNumberDef(def, refs) {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/object.js
 
-
 function parseObjectDef(def, refs) {
     const forceOptionalIntoNullable = refs.target === "openAi";
     const result = {
@@ -101026,7 +102457,7 @@ function parseObjectDef(def, refs) {
         }
         let propOptional = safeIsOptional(propDef);
         if (propOptional && forceOptionalIntoNullable) {
-            if (propDef instanceof ZodOptional) {
+            if (propDef._def.typeName === "ZodOptional") {
                 propDef = propDef._def.innerType;
             }
             if (!propDef.isNullable()) {
@@ -101085,6 +102516,7 @@ function safeIsOptional(schema) {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/optional.js
 
+
 const parseOptionalDef = (def, refs) => {
     if (refs.currentPath.toString() === refs.propertyPath?.toString()) {
         return parseDef(def.innerType._def, refs);
@@ -101097,12 +102529,12 @@ const parseOptionalDef = (def, refs) => {
         ? {
             anyOf: [
                 {
-                    not: {},
+                    not: parseAnyDef(refs),
                 },
                 innerSchema,
             ],
         }
-        : {};
+        : parseAnyDef(refs);
 };
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/pipeline.js
@@ -101190,15 +102622,17 @@ function parseTupleDef(def, refs) {
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/undefined.js
-function parseUndefinedDef() {
+
+function parseUndefinedDef(refs) {
     return {
-        not: {},
+        not: parseAnyDef(refs),
     };
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/unknown.js
-function parseUnknownDef() {
-    return {};
+
+function parseUnknownDef(refs) {
+    return parseAnyDef(refs);
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/readonly.js
@@ -101254,7 +102688,7 @@ const selectParser = (def, typeName, refs) => {
         case ZodFirstPartyTypeKind.ZodDate:
             return parseDateDef(def, refs);
         case ZodFirstPartyTypeKind.ZodUndefined:
-            return parseUndefinedDef();
+            return parseUndefinedDef(refs);
         case ZodFirstPartyTypeKind.ZodNull:
             return parseNullDef(refs);
         case ZodFirstPartyTypeKind.ZodArray:
@@ -101288,13 +102722,13 @@ const selectParser = (def, typeName, refs) => {
             return parsePromiseDef(def, refs);
         case ZodFirstPartyTypeKind.ZodNaN:
         case ZodFirstPartyTypeKind.ZodNever:
-            return parseNeverDef();
+            return parseNeverDef(refs);
         case ZodFirstPartyTypeKind.ZodEffects:
             return parseEffectsDef(def, refs);
         case ZodFirstPartyTypeKind.ZodAny:
-            return parseAnyDef();
+            return parseAnyDef(refs);
         case ZodFirstPartyTypeKind.ZodUnknown:
-            return parseUnknownDef();
+            return parseUnknownDef(refs);
         case ZodFirstPartyTypeKind.ZodDefault:
             return parseDefaultDef(def, refs);
         case ZodFirstPartyTypeKind.ZodBranded:
@@ -101316,6 +102750,8 @@ const selectParser = (def, typeName, refs) => {
 };
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parseDef.js
+
+
 
 
 function parseDef(def, refs, forceResolution = false) {
@@ -101361,19 +102797,11 @@ const get$ref = (item, refs) => {
             if (item.path.length < refs.currentPath.length &&
                 item.path.every((value, index) => refs.currentPath[index] === value)) {
                 console.warn(`Recursive reference detected at ${refs.currentPath.join("/")}! Defaulting to any`);
-                return {};
+                return parseAnyDef(refs);
             }
-            return refs.$refStrategy === "seen" ? {} : undefined;
+            return refs.$refStrategy === "seen" ? parseAnyDef(refs) : undefined;
         }
     }
-};
-const getRelativePath = (pathA, pathB) => {
-    let i = 0;
-    for (; i < pathA.length && i < pathB.length; i++) {
-        if (pathA[i] !== pathB[i])
-            break;
-    }
-    return [(pathA.length - i).toString(), ...pathB.slice(i)].join("/");
 };
 const addMeta = (def, refs, jsonSchema) => {
     if (def.description) {
@@ -101388,15 +102816,16 @@ const addMeta = (def, refs, jsonSchema) => {
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/zodToJsonSchema.js
 
 
+
 const zodToJsonSchema_zodToJsonSchema = (schema, options) => {
     const refs = getRefs(options);
-    const definitions = typeof options === "object" && options.definitions
+    let definitions = typeof options === "object" && options.definitions
         ? Object.entries(options.definitions).reduce((acc, [name, schema]) => ({
             ...acc,
             [name]: parseDef(schema._def, {
                 ...refs,
                 currentPath: [...refs.basePath, refs.definitionPath, name],
-            }, true) ?? {},
+            }, true) ?? parseAnyDef(refs),
         }), {})
         : undefined;
     const name = typeof options === "string"
@@ -101409,7 +102838,7 @@ const zodToJsonSchema_zodToJsonSchema = (schema, options) => {
         : {
             ...refs,
             currentPath: [...refs.basePath, refs.definitionPath, name],
-        }, false) ?? {};
+        }, false) ?? parseAnyDef(refs);
     const title = typeof options === "object" &&
         options.name !== undefined &&
         options.nameStrategy === "title"
@@ -101417,6 +102846,26 @@ const zodToJsonSchema_zodToJsonSchema = (schema, options) => {
         : undefined;
     if (title !== undefined) {
         main.title = title;
+    }
+    if (refs.flags.hasReferencedOpenAiAnyType) {
+        if (!definitions) {
+            definitions = {};
+        }
+        if (!definitions[refs.openAiAnyTypeName]) {
+            definitions[refs.openAiAnyTypeName] = {
+                // Skipping "object" as no properties can be defined and additionalProperties must be "false"
+                type: ["string", "number", "integer", "boolean", "array", "null"],
+                items: {
+                    $ref: refs.$refStrategy === "relative"
+                        ? "1"
+                        : [
+                            ...refs.basePath,
+                            refs.definitionPath,
+                            refs.openAiAnyTypeName,
+                        ].join("/"),
+                },
+            };
+        }
     }
     const combined = name === undefined
         ? definitions
@@ -101454,6 +102903,7 @@ const zodToJsonSchema_zodToJsonSchema = (schema, options) => {
 
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/index.js
+
 
 
 
@@ -102814,7 +104264,7 @@ function interopParse(schema, input) {
  */
 function getSchemaDescription(schema) {
     if (isZodSchemaV4(schema)) {
-        return globalRegistry.get(schema)?.description;
+        return registries_globalRegistry.get(schema)?.description;
     }
     if (isZodSchemaV3(schema)) {
         return schema.description;
@@ -102915,6 +104365,55 @@ function isSimpleStringZodSchema(schema) {
     }
     return false;
 }
+function isZodObjectV3(obj) {
+    // Zod v3 object schemas have _def.typeName === "ZodObject"
+    if (typeof obj === "object" &&
+        obj !== null &&
+        "_def" in obj &&
+        typeof obj._def === "object" &&
+        obj._def !== null &&
+        "typeName" in obj._def &&
+        obj._def.typeName === "ZodObject") {
+        return true;
+    }
+    return false;
+}
+function isZodObjectV4(obj) {
+    if (!isZodSchemaV4(obj))
+        return false;
+    // Zod v4 object schemas have _zod.def.type === "object"
+    if (typeof obj === "object" &&
+        obj !== null &&
+        "_zod" in obj &&
+        typeof obj._zod === "object" &&
+        obj._zod !== null &&
+        "def" in obj._zod &&
+        typeof obj._zod.def === "object" &&
+        obj._zod.def !== null &&
+        "type" in obj._zod.def &&
+        obj._zod.def.type === "object") {
+        return true;
+    }
+    return false;
+}
+function isZodArrayV4(obj) {
+    if (!isZodSchemaV4(obj))
+        return false;
+    // Zod v4 array schemas have _zod.def.type === "array"
+    if (typeof obj === "object" &&
+        obj !== null &&
+        "_zod" in obj &&
+        typeof obj._zod === "object" &&
+        obj._zod !== null &&
+        "def" in obj._zod &&
+        typeof obj._zod.def === "object" &&
+        obj._zod.def !== null &&
+        "type" in obj._zod.def &&
+        obj._zod.def.type === "array") {
+        return true;
+    }
+    return false;
+}
 /**
  * Determines if the provided value is an InteropZodObject (Zod v3 or v4 object schema).
  *
@@ -102922,33 +104421,10 @@ function isSimpleStringZodSchema(schema) {
  * @returns {boolean} True if the value is a Zod v3 or v4 object schema, false otherwise.
  */
 function isInteropZodObject(obj) {
-    if (isZodSchemaV3(obj)) {
-        // Zod v3 object schemas have _def.typeName === "ZodObject"
-        if (typeof obj === "object" &&
-            obj !== null &&
-            "_def" in obj &&
-            typeof obj._def === "object" &&
-            obj._def !== null &&
-            "typeName" in obj._def &&
-            obj._def.typeName === "ZodObject") {
-            return true;
-        }
-    }
-    if (isZodSchemaV4(obj)) {
-        // Zod v4 object schemas have _zod.def.type === "object"
-        if (typeof obj === "object" &&
-            obj !== null &&
-            "_zod" in obj &&
-            typeof obj._zod === "object" &&
-            obj._zod !== null &&
-            "def" in obj._zod &&
-            typeof obj._zod.def === "object" &&
-            obj._zod.def !== null &&
-            "type" in obj._zod.def &&
-            obj._zod.def.type === "object") {
-            return true;
-        }
-    }
+    if (isZodObjectV3(obj))
+        return true;
+    if (isZodObjectV4(obj))
+        return true;
     return false;
 }
 /**
@@ -103006,19 +104482,123 @@ function interopZodObjectPartial(schema) {
     }
     throw new Error("Schema must be an instance of z3.ZodObject or z4.$ZodObject");
 }
-function interopZodObjectPassthrough(schema) {
-    if (isInteropZodObject(schema)) {
-        if (isZodSchemaV3(schema)) {
-            return schema.passthrough();
+/**
+ * Returns a strict version of a Zod object schema, disallowing unknown keys.
+ * Supports both Zod v3 and v4 object schemas. If `recursive` is true, applies strictness
+ * recursively to all nested object schemas and arrays of object schemas.
+ *
+ * @template T - The type of the Zod object schema.
+ * @param {T} schema - The Zod object schema instance (either v3 or v4).
+ * @param {boolean} [recursive=false] - Whether to apply strictness recursively to nested objects/arrays.
+ * @returns {InteropZodObject} The strict Zod object schema.
+ * @throws {Error} If the schema is not a Zod v3 or v4 object.
+ */
+function interopZodObjectStrict(schema, recursive = false) {
+    if (isZodSchemaV3(schema)) {
+        // TODO: v3 schemas aren't recursively handled here
+        // (currently not necessary since zodToJsonSchema handles this)
+        return schema.strict();
+    }
+    if (isZodObjectV4(schema)) {
+        const outputShape = schema._zod.def.shape;
+        if (recursive) {
+            for (const [key, keySchema] of Object.entries(schema._zod.def.shape)) {
+                // If the shape key is a v4 object schema, we need to make it strict
+                if (isZodObjectV4(keySchema)) {
+                    const outputSchema = interopZodObjectStrict(keySchema, recursive);
+                    outputShape[key] = outputSchema;
+                }
+                // If the shape key is a v4 array schema, we need to make the element
+                // schema strict if it's an object schema
+                else if (isZodArrayV4(keySchema)) {
+                    let elementSchema = keySchema._zod.def.element;
+                    if (isZodObjectV4(elementSchema)) {
+                        elementSchema = interopZodObjectStrict(elementSchema, recursive);
+                    }
+                    outputShape[key] = util_clone(keySchema, {
+                        ...keySchema._zod.def,
+                        element: elementSchema,
+                    });
+                }
+                // Otherwise, just use the keySchema
+                else {
+                    outputShape[key] = keySchema;
+                }
+                // Assign meta fields to the keySchema
+                const meta = registries_globalRegistry.get(keySchema);
+                if (meta)
+                    registries_globalRegistry.add(outputShape[key], meta);
+            }
         }
-        if (isZodSchemaV4(schema)) {
-            // Type reassign since ZodObjectV4 assumes that generics should be washed
-            const objectSchema = schema;
-            return clone(objectSchema, {
-                ...objectSchema._zod.def,
-                catchall: _unknown($ZodUnknown),
-            });
+        const modifiedSchema = util_clone(schema, {
+            ...schema._zod.def,
+            shape: outputShape,
+            catchall: _never($ZodNever),
+        });
+        const meta = registries_globalRegistry.get(schema);
+        if (meta)
+            registries_globalRegistry.add(modifiedSchema, meta);
+        return modifiedSchema;
+    }
+    throw new Error("Schema must be an instance of z3.ZodObject or z4.$ZodObject");
+}
+/**
+ * Returns a passthrough version of a Zod object schema, allowing unknown keys.
+ * Supports both Zod v3 and v4 object schemas. If `recursive` is true, applies passthrough
+ * recursively to all nested object schemas and arrays of object schemas.
+ *
+ * @template T - The type of the Zod object schema.
+ * @param {T} schema - The Zod object schema instance (either v3 or v4).
+ * @param {boolean} [recursive=false] - Whether to apply passthrough recursively to nested objects/arrays.
+ * @returns {InteropZodObject} The passthrough Zod object schema.
+ * @throws {Error} If the schema is not a Zod v3 or v4 object.
+ */
+function interopZodObjectPassthrough(schema, recursive = false) {
+    if (isZodObjectV3(schema)) {
+        // TODO: v3 schemas aren't recursively handled here
+        // (currently not necessary since zodToJsonSchema handles this)
+        return schema.passthrough();
+    }
+    if (isZodObjectV4(schema)) {
+        const outputShape = schema._zod.def.shape;
+        if (recursive) {
+            for (const [key, keySchema] of Object.entries(schema._zod.def.shape)) {
+                // If the shape key is a v4 object schema, we need to make it passthrough
+                if (isZodObjectV4(keySchema)) {
+                    const outputSchema = interopZodObjectPassthrough(keySchema, recursive);
+                    outputShape[key] = outputSchema;
+                }
+                // If the shape key is a v4 array schema, we need to make the element
+                // schema passthrough if it's an object schema
+                else if (isZodArrayV4(keySchema)) {
+                    let elementSchema = keySchema._zod.def.element;
+                    if (isZodObjectV4(elementSchema)) {
+                        elementSchema = interopZodObjectPassthrough(elementSchema, recursive);
+                    }
+                    outputShape[key] = clone(keySchema, {
+                        ...keySchema._zod.def,
+                        element: elementSchema,
+                    });
+                }
+                // Otherwise, just use the keySchema
+                else {
+                    outputShape[key] = keySchema;
+                }
+                // Assign meta fields to the keySchema
+                const meta = globalRegistry.get(keySchema);
+                if (meta)
+                    globalRegistry.add(outputShape[key], meta);
+            }
         }
+        const modifiedSchema = clone(schema, {
+            ...schema._zod.def,
+            shape: outputShape,
+            catchall: _unknown($ZodUnknown),
+        });
+        const meta = globalRegistry.get(schema);
+        if (meta)
+            globalRegistry.add(modifiedSchema, meta);
+        return modifiedSchema;
     }
     throw new Error("Schema must be an instance of z3.ZodObject or z4.$ZodObject");
 }
@@ -103053,6 +104633,67 @@ function getInteropZodDefaultGetter(schema) {
     }
     return undefined;
 }
+function isZodTransformV3(schema) {
+    return (isZodSchemaV3(schema) &&
+        "typeName" in schema._def &&
+        schema._def.typeName === "ZodEffects");
+}
+function isZodTransformV4(schema) {
+    return isZodSchemaV4(schema) && schema._zod.def.type === "pipe";
+}
+/**
+ * Returns the input type of a Zod transform schema, for both v3 and v4.
+ * If the schema is not a transform, returns undefined. If `recursive` is true,
+ * recursively processes nested object schemas and arrays of object schemas.
+ *
+ * @param schema - The Zod schema instance (v3 or v4)
+ * @param {boolean} [recursive=false] - Whether to recursively process nested objects/arrays.
+ * @returns The input Zod schema of the transform, or undefined if not a transform
+ */
+function interopZodTransformInputSchema(schema, recursive = false) {
+    // Zod v3: ._def.schema is the input schema for ZodEffects (transform)
+    if (isZodSchemaV3(schema)) {
+        if (isZodTransformV3(schema)) {
+            return interopZodTransformInputSchema(schema._def.schema, recursive);
+        }
+        // TODO: v3 schemas aren't recursively handled here
+        // (currently not necessary since zodToJsonSchema handles this)
+        return schema;
+    }
+    // Zod v4: _def.type is the input schema for ZodEffects (transform)
+    if (isZodSchemaV4(schema)) {
+        let outputSchema = schema;
+        if (isZodTransformV4(schema)) {
+            outputSchema = interopZodTransformInputSchema(schema._zod.def.in, recursive);
+        }
+        if (recursive) {
+            // Handle nested object schemas
+            if (isZodObjectV4(outputSchema)) {
+                const outputShape = outputSchema._zod.def.shape;
+                for (const [key, keySchema] of Object.entries(outputSchema._zod.def.shape)) {
+                    outputShape[key] = interopZodTransformInputSchema(keySchema, recursive);
+                }
+                outputSchema = util_clone(outputSchema, {
+                    ...outputSchema._zod.def,
+                    shape: outputShape,
+                });
+            }
+            // Handle nested array schemas
+            else if (isZodArrayV4(outputSchema)) {
+                const elementSchema = interopZodTransformInputSchema(outputSchema._zod.def.element, recursive);
+                outputSchema = util_clone(outputSchema, {
+                    ...outputSchema._zod.def,
+                    element: elementSchema,
+                });
+            }
+        }
+        const meta = registries_globalRegistry.get(schema);
+        if (meta)
+            registries_globalRegistry.add(outputSchema, meta);
+        return outputSchema;
+    }
+    throw new Error("Schema must be an instance of z3.ZodType or z4.$ZodType");
+}
 
 ;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/json_schema.js
 
@@ -103067,7 +104708,14 @@ function getInteropZodDefaultGetter(schema) {
  */
 function json_schema_toJsonSchema(schema) {
     if (isZodSchemaV4(schema)) {
-        return toJSONSchema(schema);
+        const inputSchema = interopZodTransformInputSchema(schema, true);
+        if (isZodObjectV4(inputSchema)) {
+            const strictSchema = interopZodObjectStrict(inputSchema, true);
+            return toJSONSchema(strictSchema);
+        }
+        else {
+            return toJSONSchema(schema);
+        }
     }
     if (isZodSchemaV3(schema)) {
         return zodToJsonSchema_zodToJsonSchema(schema);
@@ -103982,8 +105630,9 @@ class Runnable extends Serializable {
         // add each chunk to the output stream
         const outerThis = this;
         async function consumeRunnableStream() {
+            let signal;
+            let listener = null;
             try {
-                let signal;
                 if (options?.signal) {
                     if ("any" in AbortSignal) {
                         // Use native AbortSignal.any() if available (Node 19+)
@@ -103997,9 +105646,10 @@ class Runnable extends Serializable {
                         // Fallback for Node 18 and below - just use the provided signal
                         signal = options.signal;
                         // Ensure we still abort our controller when the parent signal aborts
-                        options.signal.addEventListener("abort", () => {
+                        listener = () => {
                             abortController.abort();
-                        }, { once: true });
+                        };
+                        options.signal.addEventListener("abort", listener, { once: true });
                     }
                 }
                 else {
@@ -104019,6 +105669,9 @@ class Runnable extends Serializable {
             }
             finally {
                 await eventStreamer.finish();
+                if (signal && listener) {
+                    signal.removeEventListener("abort", listener);
+                }
             }
         }
         const runnableStreamConsumePromise = consumeRunnableStream();
@@ -104690,7 +106343,7 @@ class RunnableRetry extends RunnableBinding {
  * const promptTemplate = PromptTemplate.fromTemplate(
  *   "Tell me a joke about {topic}",
  * );
- * const chain = RunnableSequence.from([promptTemplate, new ChatOpenAI({})]);
+ * const chain = RunnableSequence.from([promptTemplate, new ChatOpenAI({ model: "gpt-4o-mini" })]);
  * const result = await chain.invoke({ topic: "bears" });
  * ```
  */
@@ -105330,9 +106983,9 @@ class base_RunnableLambda extends Runnable {
  * );
  *
  * // Invoke the sequence with a single age input
- * const res = sequence.invoke(25);
+ * const res = await sequence.invoke(25);
  *
- * // { years_to_fifty: 25, years_to_hundred: 75 }
+ * // { years_to_fifty: 20, years_to_hundred: 70 }
  * ```
  */
 class RunnableParallel extends (/* unused pure expression or super */ null && (RunnableMap)) {
@@ -105749,7 +107402,9 @@ class RunnablePick extends Runnable {
             const picked = this.keys
                 .map((key) => [key, input[key]])
                 .filter((v) => v[1] !== undefined);
-            return picked.length === 0 ? undefined : Object.fromEntries(picked);
+            return picked.length === 0
+                ? undefined
+                : Object.fromEntries(picked);
         }
     }
     async invoke(input, options) {
@@ -106719,11 +108374,476 @@ Sha1.prototype.arrayBuffer = function () {
     dataView.setUint32(16, this.h4);
     return buffer;
 };
+let hasLoggedWarning = false;
+/**
+ * @deprecated Use `makeDefaultKeyEncoder()` to create a custom key encoder.
+ * This function will be removed in a future version.
+ */
 const insecureHash = (message) => {
+    if (!hasLoggedWarning) {
+        console.warn([
+            `The default method for hashing keys is insecure and will be replaced in a future version,`,
+            `but hasn't been replaced yet as to not break existing caches. It's recommended that you use`,
+            `a more secure hashing algorithm to avoid cache poisoning.`,
+            ``,
+            `See this page for more information:`,
+            `|`,
+            `└> https://js.langchain.com/docs/troubleshooting/warnings/insecure-cache-algorithm`,
+        ].join("\n"));
+        hasLoggedWarning = true;
+    }
     return new Sha1(true).update(message)["hex"]();
 };
 
+;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/js-sha256/hash.js
+// @ts-nocheck
+// Inlined to deal with portability issues with importing crypto module
+/**
+ * [js-sha256]{@link https://github.com/emn178/js-sha256}
+ *
+ * @version 0.11.1
+ * @author Chen, Yi-Cyuan [emn178@gmail.com]
+ * @copyright Chen, Yi-Cyuan 2014-2025
+ * @license MIT
+ */
+/*jslint bitwise: true */
+
+var hash_HEX_CHARS = "0123456789abcdef".split("");
+var hash_EXTRA = [-2147483648, 8388608, 32768, 128];
+var hash_SHIFT = [24, 16, 8, 0];
+var K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
+    0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+    0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
+    0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147,
+    0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+    0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
+    0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
+    0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+    0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+];
+var hash_OUTPUT_TYPES = (/* unused pure expression or super */ null && (["hex", "array", "digest", "arrayBuffer"]));
+var hash_blocks = [];
+function Sha256(is224, sharedMemory) {
+    if (sharedMemory) {
+        hash_blocks[0] =
+            hash_blocks[16] =
+                hash_blocks[1] =
+                    hash_blocks[2] =
+                        hash_blocks[3] =
+                            hash_blocks[4] =
+                                hash_blocks[5] =
+                                    hash_blocks[6] =
+                                        hash_blocks[7] =
+                                            hash_blocks[8] =
+                                                hash_blocks[9] =
+                                                    hash_blocks[10] =
+                                                        hash_blocks[11] =
+                                                            hash_blocks[12] =
+                                                                hash_blocks[13] =
+                                                                    hash_blocks[14] =
+                                                                        hash_blocks[15] =
+                                                                            0;
+        this.blocks = hash_blocks;
+    }
+    else {
+        this.blocks = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    }
+    if (is224) {
+        this.h0 = 0xc1059ed8;
+        this.h1 = 0x367cd507;
+        this.h2 = 0x3070dd17;
+        this.h3 = 0xf70e5939;
+        this.h4 = 0xffc00b31;
+        this.h5 = 0x68581511;
+        this.h6 = 0x64f98fa7;
+        this.h7 = 0xbefa4fa4;
+    }
+    else {
+        // 256
+        this.h0 = 0x6a09e667;
+        this.h1 = 0xbb67ae85;
+        this.h2 = 0x3c6ef372;
+        this.h3 = 0xa54ff53a;
+        this.h4 = 0x510e527f;
+        this.h5 = 0x9b05688c;
+        this.h6 = 0x1f83d9ab;
+        this.h7 = 0x5be0cd19;
+    }
+    this.block = this.start = this.bytes = this.hBytes = 0;
+    this.finalized = this.hashed = false;
+    this.first = true;
+    this.is224 = is224;
+}
+Sha256.prototype.update = function (message) {
+    if (this.finalized) {
+        return;
+    }
+    var notString, type = typeof message;
+    if (type !== "string") {
+        if (type === "object") {
+            if (message === null) {
+                throw new Error(ERROR);
+            }
+            else if (ARRAY_BUFFER && message.constructor === ArrayBuffer) {
+                message = new Uint8Array(message);
+            }
+            else if (!Array.isArray(message)) {
+                if (!ARRAY_BUFFER || !ArrayBuffer.isView(message)) {
+                    throw new Error(ERROR);
+                }
+            }
+        }
+        else {
+            throw new Error(ERROR);
+        }
+        notString = true;
+    }
+    var code, index = 0, i, length = message.length, blocks = this.blocks;
+    while (index < length) {
+        if (this.hashed) {
+            this.hashed = false;
+            blocks[0] = this.block;
+            this.block =
+                blocks[16] =
+                    blocks[1] =
+                        blocks[2] =
+                            blocks[3] =
+                                blocks[4] =
+                                    blocks[5] =
+                                        blocks[6] =
+                                            blocks[7] =
+                                                blocks[8] =
+                                                    blocks[9] =
+                                                        blocks[10] =
+                                                            blocks[11] =
+                                                                blocks[12] =
+                                                                    blocks[13] =
+                                                                        blocks[14] =
+                                                                            blocks[15] =
+                                                                                0;
+        }
+        if (notString) {
+            for (i = this.start; index < length && i < 64; ++index) {
+                blocks[i >>> 2] |= message[index] << hash_SHIFT[i++ & 3];
+            }
+        }
+        else {
+            for (i = this.start; index < length && i < 64; ++index) {
+                code = message.charCodeAt(index);
+                if (code < 0x80) {
+                    blocks[i >>> 2] |= code << hash_SHIFT[i++ & 3];
+                }
+                else if (code < 0x800) {
+                    blocks[i >>> 2] |= (0xc0 | (code >>> 6)) << hash_SHIFT[i++ & 3];
+                    blocks[i >>> 2] |= (0x80 | (code & 0x3f)) << hash_SHIFT[i++ & 3];
+                }
+                else if (code < 0xd800 || code >= 0xe000) {
+                    blocks[i >>> 2] |= (0xe0 | (code >>> 12)) << hash_SHIFT[i++ & 3];
+                    blocks[i >>> 2] |= (0x80 | ((code >>> 6) & 0x3f)) << hash_SHIFT[i++ & 3];
+                    blocks[i >>> 2] |= (0x80 | (code & 0x3f)) << hash_SHIFT[i++ & 3];
+                }
+                else {
+                    code =
+                        0x10000 +
+                            (((code & 0x3ff) << 10) | (message.charCodeAt(++index) & 0x3ff));
+                    blocks[i >>> 2] |= (0xf0 | (code >>> 18)) << hash_SHIFT[i++ & 3];
+                    blocks[i >>> 2] |= (0x80 | ((code >>> 12) & 0x3f)) << hash_SHIFT[i++ & 3];
+                    blocks[i >>> 2] |= (0x80 | ((code >>> 6) & 0x3f)) << hash_SHIFT[i++ & 3];
+                    blocks[i >>> 2] |= (0x80 | (code & 0x3f)) << hash_SHIFT[i++ & 3];
+                }
+            }
+        }
+        this.lastByteIndex = i;
+        this.bytes += i - this.start;
+        if (i >= 64) {
+            this.block = blocks[16];
+            this.start = i - 64;
+            this.hash();
+            this.hashed = true;
+        }
+        else {
+            this.start = i;
+        }
+    }
+    if (this.bytes > 4294967295) {
+        this.hBytes += (this.bytes / 4294967296) << 0;
+        this.bytes = this.bytes % 4294967296;
+    }
+    return this;
+};
+Sha256.prototype.finalize = function () {
+    if (this.finalized) {
+        return;
+    }
+    this.finalized = true;
+    var blocks = this.blocks, i = this.lastByteIndex;
+    blocks[16] = this.block;
+    blocks[i >>> 2] |= hash_EXTRA[i & 3];
+    this.block = blocks[16];
+    if (i >= 56) {
+        if (!this.hashed) {
+            this.hash();
+        }
+        blocks[0] = this.block;
+        blocks[16] =
+            blocks[1] =
+                blocks[2] =
+                    blocks[3] =
+                        blocks[4] =
+                            blocks[5] =
+                                blocks[6] =
+                                    blocks[7] =
+                                        blocks[8] =
+                                            blocks[9] =
+                                                blocks[10] =
+                                                    blocks[11] =
+                                                        blocks[12] =
+                                                            blocks[13] =
+                                                                blocks[14] =
+                                                                    blocks[15] =
+                                                                        0;
+    }
+    blocks[14] = (this.hBytes << 3) | (this.bytes >>> 29);
+    blocks[15] = this.bytes << 3;
+    this.hash();
+};
+Sha256.prototype.hash = function () {
+    var a = this.h0, b = this.h1, c = this.h2, d = this.h3, e = this.h4, f = this.h5, g = this.h6, h = this.h7, blocks = this.blocks, j, s0, s1, maj, t1, t2, ch, ab, da, cd, bc;
+    for (j = 16; j < 64; ++j) {
+        // rightrotate
+        t1 = blocks[j - 15];
+        s0 = ((t1 >>> 7) | (t1 << 25)) ^ ((t1 >>> 18) | (t1 << 14)) ^ (t1 >>> 3);
+        t1 = blocks[j - 2];
+        s1 = ((t1 >>> 17) | (t1 << 15)) ^ ((t1 >>> 19) | (t1 << 13)) ^ (t1 >>> 10);
+        blocks[j] = (blocks[j - 16] + s0 + blocks[j - 7] + s1) << 0;
+    }
+    bc = b & c;
+    for (j = 0; j < 64; j += 4) {
+        if (this.first) {
+            if (this.is224) {
+                ab = 300032;
+                t1 = blocks[0] - 1413257819;
+                h = (t1 - 150054599) << 0;
+                d = (t1 + 24177077) << 0;
+            }
+            else {
+                ab = 704751109;
+                t1 = blocks[0] - 210244248;
+                h = (t1 - 1521486534) << 0;
+                d = (t1 + 143694565) << 0;
+            }
+            this.first = false;
+        }
+        else {
+            s0 =
+                ((a >>> 2) | (a << 30)) ^
+                    ((a >>> 13) | (a << 19)) ^
+                    ((a >>> 22) | (a << 10));
+            s1 =
+                ((e >>> 6) | (e << 26)) ^
+                    ((e >>> 11) | (e << 21)) ^
+                    ((e >>> 25) | (e << 7));
+            ab = a & b;
+            maj = ab ^ (a & c) ^ bc;
+            ch = (e & f) ^ (~e & g);
+            t1 = h + s1 + ch + K[j] + blocks[j];
+            t2 = s0 + maj;
+            h = (d + t1) << 0;
+            d = (t1 + t2) << 0;
+        }
+        s0 =
+            ((d >>> 2) | (d << 30)) ^
+                ((d >>> 13) | (d << 19)) ^
+                ((d >>> 22) | (d << 10));
+        s1 =
+            ((h >>> 6) | (h << 26)) ^
+                ((h >>> 11) | (h << 21)) ^
+                ((h >>> 25) | (h << 7));
+        da = d & a;
+        maj = da ^ (d & b) ^ ab;
+        ch = (g & h) ^ (~g & e);
+        t1 = f + s1 + ch + K[j + 1] + blocks[j + 1];
+        t2 = s0 + maj;
+        g = (c + t1) << 0;
+        c = (t1 + t2) << 0;
+        s0 =
+            ((c >>> 2) | (c << 30)) ^
+                ((c >>> 13) | (c << 19)) ^
+                ((c >>> 22) | (c << 10));
+        s1 =
+            ((g >>> 6) | (g << 26)) ^
+                ((g >>> 11) | (g << 21)) ^
+                ((g >>> 25) | (g << 7));
+        cd = c & d;
+        maj = cd ^ (c & a) ^ da;
+        ch = (f & g) ^ (~f & h);
+        t1 = e + s1 + ch + K[j + 2] + blocks[j + 2];
+        t2 = s0 + maj;
+        f = (b + t1) << 0;
+        b = (t1 + t2) << 0;
+        s0 =
+            ((b >>> 2) | (b << 30)) ^
+                ((b >>> 13) | (b << 19)) ^
+                ((b >>> 22) | (b << 10));
+        s1 =
+            ((f >>> 6) | (f << 26)) ^
+                ((f >>> 11) | (f << 21)) ^
+                ((f >>> 25) | (f << 7));
+        bc = b & c;
+        maj = bc ^ (b & d) ^ cd;
+        ch = (f & g) ^ (~f & h);
+        t1 = e + s1 + ch + K[j + 3] + blocks[j + 3];
+        t2 = s0 + maj;
+        e = (a + t1) << 0;
+        a = (t1 + t2) << 0;
+        this.chromeBugWorkAround = true;
+    }
+    this.h0 = (this.h0 + a) << 0;
+    this.h1 = (this.h1 + b) << 0;
+    this.h2 = (this.h2 + c) << 0;
+    this.h3 = (this.h3 + d) << 0;
+    this.h4 = (this.h4 + e) << 0;
+    this.h5 = (this.h5 + f) << 0;
+    this.h6 = (this.h6 + g) << 0;
+    this.h7 = (this.h7 + h) << 0;
+};
+Sha256.prototype.hex = function () {
+    this.finalize();
+    var h0 = this.h0, h1 = this.h1, h2 = this.h2, h3 = this.h3, h4 = this.h4, h5 = this.h5, h6 = this.h6, h7 = this.h7;
+    var hex = hash_HEX_CHARS[(h0 >>> 28) & 0x0f] +
+        hash_HEX_CHARS[(h0 >>> 24) & 0x0f] +
+        hash_HEX_CHARS[(h0 >>> 20) & 0x0f] +
+        hash_HEX_CHARS[(h0 >>> 16) & 0x0f] +
+        hash_HEX_CHARS[(h0 >>> 12) & 0x0f] +
+        hash_HEX_CHARS[(h0 >>> 8) & 0x0f] +
+        hash_HEX_CHARS[(h0 >>> 4) & 0x0f] +
+        hash_HEX_CHARS[h0 & 0x0f] +
+        hash_HEX_CHARS[(h1 >>> 28) & 0x0f] +
+        hash_HEX_CHARS[(h1 >>> 24) & 0x0f] +
+        hash_HEX_CHARS[(h1 >>> 20) & 0x0f] +
+        hash_HEX_CHARS[(h1 >>> 16) & 0x0f] +
+        hash_HEX_CHARS[(h1 >>> 12) & 0x0f] +
+        hash_HEX_CHARS[(h1 >>> 8) & 0x0f] +
+        hash_HEX_CHARS[(h1 >>> 4) & 0x0f] +
+        hash_HEX_CHARS[h1 & 0x0f] +
+        hash_HEX_CHARS[(h2 >>> 28) & 0x0f] +
+        hash_HEX_CHARS[(h2 >>> 24) & 0x0f] +
+        hash_HEX_CHARS[(h2 >>> 20) & 0x0f] +
+        hash_HEX_CHARS[(h2 >>> 16) & 0x0f] +
+        hash_HEX_CHARS[(h2 >>> 12) & 0x0f] +
+        hash_HEX_CHARS[(h2 >>> 8) & 0x0f] +
+        hash_HEX_CHARS[(h2 >>> 4) & 0x0f] +
+        hash_HEX_CHARS[h2 & 0x0f] +
+        hash_HEX_CHARS[(h3 >>> 28) & 0x0f] +
+        hash_HEX_CHARS[(h3 >>> 24) & 0x0f] +
+        hash_HEX_CHARS[(h3 >>> 20) & 0x0f] +
+        hash_HEX_CHARS[(h3 >>> 16) & 0x0f] +
+        hash_HEX_CHARS[(h3 >>> 12) & 0x0f] +
+        hash_HEX_CHARS[(h3 >>> 8) & 0x0f] +
+        hash_HEX_CHARS[(h3 >>> 4) & 0x0f] +
+        hash_HEX_CHARS[h3 & 0x0f] +
+        hash_HEX_CHARS[(h4 >>> 28) & 0x0f] +
+        hash_HEX_CHARS[(h4 >>> 24) & 0x0f] +
+        hash_HEX_CHARS[(h4 >>> 20) & 0x0f] +
+        hash_HEX_CHARS[(h4 >>> 16) & 0x0f] +
+        hash_HEX_CHARS[(h4 >>> 12) & 0x0f] +
+        hash_HEX_CHARS[(h4 >>> 8) & 0x0f] +
+        hash_HEX_CHARS[(h4 >>> 4) & 0x0f] +
+        hash_HEX_CHARS[h4 & 0x0f] +
+        hash_HEX_CHARS[(h5 >>> 28) & 0x0f] +
+        hash_HEX_CHARS[(h5 >>> 24) & 0x0f] +
+        hash_HEX_CHARS[(h5 >>> 20) & 0x0f] +
+        hash_HEX_CHARS[(h5 >>> 16) & 0x0f] +
+        hash_HEX_CHARS[(h5 >>> 12) & 0x0f] +
+        hash_HEX_CHARS[(h5 >>> 8) & 0x0f] +
+        hash_HEX_CHARS[(h5 >>> 4) & 0x0f] +
+        hash_HEX_CHARS[h5 & 0x0f] +
+        hash_HEX_CHARS[(h6 >>> 28) & 0x0f] +
+        hash_HEX_CHARS[(h6 >>> 24) & 0x0f] +
+        hash_HEX_CHARS[(h6 >>> 20) & 0x0f] +
+        hash_HEX_CHARS[(h6 >>> 16) & 0x0f] +
+        hash_HEX_CHARS[(h6 >>> 12) & 0x0f] +
+        hash_HEX_CHARS[(h6 >>> 8) & 0x0f] +
+        hash_HEX_CHARS[(h6 >>> 4) & 0x0f] +
+        hash_HEX_CHARS[h6 & 0x0f];
+    if (!this.is224) {
+        hex +=
+            hash_HEX_CHARS[(h7 >>> 28) & 0x0f] +
+                hash_HEX_CHARS[(h7 >>> 24) & 0x0f] +
+                hash_HEX_CHARS[(h7 >>> 20) & 0x0f] +
+                hash_HEX_CHARS[(h7 >>> 16) & 0x0f] +
+                hash_HEX_CHARS[(h7 >>> 12) & 0x0f] +
+                hash_HEX_CHARS[(h7 >>> 8) & 0x0f] +
+                hash_HEX_CHARS[(h7 >>> 4) & 0x0f] +
+                hash_HEX_CHARS[h7 & 0x0f];
+    }
+    return hex;
+};
+Sha256.prototype.toString = Sha256.prototype.hex;
+Sha256.prototype.digest = function () {
+    this.finalize();
+    var h0 = this.h0, h1 = this.h1, h2 = this.h2, h3 = this.h3, h4 = this.h4, h5 = this.h5, h6 = this.h6, h7 = this.h7;
+    var arr = [
+        (h0 >>> 24) & 0xff,
+        (h0 >>> 16) & 0xff,
+        (h0 >>> 8) & 0xff,
+        h0 & 0xff,
+        (h1 >>> 24) & 0xff,
+        (h1 >>> 16) & 0xff,
+        (h1 >>> 8) & 0xff,
+        h1 & 0xff,
+        (h2 >>> 24) & 0xff,
+        (h2 >>> 16) & 0xff,
+        (h2 >>> 8) & 0xff,
+        h2 & 0xff,
+        (h3 >>> 24) & 0xff,
+        (h3 >>> 16) & 0xff,
+        (h3 >>> 8) & 0xff,
+        h3 & 0xff,
+        (h4 >>> 24) & 0xff,
+        (h4 >>> 16) & 0xff,
+        (h4 >>> 8) & 0xff,
+        h4 & 0xff,
+        (h5 >>> 24) & 0xff,
+        (h5 >>> 16) & 0xff,
+        (h5 >>> 8) & 0xff,
+        h5 & 0xff,
+        (h6 >>> 24) & 0xff,
+        (h6 >>> 16) & 0xff,
+        (h6 >>> 8) & 0xff,
+        h6 & 0xff,
+    ];
+    if (!this.is224) {
+        arr.push((h7 >>> 24) & 0xff, (h7 >>> 16) & 0xff, (h7 >>> 8) & 0xff, h7 & 0xff);
+    }
+    return arr;
+};
+Sha256.prototype.array = Sha256.prototype.digest;
+Sha256.prototype.arrayBuffer = function () {
+    this.finalize();
+    var buffer = new ArrayBuffer(this.is224 ? 28 : 32);
+    var dataView = new DataView(buffer);
+    dataView.setUint32(0, this.h0);
+    dataView.setUint32(4, this.h1);
+    dataView.setUint32(8, this.h2);
+    dataView.setUint32(12, this.h3);
+    dataView.setUint32(16, this.h4);
+    dataView.setUint32(20, this.h5);
+    dataView.setUint32(24, this.h6);
+    if (!this.is224) {
+        dataView.setUint32(28, this.h7);
+    }
+    return buffer;
+};
+const sha256 = (...strings) => {
+    return new Sha256(false, true).update(strings.join("")).hex();
+};
+
 ;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/utils/hash.js
+
 
 
 ;// CONCATENATED MODULE: ./node_modules/@langchain/core/dist/caches/base.js
@@ -106738,6 +108858,9 @@ const insecureHash = (message) => {
  * separate concerns and scale horizontally.
  *
  * TODO: Make cache key consistent across versions of LangChain.
+ *
+ * @deprecated Use `makeDefaultKeyEncoder()` to create a custom key encoder.
+ * This function will be removed in a future version.
  */
 const getCacheKey = (...strings) => insecureHash(strings.join("_"));
 function deserializeStoredGeneration(storedGeneration) {
@@ -106764,6 +108887,26 @@ function serializeGeneration(generation) {
  * Base class for all caches. All caches should extend this class.
  */
 class BaseCache {
+    constructor() {
+        // For backwards compatibility, we use a default key encoder
+        // that uses SHA-1 to hash the prompt and LLM key. This will also print a warning
+        // about the security implications of using SHA-1 as a cache key.
+        Object.defineProperty(this, "keyEncoder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: getCacheKey
+        });
+    }
+    /**
+     * Sets a custom key encoder function for the cache.
+     * This function should take a prompt and an LLM key and return a string
+     * that will be used as the cache key.
+     * @param keyEncoderFn The custom key encoder function.
+     */
+    makeDefaultKeyEncoder(keyEncoderFn) {
+        this.keyEncoder = keyEncoderFn;
+    }
 }
 const GLOBAL_MAP = new Map();
 /**
@@ -106788,7 +108931,7 @@ class InMemoryCache extends BaseCache {
      * @returns The data corresponding to the prompt and LLM key, or null if not found.
      */
     lookup(prompt, llmKey) {
-        return Promise.resolve(this.cache.get(getCacheKey(prompt, llmKey)) ?? null);
+        return Promise.resolve(this.cache.get(this.keyEncoder(prompt, llmKey)) ?? null);
     }
     /**
      * Updates the cache with new data using a prompt and an LLM key.
@@ -106797,7 +108940,7 @@ class InMemoryCache extends BaseCache {
      * @param value The data to be stored.
      */
     async update(prompt, llmKey, value) {
-        this.cache.set(getCacheKey(prompt, llmKey), value);
+        this.cache.set(this.keyEncoder(prompt, llmKey), value);
     }
     /**
      * Returns a global instance of InMemoryCache using a predefined global
@@ -107420,13 +109563,37 @@ class BaseLanguageModel extends BaseLangChain {
         }
         this.caller = new async_caller_AsyncCaller(params ?? {});
     }
+    /**
+     * Get the number of tokens in the content.
+     * @param content The content to get the number of tokens for.
+     * @returns The number of tokens in the content.
+     */
     async getNumTokens(content) {
-        // TODO: Figure out correct value.
-        if (typeof content !== "string") {
-            return 0;
+        // Extract text content from MessageContent
+        let textContent;
+        if (typeof content === "string") {
+            textContent = content;
+        }
+        else {
+            /**
+             * Content is an array of MessageContentComplex
+             *
+             * ToDo(@christian-bromann): This is a temporary fix to get the number of tokens for the content.
+             * We need to find a better way to do this.
+             * @see https://github.com/langchain-ai/langchainjs/pull/8341#pullrequestreview-2933713116
+             */
+            textContent = content
+                .map((item) => {
+                if (typeof item === "string")
+                    return item;
+                if (item.type === "text" && "text" in item)
+                    return item.text;
+                return "";
+            })
+                .join("");
         }
         // fallback to approximate calculation if tiktoken is not available
-        let numTokens = Math.ceil(content.length / 4);
+        let numTokens = Math.ceil(textContent.length / 4);
         if (!this._encoding) {
             try {
                 this._encoding = await tiktoken_encodingForModel("modelName" in this
@@ -107439,7 +109606,7 @@ class BaseLanguageModel extends BaseLangChain {
         }
         if (this._encoding) {
             try {
-                numTokens = this._encoding.encode(content).length;
+                numTokens = this._encoding.encode(textContent).length;
             }
             catch (error) {
                 console.warn("Failed to calculate number of tokens, falling back to approximate count", error);
@@ -107619,7 +109786,7 @@ class RunnablePassthrough extends Runnable {
      *     schema: async () => db.getTableInfo(),
      *   }),
      *   prompt,
-     *   new ChatOpenAI({}).withConfig({ stop: ["\nSQLResult:"] }),
+     *   new ChatOpenAI({ model: "gpt-4o-mini" }).withConfig({ stop: ["\nSQLResult:"] }),
      *   new StringOutputParser(),
      * ]);
      * const result = await sqlQueryGeneratorChain.invoke({
@@ -109350,7 +111517,7 @@ class MarkdownListOutputParser extends ListOutputParser {
  *
  * const chain = RunnableSequence.from([
  *   promptTemplate,
- *   new ChatOpenAI({}),
+ *   new ChatOpenAI({ model: "gpt-4o-mini" }),
  *   new StringOutputParser(),
  * ]);
  *
@@ -109949,41 +112116,41 @@ const initializeSax = function () {
     }
     var S = 0;
     sax.STATE = {
-        BEGIN: S++,
-        BEGIN_WHITESPACE: S++,
-        TEXT: S++,
-        TEXT_ENTITY: S++,
-        OPEN_WAKA: S++,
-        SGML_DECL: S++,
-        SGML_DECL_QUOTED: S++,
-        DOCTYPE: S++,
-        DOCTYPE_QUOTED: S++,
-        DOCTYPE_DTD: S++,
-        DOCTYPE_DTD_QUOTED: S++,
-        COMMENT_STARTING: S++,
-        COMMENT: S++,
-        COMMENT_ENDING: S++,
-        COMMENT_ENDED: S++,
-        CDATA: S++,
-        CDATA_ENDING: S++,
-        CDATA_ENDING_2: S++,
-        PROC_INST: S++,
-        PROC_INST_BODY: S++,
-        PROC_INST_ENDING: S++,
-        OPEN_TAG: S++,
-        OPEN_TAG_SLASH: S++,
-        ATTRIB: S++,
-        ATTRIB_NAME: S++,
-        ATTRIB_NAME_SAW_WHITE: S++,
-        ATTRIB_VALUE: S++,
-        ATTRIB_VALUE_QUOTED: S++,
-        ATTRIB_VALUE_CLOSED: S++,
-        ATTRIB_VALUE_UNQUOTED: S++,
-        ATTRIB_VALUE_ENTITY_Q: S++,
-        ATTRIB_VALUE_ENTITY_U: S++,
-        CLOSE_TAG: S++,
-        CLOSE_TAG_SAW_WHITE: S++,
-        SCRIPT: S++,
+        BEGIN: S++, // leading byte order mark or whitespace
+        BEGIN_WHITESPACE: S++, // leading whitespace
+        TEXT: S++, // general stuff
+        TEXT_ENTITY: S++, // &amp and such.
+        OPEN_WAKA: S++, // <
+        SGML_DECL: S++, // <!BLARG
+        SGML_DECL_QUOTED: S++, // <!BLARG foo "bar
+        DOCTYPE: S++, // <!DOCTYPE
+        DOCTYPE_QUOTED: S++, // <!DOCTYPE "//blah
+        DOCTYPE_DTD: S++, // <!DOCTYPE "//blah" [ ...
+        DOCTYPE_DTD_QUOTED: S++, // <!DOCTYPE "//blah" [ "foo
+        COMMENT_STARTING: S++, // <!-
+        COMMENT: S++, // <!--
+        COMMENT_ENDING: S++, // <!-- blah -
+        COMMENT_ENDED: S++, // <!-- blah --
+        CDATA: S++, // <![CDATA[ something
+        CDATA_ENDING: S++, // ]
+        CDATA_ENDING_2: S++, // ]]
+        PROC_INST: S++, // <?hi
+        PROC_INST_BODY: S++, // <?hi there
+        PROC_INST_ENDING: S++, // <?hi "there" ?
+        OPEN_TAG: S++, // <strong
+        OPEN_TAG_SLASH: S++, // <strong /
+        ATTRIB: S++, // <a
+        ATTRIB_NAME: S++, // <a foo
+        ATTRIB_NAME_SAW_WHITE: S++, // <a foo _
+        ATTRIB_VALUE: S++, // <a foo=
+        ATTRIB_VALUE_QUOTED: S++, // <a foo="bar
+        ATTRIB_VALUE_CLOSED: S++, // <a foo="bar"
+        ATTRIB_VALUE_UNQUOTED: S++, // <a foo=bar
+        ATTRIB_VALUE_ENTITY_Q: S++, // <foo bar="&quot;"
+        ATTRIB_VALUE_ENTITY_U: S++, // <foo bar=&quot
+        CLOSE_TAG: S++, // </a
+        CLOSE_TAG_SAW_WHITE: S++, // </a   >
+        SCRIPT: S++, // <script> ...
         SCRIPT_ENDING: S++, // <script> ... <
     };
     sax.XML_ENTITIES = {
@@ -115062,8 +117229,9 @@ function object_parseObjectDef(def, refs) {
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/optional.mjs
 
 const optional_parseOptionalDef = (def, refs) => {
-    if (refs.currentPath.toString() === refs.propertyPath?.toString()) {
-        return parseDef_parseDef(def.innerType._def, refs);
+    if (refs.propertyPath &&
+        refs.currentPath.slice(0, refs.propertyPath.length).toString() === refs.propertyPath.toString()) {
+        return parseDef_parseDef(def.innerType._def, { ...refs, currentPath: refs.currentPath });
     }
     const innerSchema = parseDef_parseDef(def.innerType._def, {
         ...refs,
