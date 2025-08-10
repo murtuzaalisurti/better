@@ -115622,7 +115622,7 @@ const diffPayloadSchemaWithRequiredSuggestions = diffPayloadSchema.extend({
 ;// CONCATENATED MODULE: ./utils/constants.js
 const DEFAULT_MODEL = {
     OPENAI: {
-        name: "gpt-4.1-2025-04-14",
+        name: "gpt-5",
     },
     ANTHROPIC: {
         name: "claude-3-7-sonnet-latest",
