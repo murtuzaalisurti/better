@@ -118181,7 +118181,6 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
  */
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
     const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
-    console.log(zodResponseFormat(diffPayloadSchema, "json_diff_response").json_schema);
     const result = !modelDeepseek
         ? await openAI.responses.create({
               model: getModelName(modelName, platform),
@@ -118240,12 +118239,10 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
               },
           });
 
-    console.log(JSON.stringify(result));
     if (result.error) {
         throw new Error(`the model refused to generate suggestions - ${result.error}`);
     }
 
-    // return modelDeepseek ? JSON.parse(result.choices[0].message.content) : JSON.parse(result.output_text);
     return JSON.parse(result.output_text);
 }
 
