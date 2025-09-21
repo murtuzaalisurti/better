@@ -174,7 +174,7 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
     const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
     const result = !modelDeepseek
-        ? await openAI.chat.completions.parse({
+        ? await openAI.responses.create({
               model: getModelName(modelName, platform),
               messages: [
                   {
@@ -186,7 +186,14 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                       content: getUserPrompt(rules, rawComments, pullRequestContext),
                   },
               ],
-              response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
+              text: {
+                  format: {
+                      type: "json_schema",
+                      name: "json_diff_response",
+                      schema: diffPayloadSchema,
+                  },
+              },
+              //   response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
           })
         : await openAI.chat.completions.create({
               model: getModelName(modelName, platform),
@@ -221,6 +228,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
               },
           });
 
+    console.log("AI model raw response:", JSON.stringify(result, null, 2));
     const { message } = result.choices[0];
 
     if (message.refusal) {
