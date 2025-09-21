@@ -62468,7 +62468,7 @@ function maybeObj(x) {
     return x ?? {};
 }
 // https://stackoverflow.com/a/34491287
-function values_isEmptyObj(obj) {
+function isEmptyObj(obj) {
     if (!obj)
         return true;
     for (const _k in obj)
@@ -64440,7 +64440,7 @@ class Messages extends APIResource {
 function isChatCompletionFunctionTool(tool) {
     return tool !== undefined && 'function' in tool && tool.function !== undefined;
 }
-function parser_makeParseableResponseFormat(response_format, parser) {
+function makeParseableResponseFormat(response_format, parser) {
     const obj = { ...response_format };
     Object.defineProperties(obj, {
         $brand: {
@@ -69583,7 +69583,7 @@ class OpenAI {
             new URL(path)
             : new URL(baseURL + (baseURL.endsWith('/') && path.startsWith('/') ? path.slice(1) : path));
         const defaultQuery = this.defaultQuery();
-        if (!values_isEmptyObj(defaultQuery)) {
+        if (!isEmptyObj(defaultQuery)) {
             query = { ...defaultQuery, ...query };
         }
         if (typeof query === 'object' && query && !Array.isArray(query)) {
@@ -70243,7 +70243,7 @@ function values_maybeObj(x) {
     return x ?? {};
 }
 // https://stackoverflow.com/a/34491287
-function utils_values_isEmptyObj(obj) {
+function values_isEmptyObj(obj) {
     if (!obj)
         return true;
     for (const _k in obj)
@@ -74121,7 +74121,7 @@ class BaseAnthropic {
             new URL(path)
             : new URL(baseURL + (baseURL.endsWith('/') && path.startsWith('/') ? path.slice(1) : path));
         const defaultQuery = this.defaultQuery();
-        if (!utils_values_isEmptyObj(defaultQuery)) {
+        if (!values_isEmptyObj(defaultQuery)) {
             query = { ...defaultQuery, ...query };
         }
         if (typeof query === 'object' && query && !Array.isArray(query)) {
@@ -77229,7 +77229,7 @@ class ZodType {
     _refinement(refinement) {
         return new ZodEffects({
             schema: this,
-            typeName: types_ZodFirstPartyTypeKind.ZodEffects,
+            typeName: ZodFirstPartyTypeKind.ZodEffects,
             effect: { type: "refinement", refinement },
         });
     }
@@ -77295,7 +77295,7 @@ class ZodType {
         return new ZodEffects({
             ...processCreateParams(this._def),
             schema: this,
-            typeName: types_ZodFirstPartyTypeKind.ZodEffects,
+            typeName: ZodFirstPartyTypeKind.ZodEffects,
             effect: { type: "transform", transform },
         });
     }
@@ -77305,12 +77305,12 @@ class ZodType {
             ...processCreateParams(this._def),
             innerType: this,
             defaultValue: defaultValueFunc,
-            typeName: types_ZodFirstPartyTypeKind.ZodDefault,
+            typeName: ZodFirstPartyTypeKind.ZodDefault,
         });
     }
     brand() {
         return new ZodBranded({
-            typeName: types_ZodFirstPartyTypeKind.ZodBranded,
+            typeName: ZodFirstPartyTypeKind.ZodBranded,
             type: this,
             ...processCreateParams(this._def),
         });
@@ -77321,7 +77321,7 @@ class ZodType {
             ...processCreateParams(this._def),
             innerType: this,
             catchValue: catchValueFunc,
-            typeName: types_ZodFirstPartyTypeKind.ZodCatch,
+            typeName: ZodFirstPartyTypeKind.ZodCatch,
         });
     }
     describe(description) {
@@ -78028,7 +78028,7 @@ class ZodString extends ZodType {
 ZodString.create = (params) => {
     return new ZodString({
         checks: [],
-        typeName: types_ZodFirstPartyTypeKind.ZodString,
+        typeName: ZodFirstPartyTypeKind.ZodString,
         coerce: params?.coerce ?? false,
         ...processCreateParams(params),
     });
@@ -78276,7 +78276,7 @@ class ZodNumber extends ZodType {
 ZodNumber.create = (params) => {
     return new ZodNumber({
         checks: [],
-        typeName: types_ZodFirstPartyTypeKind.ZodNumber,
+        typeName: ZodFirstPartyTypeKind.ZodNumber,
         coerce: params?.coerce || false,
         ...processCreateParams(params),
     });
@@ -78452,7 +78452,7 @@ class ZodBigInt extends ZodType {
 ZodBigInt.create = (params) => {
     return new ZodBigInt({
         checks: [],
-        typeName: types_ZodFirstPartyTypeKind.ZodBigInt,
+        typeName: ZodFirstPartyTypeKind.ZodBigInt,
         coerce: params?.coerce ?? false,
         ...processCreateParams(params),
     });
@@ -78477,7 +78477,7 @@ class ZodBoolean extends ZodType {
 }
 ZodBoolean.create = (params) => {
     return new ZodBoolean({
-        typeName: types_ZodFirstPartyTypeKind.ZodBoolean,
+        typeName: ZodFirstPartyTypeKind.ZodBoolean,
         coerce: params?.coerce || false,
         ...processCreateParams(params),
     });
@@ -78589,7 +78589,7 @@ ZodDate.create = (params) => {
     return new ZodDate({
         checks: [],
         coerce: params?.coerce || false,
-        typeName: types_ZodFirstPartyTypeKind.ZodDate,
+        typeName: ZodFirstPartyTypeKind.ZodDate,
         ...processCreateParams(params),
     });
 };
@@ -78610,7 +78610,7 @@ class ZodSymbol extends ZodType {
 }
 ZodSymbol.create = (params) => {
     return new ZodSymbol({
-        typeName: types_ZodFirstPartyTypeKind.ZodSymbol,
+        typeName: ZodFirstPartyTypeKind.ZodSymbol,
         ...processCreateParams(params),
     });
 };
@@ -78631,7 +78631,7 @@ class ZodUndefined extends ZodType {
 }
 ZodUndefined.create = (params) => {
     return new ZodUndefined({
-        typeName: types_ZodFirstPartyTypeKind.ZodUndefined,
+        typeName: ZodFirstPartyTypeKind.ZodUndefined,
         ...processCreateParams(params),
     });
 };
@@ -78652,7 +78652,7 @@ class ZodNull extends ZodType {
 }
 ZodNull.create = (params) => {
     return new ZodNull({
-        typeName: types_ZodFirstPartyTypeKind.ZodNull,
+        typeName: ZodFirstPartyTypeKind.ZodNull,
         ...processCreateParams(params),
     });
 };
@@ -78668,7 +78668,7 @@ class ZodAny extends ZodType {
 }
 ZodAny.create = (params) => {
     return new ZodAny({
-        typeName: types_ZodFirstPartyTypeKind.ZodAny,
+        typeName: ZodFirstPartyTypeKind.ZodAny,
         ...processCreateParams(params),
     });
 };
@@ -78684,7 +78684,7 @@ class ZodUnknown extends ZodType {
 }
 ZodUnknown.create = (params) => {
     return new ZodUnknown({
-        typeName: types_ZodFirstPartyTypeKind.ZodUnknown,
+        typeName: ZodFirstPartyTypeKind.ZodUnknown,
         ...processCreateParams(params),
     });
 };
@@ -78701,7 +78701,7 @@ class ZodNever extends ZodType {
 }
 ZodNever.create = (params) => {
     return new ZodNever({
-        typeName: types_ZodFirstPartyTypeKind.ZodNever,
+        typeName: ZodFirstPartyTypeKind.ZodNever,
         ...processCreateParams(params),
     });
 };
@@ -78722,7 +78722,7 @@ class ZodVoid extends ZodType {
 }
 ZodVoid.create = (params) => {
     return new ZodVoid({
-        typeName: types_ZodFirstPartyTypeKind.ZodVoid,
+        typeName: ZodFirstPartyTypeKind.ZodVoid,
         ...processCreateParams(params),
     });
 };
@@ -78823,7 +78823,7 @@ ZodArray.create = (schema, params) => {
         minLength: null,
         maxLength: null,
         exactLength: null,
-        typeName: types_ZodFirstPartyTypeKind.ZodArray,
+        typeName: ZodFirstPartyTypeKind.ZodArray,
         ...processCreateParams(params),
     });
 };
@@ -79080,7 +79080,7 @@ class ZodObject extends ZodType {
                 ...this._def.shape(),
                 ...merging._def.shape(),
             }),
-            typeName: types_ZodFirstPartyTypeKind.ZodObject,
+            typeName: ZodFirstPartyTypeKind.ZodObject,
         });
         return merged;
     }
@@ -79224,7 +79224,7 @@ ZodObject.create = (shape, params) => {
         shape: () => shape,
         unknownKeys: "strip",
         catchall: ZodNever.create(),
-        typeName: types_ZodFirstPartyTypeKind.ZodObject,
+        typeName: ZodFirstPartyTypeKind.ZodObject,
         ...processCreateParams(params),
     });
 };
@@ -79233,7 +79233,7 @@ ZodObject.strictCreate = (shape, params) => {
         shape: () => shape,
         unknownKeys: "strict",
         catchall: ZodNever.create(),
-        typeName: types_ZodFirstPartyTypeKind.ZodObject,
+        typeName: ZodFirstPartyTypeKind.ZodObject,
         ...processCreateParams(params),
     });
 };
@@ -79242,7 +79242,7 @@ ZodObject.lazycreate = (shape, params) => {
         shape,
         unknownKeys: "strip",
         catchall: ZodNever.create(),
-        typeName: types_ZodFirstPartyTypeKind.ZodObject,
+        typeName: ZodFirstPartyTypeKind.ZodObject,
         ...processCreateParams(params),
     });
 };
@@ -79338,7 +79338,7 @@ class ZodUnion extends ZodType {
 ZodUnion.create = (types, params) => {
     return new ZodUnion({
         options: types,
-        typeName: types_ZodFirstPartyTypeKind.ZodUnion,
+        typeName: ZodFirstPartyTypeKind.ZodUnion,
         ...processCreateParams(params),
     });
 };
@@ -79465,7 +79465,7 @@ class ZodDiscriminatedUnion extends ZodType {
             }
         }
         return new ZodDiscriminatedUnion({
-            typeName: types_ZodFirstPartyTypeKind.ZodDiscriminatedUnion,
+            typeName: ZodFirstPartyTypeKind.ZodDiscriminatedUnion,
             discriminator,
             options,
             optionsMap,
@@ -79565,7 +79565,7 @@ ZodIntersection.create = (left, right, params) => {
     return new ZodIntersection({
         left: left,
         right: right,
-        typeName: types_ZodFirstPartyTypeKind.ZodIntersection,
+        typeName: ZodFirstPartyTypeKind.ZodIntersection,
         ...processCreateParams(params),
     });
 };
@@ -79635,7 +79635,7 @@ ZodTuple.create = (schemas, params) => {
     }
     return new ZodTuple({
         items: schemas,
-        typeName: types_ZodFirstPartyTypeKind.ZodTuple,
+        typeName: ZodFirstPartyTypeKind.ZodTuple,
         rest: null,
         ...processCreateParams(params),
     });
@@ -79682,14 +79682,14 @@ class ZodRecord extends ZodType {
             return new ZodRecord({
                 keyType: first,
                 valueType: second,
-                typeName: types_ZodFirstPartyTypeKind.ZodRecord,
+                typeName: ZodFirstPartyTypeKind.ZodRecord,
                 ...processCreateParams(third),
             });
         }
         return new ZodRecord({
             keyType: ZodString.create(),
             valueType: first,
-            typeName: types_ZodFirstPartyTypeKind.ZodRecord,
+            typeName: ZodFirstPartyTypeKind.ZodRecord,
             ...processCreateParams(second),
         });
     }
@@ -79757,7 +79757,7 @@ ZodMap.create = (keyType, valueType, params) => {
     return new ZodMap({
         valueType,
         keyType,
-        typeName: types_ZodFirstPartyTypeKind.ZodMap,
+        typeName: ZodFirstPartyTypeKind.ZodMap,
         ...processCreateParams(params),
     });
 };
@@ -79843,7 +79843,7 @@ ZodSet.create = (valueType, params) => {
         valueType,
         minSize: null,
         maxSize: null,
-        typeName: types_ZodFirstPartyTypeKind.ZodSet,
+        typeName: ZodFirstPartyTypeKind.ZodSet,
         ...processCreateParams(params),
     });
 };
@@ -79956,7 +79956,7 @@ class ZodFunction extends ZodType {
         return new ZodFunction({
             args: (args ? args : ZodTuple.create([]).rest(ZodUnknown.create())),
             returns: returns || ZodUnknown.create(),
-            typeName: types_ZodFirstPartyTypeKind.ZodFunction,
+            typeName: ZodFirstPartyTypeKind.ZodFunction,
             ...processCreateParams(params),
         });
     }
@@ -79974,7 +79974,7 @@ class ZodLazy extends ZodType {
 ZodLazy.create = (getter, params) => {
     return new ZodLazy({
         getter: getter,
-        typeName: types_ZodFirstPartyTypeKind.ZodLazy,
+        typeName: ZodFirstPartyTypeKind.ZodLazy,
         ...processCreateParams(params),
     });
 };
@@ -79998,14 +79998,14 @@ class ZodLiteral extends ZodType {
 ZodLiteral.create = (value, params) => {
     return new ZodLiteral({
         value: value,
-        typeName: types_ZodFirstPartyTypeKind.ZodLiteral,
+        typeName: ZodFirstPartyTypeKind.ZodLiteral,
         ...processCreateParams(params),
     });
 };
 function createZodEnum(values, params) {
     return new ZodEnum({
         values,
-        typeName: types_ZodFirstPartyTypeKind.ZodEnum,
+        typeName: ZodFirstPartyTypeKind.ZodEnum,
         ...processCreateParams(params),
     });
 }
@@ -80108,7 +80108,7 @@ class ZodNativeEnum extends ZodType {
 ZodNativeEnum.create = (values, params) => {
     return new ZodNativeEnum({
         values: values,
-        typeName: types_ZodFirstPartyTypeKind.ZodNativeEnum,
+        typeName: ZodFirstPartyTypeKind.ZodNativeEnum,
         ...processCreateParams(params),
     });
 };
@@ -80138,7 +80138,7 @@ class ZodPromise extends ZodType {
 ZodPromise.create = (schema, params) => {
     return new ZodPromise({
         type: schema,
-        typeName: types_ZodFirstPartyTypeKind.ZodPromise,
+        typeName: ZodFirstPartyTypeKind.ZodPromise,
         ...processCreateParams(params),
     });
 };
@@ -80147,7 +80147,7 @@ class ZodEffects extends ZodType {
         return this._def.schema;
     }
     sourceType() {
-        return this._def.schema._def.typeName === types_ZodFirstPartyTypeKind.ZodEffects
+        return this._def.schema._def.typeName === ZodFirstPartyTypeKind.ZodEffects
             ? this._def.schema.sourceType()
             : this._def.schema;
     }
@@ -80275,7 +80275,7 @@ class ZodEffects extends ZodType {
 ZodEffects.create = (schema, effect, params) => {
     return new ZodEffects({
         schema,
-        typeName: types_ZodFirstPartyTypeKind.ZodEffects,
+        typeName: ZodFirstPartyTypeKind.ZodEffects,
         effect,
         ...processCreateParams(params),
     });
@@ -80284,7 +80284,7 @@ ZodEffects.createWithPreprocess = (preprocess, schema, params) => {
     return new ZodEffects({
         schema,
         effect: { type: "preprocess", transform: preprocess },
-        typeName: types_ZodFirstPartyTypeKind.ZodEffects,
+        typeName: ZodFirstPartyTypeKind.ZodEffects,
         ...processCreateParams(params),
     });
 };
@@ -80304,7 +80304,7 @@ class ZodOptional extends ZodType {
 ZodOptional.create = (type, params) => {
     return new ZodOptional({
         innerType: type,
-        typeName: types_ZodFirstPartyTypeKind.ZodOptional,
+        typeName: ZodFirstPartyTypeKind.ZodOptional,
         ...processCreateParams(params),
     });
 };
@@ -80323,7 +80323,7 @@ class ZodNullable extends ZodType {
 ZodNullable.create = (type, params) => {
     return new ZodNullable({
         innerType: type,
-        typeName: types_ZodFirstPartyTypeKind.ZodNullable,
+        typeName: ZodFirstPartyTypeKind.ZodNullable,
         ...processCreateParams(params),
     });
 };
@@ -80347,7 +80347,7 @@ class ZodDefault extends ZodType {
 ZodDefault.create = (type, params) => {
     return new ZodDefault({
         innerType: type,
-        typeName: types_ZodFirstPartyTypeKind.ZodDefault,
+        typeName: ZodFirstPartyTypeKind.ZodDefault,
         defaultValue: typeof params.default === "function" ? params.default : () => params.default,
         ...processCreateParams(params),
     });
@@ -80406,7 +80406,7 @@ class ZodCatch extends ZodType {
 ZodCatch.create = (type, params) => {
     return new ZodCatch({
         innerType: type,
-        typeName: types_ZodFirstPartyTypeKind.ZodCatch,
+        typeName: ZodFirstPartyTypeKind.ZodCatch,
         catchValue: typeof params.catch === "function" ? params.catch : () => params.catch,
         ...processCreateParams(params),
     });
@@ -80428,7 +80428,7 @@ class ZodNaN extends ZodType {
 }
 ZodNaN.create = (params) => {
     return new ZodNaN({
-        typeName: types_ZodFirstPartyTypeKind.ZodNaN,
+        typeName: ZodFirstPartyTypeKind.ZodNaN,
         ...processCreateParams(params),
     });
 };
@@ -80501,7 +80501,7 @@ class ZodPipeline extends ZodType {
         return new ZodPipeline({
             in: a,
             out: b,
-            typeName: types_ZodFirstPartyTypeKind.ZodPipeline,
+            typeName: ZodFirstPartyTypeKind.ZodPipeline,
         });
     }
 }
@@ -80523,7 +80523,7 @@ class ZodReadonly extends ZodType {
 ZodReadonly.create = (type, params) => {
     return new ZodReadonly({
         innerType: type,
-        typeName: types_ZodFirstPartyTypeKind.ZodReadonly,
+        typeName: ZodFirstPartyTypeKind.ZodReadonly,
         ...processCreateParams(params),
     });
 };
@@ -80576,7 +80576,7 @@ fatal) {
 const late = {
     object: ZodObject.lazycreate,
 };
-var types_ZodFirstPartyTypeKind;
+var ZodFirstPartyTypeKind;
 (function (ZodFirstPartyTypeKind) {
     ZodFirstPartyTypeKind["ZodString"] = "ZodString";
     ZodFirstPartyTypeKind["ZodNumber"] = "ZodNumber";
@@ -80614,7 +80614,7 @@ var types_ZodFirstPartyTypeKind;
     ZodFirstPartyTypeKind["ZodBranded"] = "ZodBranded";
     ZodFirstPartyTypeKind["ZodPipeline"] = "ZodPipeline";
     ZodFirstPartyTypeKind["ZodReadonly"] = "ZodReadonly";
-})(types_ZodFirstPartyTypeKind || (types_ZodFirstPartyTypeKind = {}));
+})(ZodFirstPartyTypeKind || (ZodFirstPartyTypeKind = {}));
 // requires TS 4.4+
 class Class {
     constructor(..._) { }
@@ -101572,7 +101572,7 @@ function isTransforming(_schema, _ctx) {
 
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/Options.js
-const Options_ignoreOverride = Symbol("Let zodToJsonSchema decide on which parser to use");
+const ignoreOverride = Symbol("Let zodToJsonSchema decide on which parser to use");
 const jsonDescription = (jsonSchema, def) => {
     if (def.description) {
         try {
@@ -101609,7 +101609,7 @@ const Options_defaultOptions = {
     nameStrategy: "ref",
     openAiAnyTypeName: "OpenAiAnyType"
 };
-const Options_getDefaultOptions = (options) => (typeof options === "string"
+const getDefaultOptions = (options) => (typeof options === "string"
     ? {
         ...Options_defaultOptions,
         name: options,
@@ -101621,8 +101621,8 @@ const Options_getDefaultOptions = (options) => (typeof options === "string"
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/Refs.js
 
-const Refs_getRefs = (options) => {
-    const _options = Options_getDefaultOptions(options);
+const getRefs = (options) => {
+    const _options = getDefaultOptions(options);
     const currentPath = _options.name !== undefined
         ? [..._options.basePath, _options.definitionPath, _options.name]
         : _options.basePath;
@@ -101655,7 +101655,7 @@ const getRelativePath = (pathA, pathB) => {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/any.js
 
-function any_parseAnyDef(refs) {
+function parseAnyDef(refs) {
     if (refs.target !== "openAi") {
         return {};
     }
@@ -101683,7 +101683,7 @@ function addErrorMessage(res, key, errorMessage, refs) {
         };
     }
 }
-function errorMessages_setResponseValueAndErrors(res, key, value, errorMessage, refs) {
+function setResponseValueAndErrors(res, key, value, errorMessage, refs) {
     res[key] = value;
     addErrorMessage(res, key, errorMessage, refs);
 }
@@ -101692,33 +101692,33 @@ function errorMessages_setResponseValueAndErrors(res, key, value, errorMessage, 
 
 
 
-function array_parseArrayDef(def, refs) {
+function parseArrayDef(def, refs) {
     const res = {
         type: "array",
     };
     if (def.type?._def &&
-        def.type?._def?.typeName !== types_ZodFirstPartyTypeKind.ZodAny) {
-        res.items = parseDef_parseDef(def.type._def, {
+        def.type?._def?.typeName !== ZodFirstPartyTypeKind.ZodAny) {
+        res.items = parseDef(def.type._def, {
             ...refs,
             currentPath: [...refs.currentPath, "items"],
         });
     }
     if (def.minLength) {
-        errorMessages_setResponseValueAndErrors(res, "minItems", def.minLength.value, def.minLength.message, refs);
+        setResponseValueAndErrors(res, "minItems", def.minLength.value, def.minLength.message, refs);
     }
     if (def.maxLength) {
-        errorMessages_setResponseValueAndErrors(res, "maxItems", def.maxLength.value, def.maxLength.message, refs);
+        setResponseValueAndErrors(res, "maxItems", def.maxLength.value, def.maxLength.message, refs);
     }
     if (def.exactLength) {
-        errorMessages_setResponseValueAndErrors(res, "minItems", def.exactLength.value, def.exactLength.message, refs);
-        errorMessages_setResponseValueAndErrors(res, "maxItems", def.exactLength.value, def.exactLength.message, refs);
+        setResponseValueAndErrors(res, "minItems", def.exactLength.value, def.exactLength.message, refs);
+        setResponseValueAndErrors(res, "maxItems", def.exactLength.value, def.exactLength.message, refs);
     }
     return res;
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/bigint.js
 
-function bigint_parseBigintDef(def, refs) {
+function parseBigintDef(def, refs) {
     const res = {
         type: "integer",
         format: "int64",
@@ -101730,37 +101730,37 @@ function bigint_parseBigintDef(def, refs) {
             case "min":
                 if (refs.target === "jsonSchema7") {
                     if (check.inclusive) {
-                        errorMessages_setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
+                        setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
                     }
                     else {
-                        errorMessages_setResponseValueAndErrors(res, "exclusiveMinimum", check.value, check.message, refs);
+                        setResponseValueAndErrors(res, "exclusiveMinimum", check.value, check.message, refs);
                     }
                 }
                 else {
                     if (!check.inclusive) {
                         res.exclusiveMinimum = true;
                     }
-                    errorMessages_setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
+                    setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
                 }
                 break;
             case "max":
                 if (refs.target === "jsonSchema7") {
                     if (check.inclusive) {
-                        errorMessages_setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
+                        setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
                     }
                     else {
-                        errorMessages_setResponseValueAndErrors(res, "exclusiveMaximum", check.value, check.message, refs);
+                        setResponseValueAndErrors(res, "exclusiveMaximum", check.value, check.message, refs);
                     }
                 }
                 else {
                     if (!check.inclusive) {
                         res.exclusiveMaximum = true;
                     }
-                    errorMessages_setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
+                    setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
                 }
                 break;
             case "multipleOf":
-                errorMessages_setResponseValueAndErrors(res, "multipleOf", check.value, check.message, refs);
+                setResponseValueAndErrors(res, "multipleOf", check.value, check.message, refs);
                 break;
         }
     }
@@ -101768,7 +101768,7 @@ function bigint_parseBigintDef(def, refs) {
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/boolean.js
-function boolean_parseBooleanDef() {
+function parseBooleanDef() {
     return {
         type: "boolean",
     };
@@ -101776,23 +101776,23 @@ function boolean_parseBooleanDef() {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/branded.js
 
-function branded_parseBrandedDef(_def, refs) {
-    return parseDef_parseDef(_def.type._def, refs);
+function parseBrandedDef(_def, refs) {
+    return parseDef(_def.type._def, refs);
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/catch.js
 
-const catch_parseCatchDef = (def, refs) => {
-    return parseDef_parseDef(def.innerType._def, refs);
+const parseCatchDef = (def, refs) => {
+    return parseDef(def.innerType._def, refs);
 };
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/date.js
 
-function date_parseDateDef(def, refs, overrideDateStrategy) {
+function parseDateDef(def, refs, overrideDateStrategy) {
     const strategy = overrideDateStrategy ?? refs.dateStrategy;
     if (Array.isArray(strategy)) {
         return {
-            anyOf: strategy.map((item, i) => date_parseDateDef(def, refs, item)),
+            anyOf: strategy.map((item, i) => parseDateDef(def, refs, item)),
         };
     }
     switch (strategy) {
@@ -101822,11 +101822,11 @@ const integerDateParser = (def, refs) => {
     for (const check of def.checks) {
         switch (check.kind) {
             case "min":
-                errorMessages_setResponseValueAndErrors(res, "minimum", check.value, // This is in milliseconds
+                setResponseValueAndErrors(res, "minimum", check.value, // This is in milliseconds
                 check.message, refs);
                 break;
             case "max":
-                errorMessages_setResponseValueAndErrors(res, "maximum", check.value, // This is in milliseconds
+                setResponseValueAndErrors(res, "maximum", check.value, // This is in milliseconds
                 check.message, refs);
                 break;
         }
@@ -101836,9 +101836,9 @@ const integerDateParser = (def, refs) => {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/default.js
 
-function default_parseDefaultDef(_def, refs) {
+function parseDefaultDef(_def, refs) {
     return {
-        ...parseDef_parseDef(_def.innerType._def, refs),
+        ...parseDef(_def.innerType._def, refs),
         default: _def.defaultValue(),
     };
 }
@@ -101846,14 +101846,14 @@ function default_parseDefaultDef(_def, refs) {
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/effects.js
 
 
-function effects_parseEffectsDef(_def, refs) {
+function parseEffectsDef(_def, refs) {
     return refs.effectStrategy === "input"
-        ? parseDef_parseDef(_def.schema._def, refs)
-        : any_parseAnyDef(refs);
+        ? parseDef(_def.schema._def, refs)
+        : parseAnyDef(refs);
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/enum.js
-function enum_parseEnumDef(def) {
+function parseEnumDef(def) {
     return {
         type: "string",
         enum: Array.from(def.values),
@@ -101867,13 +101867,13 @@ const isJsonSchema7AllOfType = (type) => {
         return false;
     return "allOf" in type;
 };
-function intersection_parseIntersectionDef(def, refs) {
+function parseIntersectionDef(def, refs) {
     const allOf = [
-        parseDef_parseDef(def.left._def, {
+        parseDef(def.left._def, {
             ...refs,
             currentPath: [...refs.currentPath, "allOf", "0"],
         }),
-        parseDef_parseDef(def.right._def, {
+        parseDef(def.right._def, {
             ...refs,
             currentPath: [...refs.currentPath, "allOf", "1"],
         }),
@@ -101915,7 +101915,7 @@ function intersection_parseIntersectionDef(def, refs) {
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/literal.js
-function literal_parseLiteralDef(def, refs) {
+function parseLiteralDef(def, refs) {
     const parsedType = typeof def.value;
     if (parsedType !== "bigint" &&
         parsedType !== "number" &&
@@ -101993,7 +101993,7 @@ const zodPatterns = {
     nanoid: /^[a-zA-Z0-9_-]{21}$/,
     jwt: /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/,
 };
-function string_parseStringDef(def, refs) {
+function parseStringDef(def, refs) {
     const res = {
         type: "string",
     };
@@ -102001,12 +102001,12 @@ function string_parseStringDef(def, refs) {
         for (const check of def.checks) {
             switch (check.kind) {
                 case "min":
-                    errorMessages_setResponseValueAndErrors(res, "minLength", typeof res.minLength === "number"
+                    setResponseValueAndErrors(res, "minLength", typeof res.minLength === "number"
                         ? Math.max(res.minLength, check.value)
                         : check.value, check.message, refs);
                     break;
                 case "max":
-                    errorMessages_setResponseValueAndErrors(res, "maxLength", typeof res.maxLength === "number"
+                    setResponseValueAndErrors(res, "maxLength", typeof res.maxLength === "number"
                         ? Math.min(res.maxLength, check.value)
                         : check.value, check.message, refs);
                     break;
@@ -102057,10 +102057,10 @@ function string_parseStringDef(def, refs) {
                     addFormat(res, "duration", check.message, refs);
                     break;
                 case "length":
-                    errorMessages_setResponseValueAndErrors(res, "minLength", typeof res.minLength === "number"
+                    setResponseValueAndErrors(res, "minLength", typeof res.minLength === "number"
                         ? Math.max(res.minLength, check.value)
                         : check.value, check.message, refs);
-                    errorMessages_setResponseValueAndErrors(res, "maxLength", typeof res.maxLength === "number"
+                    setResponseValueAndErrors(res, "maxLength", typeof res.maxLength === "number"
                         ? Math.min(res.maxLength, check.value)
                         : check.value, check.message, refs);
                     break;
@@ -102106,7 +102106,7 @@ function string_parseStringDef(def, refs) {
                             break;
                         }
                         case "contentEncoding:base64": {
-                            errorMessages_setResponseValueAndErrors(res, "contentEncoding", "base64", check.message, refs);
+                            setResponseValueAndErrors(res, "contentEncoding", "base64", check.message, refs);
                             break;
                         }
                         case "pattern:zod": {
@@ -102176,7 +102176,7 @@ function addFormat(schema, value, message, refs) {
         });
     }
     else {
-        errorMessages_setResponseValueAndErrors(schema, "format", value, message, refs);
+        setResponseValueAndErrors(schema, "format", value, message, refs);
     }
 }
 // Adds a "pattern" keyword to the schema. If a pattern exists, both patterns will be joined in an allOf-node, along with subsequent ones.
@@ -102208,7 +102208,7 @@ function addPattern(schema, regex, message, refs) {
         });
     }
     else {
-        errorMessages_setResponseValueAndErrors(schema, "pattern", stringifyRegExpWithFlags(regex, refs), message, refs);
+        setResponseValueAndErrors(schema, "pattern", stringifyRegExpWithFlags(regex, refs), message, refs);
     }
 }
 // Mutate z.string.regex() in a best attempt to accommodate for regex flags when applyRegexFlags is true
@@ -102298,28 +102298,28 @@ function stringifyRegExpWithFlags(regex, refs) {
 
 
 
-function record_parseRecordDef(def, refs) {
+function parseRecordDef(def, refs) {
     if (refs.target === "openAi") {
         console.warn("Warning: OpenAI may not support records in schemas! Try an array of key-value pairs instead.");
     }
     if (refs.target === "openApi3" &&
-        def.keyType?._def.typeName === types_ZodFirstPartyTypeKind.ZodEnum) {
+        def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodEnum) {
         return {
             type: "object",
             required: def.keyType._def.values,
             properties: def.keyType._def.values.reduce((acc, key) => ({
                 ...acc,
-                [key]: parseDef_parseDef(def.valueType._def, {
+                [key]: parseDef(def.valueType._def, {
                     ...refs,
                     currentPath: [...refs.currentPath, "properties", key],
-                }) ?? any_parseAnyDef(refs),
+                }) ?? parseAnyDef(refs),
             }), {}),
             additionalProperties: refs.rejectedAdditionalProperties,
         };
     }
     const schema = {
         type: "object",
-        additionalProperties: parseDef_parseDef(def.valueType._def, {
+        additionalProperties: parseDef(def.valueType._def, {
             ...refs,
             currentPath: [...refs.currentPath, "additionalProperties"],
         }) ?? refs.allowedAdditionalProperties,
@@ -102327,15 +102327,15 @@ function record_parseRecordDef(def, refs) {
     if (refs.target === "openApi3") {
         return schema;
     }
-    if (def.keyType?._def.typeName === types_ZodFirstPartyTypeKind.ZodString &&
+    if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodString &&
         def.keyType._def.checks?.length) {
-        const { type, ...keyType } = string_parseStringDef(def.keyType._def, refs);
+        const { type, ...keyType } = parseStringDef(def.keyType._def, refs);
         return {
             ...schema,
             propertyNames: keyType,
         };
     }
-    else if (def.keyType?._def.typeName === types_ZodFirstPartyTypeKind.ZodEnum) {
+    else if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodEnum) {
         return {
             ...schema,
             propertyNames: {
@@ -102343,10 +102343,10 @@ function record_parseRecordDef(def, refs) {
             },
         };
     }
-    else if (def.keyType?._def.typeName === types_ZodFirstPartyTypeKind.ZodBranded &&
-        def.keyType._def.type._def.typeName === types_ZodFirstPartyTypeKind.ZodString &&
+    else if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodBranded &&
+        def.keyType._def.type._def.typeName === ZodFirstPartyTypeKind.ZodString &&
         def.keyType._def.type._def.checks?.length) {
-        const { type, ...keyType } = branded_parseBrandedDef(def.keyType._def, refs);
+        const { type, ...keyType } = parseBrandedDef(def.keyType._def, refs);
         return {
             ...schema,
             propertyNames: keyType,
@@ -102359,18 +102359,18 @@ function record_parseRecordDef(def, refs) {
 
 
 
-function map_parseMapDef(def, refs) {
+function parseMapDef(def, refs) {
     if (refs.mapStrategy === "record") {
-        return record_parseRecordDef(def, refs);
+        return parseRecordDef(def, refs);
     }
-    const keys = parseDef_parseDef(def.keyType._def, {
+    const keys = parseDef(def.keyType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "items", "items", "0"],
-    }) || any_parseAnyDef(refs);
-    const values = parseDef_parseDef(def.valueType._def, {
+    }) || parseAnyDef(refs);
+    const values = parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "items", "items", "1"],
-    }) || any_parseAnyDef(refs);
+    }) || parseAnyDef(refs);
     return {
         type: "array",
         maxItems: 125,
@@ -102384,7 +102384,7 @@ function map_parseMapDef(def, refs) {
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/nativeEnum.js
-function nativeEnum_parseNativeEnumDef(def) {
+function parseNativeEnumDef(def) {
     const object = def.values;
     const actualKeys = Object.keys(def.values).filter((key) => {
         return typeof object[object[key]] !== "number";
@@ -102403,11 +102403,11 @@ function nativeEnum_parseNativeEnumDef(def) {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/never.js
 
-function never_parseNeverDef(refs) {
+function parseNeverDef(refs) {
     return refs.target === "openAi"
         ? undefined
         : {
-            not: any_parseAnyDef({
+            not: parseAnyDef({
                 ...refs,
                 currentPath: [...refs.currentPath, "not"],
             }),
@@ -102415,7 +102415,7 @@ function never_parseNeverDef(refs) {
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/null.js
-function null_parseNullDef(refs) {
+function parseNullDef(refs) {
     return refs.target === "openApi3"
         ? {
             enum: ["null"],
@@ -102428,23 +102428,23 @@ function null_parseNullDef(refs) {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/union.js
 
-const union_primitiveMappings = {
+const primitiveMappings = {
     ZodString: "string",
     ZodNumber: "number",
     ZodBigInt: "integer",
     ZodBoolean: "boolean",
     ZodNull: "null",
 };
-function union_parseUnionDef(def, refs) {
+function parseUnionDef(def, refs) {
     if (refs.target === "openApi3")
         return asAnyOf(def, refs);
     const options = def.options instanceof Map ? Array.from(def.options.values()) : def.options;
     // This blocks tries to look ahead a bit to produce nicer looking schemas with type array instead of anyOf.
-    if (options.every((x) => x._def.typeName in union_primitiveMappings &&
+    if (options.every((x) => x._def.typeName in primitiveMappings &&
         (!x._def.checks || !x._def.checks.length))) {
         // all types in union are primitive and lack checks, so might as well squash into {type: [...]}
         const types = options.reduce((types, x) => {
-            const type = union_primitiveMappings[x._def.typeName]; //Can be safely casted due to row 43
+            const type = primitiveMappings[x._def.typeName]; //Can be safely casted due to row 43
             return type && !types.includes(type) ? [...types, type] : types;
         }, []);
         return {
@@ -102498,7 +102498,7 @@ const asAnyOf = (def, refs) => {
     const anyOf = (def.options instanceof Map
         ? Array.from(def.options.values())
         : def.options)
-        .map((x, i) => parseDef_parseDef(x._def, {
+        .map((x, i) => parseDef(x._def, {
         ...refs,
         currentPath: [...refs.currentPath, "anyOf", `${i}`],
     }))
@@ -102511,24 +102511,24 @@ const asAnyOf = (def, refs) => {
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/nullable.js
 
 
-function nullable_parseNullableDef(def, refs) {
+function parseNullableDef(def, refs) {
     if (["ZodString", "ZodNumber", "ZodBigInt", "ZodBoolean", "ZodNull"].includes(def.innerType._def.typeName) &&
         (!def.innerType._def.checks || !def.innerType._def.checks.length)) {
         if (refs.target === "openApi3") {
             return {
-                type: union_primitiveMappings[def.innerType._def.typeName],
+                type: primitiveMappings[def.innerType._def.typeName],
                 nullable: true,
             };
         }
         return {
             type: [
-                union_primitiveMappings[def.innerType._def.typeName],
+                primitiveMappings[def.innerType._def.typeName],
                 "null",
             ],
         };
     }
     if (refs.target === "openApi3") {
-        const base = parseDef_parseDef(def.innerType._def, {
+        const base = parseDef(def.innerType._def, {
             ...refs,
             currentPath: [...refs.currentPath],
         });
@@ -102536,7 +102536,7 @@ function nullable_parseNullableDef(def, refs) {
             return { allOf: [base], nullable: true };
         return base && { ...base, nullable: true };
     }
-    const base = parseDef_parseDef(def.innerType._def, {
+    const base = parseDef(def.innerType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "anyOf", "0"],
     });
@@ -102545,7 +102545,7 @@ function nullable_parseNullableDef(def, refs) {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/number.js
 
-function number_parseNumberDef(def, refs) {
+function parseNumberDef(def, refs) {
     const res = {
         type: "number",
     };
@@ -102560,37 +102560,37 @@ function number_parseNumberDef(def, refs) {
             case "min":
                 if (refs.target === "jsonSchema7") {
                     if (check.inclusive) {
-                        errorMessages_setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
+                        setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
                     }
                     else {
-                        errorMessages_setResponseValueAndErrors(res, "exclusiveMinimum", check.value, check.message, refs);
+                        setResponseValueAndErrors(res, "exclusiveMinimum", check.value, check.message, refs);
                     }
                 }
                 else {
                     if (!check.inclusive) {
                         res.exclusiveMinimum = true;
                     }
-                    errorMessages_setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
+                    setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
                 }
                 break;
             case "max":
                 if (refs.target === "jsonSchema7") {
                     if (check.inclusive) {
-                        errorMessages_setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
+                        setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
                     }
                     else {
-                        errorMessages_setResponseValueAndErrors(res, "exclusiveMaximum", check.value, check.message, refs);
+                        setResponseValueAndErrors(res, "exclusiveMaximum", check.value, check.message, refs);
                     }
                 }
                 else {
                     if (!check.inclusive) {
                         res.exclusiveMaximum = true;
                     }
-                    errorMessages_setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
+                    setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
                 }
                 break;
             case "multipleOf":
-                errorMessages_setResponseValueAndErrors(res, "multipleOf", check.value, check.message, refs);
+                setResponseValueAndErrors(res, "multipleOf", check.value, check.message, refs);
                 break;
         }
     }
@@ -102599,7 +102599,7 @@ function number_parseNumberDef(def, refs) {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/object.js
 
-function object_parseObjectDef(def, refs) {
+function parseObjectDef(def, refs) {
     const forceOptionalIntoNullable = refs.target === "openAi";
     const result = {
         type: "object",
@@ -102622,7 +102622,7 @@ function object_parseObjectDef(def, refs) {
             }
             propOptional = false;
         }
-        const parsedDef = parseDef_parseDef(propDef._def, {
+        const parsedDef = parseDef(propDef._def, {
             ...refs,
             currentPath: [...refs.currentPath, "properties", propName],
             propertyPath: [...refs.currentPath, "properties", propName],
@@ -102646,7 +102646,7 @@ function object_parseObjectDef(def, refs) {
 }
 function decideAdditionalProperties(def, refs) {
     if (def.catchall._def.typeName !== "ZodNever") {
-        return parseDef_parseDef(def.catchall._def, {
+        return parseDef(def.catchall._def, {
             ...refs,
             currentPath: [...refs.currentPath, "additionalProperties"],
         });
@@ -102674,11 +102674,11 @@ function safeIsOptional(schema) {
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/optional.js
 
 
-const optional_parseOptionalDef = (def, refs) => {
+const parseOptionalDef = (def, refs) => {
     if (refs.currentPath.toString() === refs.propertyPath?.toString()) {
-        return parseDef_parseDef(def.innerType._def, refs);
+        return parseDef(def.innerType._def, refs);
     }
-    const innerSchema = parseDef_parseDef(def.innerType._def, {
+    const innerSchema = parseDef(def.innerType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "anyOf", "1"],
     });
@@ -102686,28 +102686,28 @@ const optional_parseOptionalDef = (def, refs) => {
         ? {
             anyOf: [
                 {
-                    not: any_parseAnyDef(refs),
+                    not: parseAnyDef(refs),
                 },
                 innerSchema,
             ],
         }
-        : any_parseAnyDef(refs);
+        : parseAnyDef(refs);
 };
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/pipeline.js
 
-const pipeline_parsePipelineDef = (def, refs) => {
+const parsePipelineDef = (def, refs) => {
     if (refs.pipeStrategy === "input") {
-        return parseDef_parseDef(def.in._def, refs);
+        return parseDef(def.in._def, refs);
     }
     else if (refs.pipeStrategy === "output") {
-        return parseDef_parseDef(def.out._def, refs);
+        return parseDef(def.out._def, refs);
     }
-    const a = parseDef_parseDef(def.in._def, {
+    const a = parseDef(def.in._def, {
         ...refs,
         currentPath: [...refs.currentPath, "allOf", "0"],
     });
-    const b = parseDef_parseDef(def.out._def, {
+    const b = parseDef(def.out._def, {
         ...refs,
         currentPath: [...refs.currentPath, "allOf", a ? "1" : "0"],
     });
@@ -102718,15 +102718,15 @@ const pipeline_parsePipelineDef = (def, refs) => {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/promise.js
 
-function promise_parsePromiseDef(def, refs) {
-    return parseDef_parseDef(def.type._def, refs);
+function parsePromiseDef(def, refs) {
+    return parseDef(def.type._def, refs);
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/set.js
 
 
-function set_parseSetDef(def, refs) {
-    const items = parseDef_parseDef(def.valueType._def, {
+function parseSetDef(def, refs) {
+    const items = parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, "items"],
     });
@@ -102736,28 +102736,28 @@ function set_parseSetDef(def, refs) {
         items,
     };
     if (def.minSize) {
-        errorMessages_setResponseValueAndErrors(schema, "minItems", def.minSize.value, def.minSize.message, refs);
+        setResponseValueAndErrors(schema, "minItems", def.minSize.value, def.minSize.message, refs);
     }
     if (def.maxSize) {
-        errorMessages_setResponseValueAndErrors(schema, "maxItems", def.maxSize.value, def.maxSize.message, refs);
+        setResponseValueAndErrors(schema, "maxItems", def.maxSize.value, def.maxSize.message, refs);
     }
     return schema;
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/tuple.js
 
-function tuple_parseTupleDef(def, refs) {
+function parseTupleDef(def, refs) {
     if (def.rest) {
         return {
             type: "array",
             minItems: def.items.length,
             items: def.items
-                .map((x, i) => parseDef_parseDef(x._def, {
+                .map((x, i) => parseDef(x._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, "items", `${i}`],
             }))
                 .reduce((acc, x) => (x === undefined ? acc : [...acc, x]), []),
-            additionalItems: parseDef_parseDef(def.rest._def, {
+            additionalItems: parseDef(def.rest._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, "additionalItems"],
             }),
@@ -102769,7 +102769,7 @@ function tuple_parseTupleDef(def, refs) {
             minItems: def.items.length,
             maxItems: def.items.length,
             items: def.items
-                .map((x, i) => parseDef_parseDef(x._def, {
+                .map((x, i) => parseDef(x._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, "items", `${i}`],
             }))
@@ -102780,22 +102780,22 @@ function tuple_parseTupleDef(def, refs) {
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/undefined.js
 
-function undefined_parseUndefinedDef(refs) {
+function parseUndefinedDef(refs) {
     return {
-        not: any_parseAnyDef(refs),
+        not: parseAnyDef(refs),
     };
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/unknown.js
 
-function unknown_parseUnknownDef(refs) {
-    return any_parseAnyDef(refs);
+function parseUnknownDef(refs) {
+    return parseAnyDef(refs);
 }
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/parsers/readonly.js
 
-const readonly_parseReadonlyDef = (def, refs) => {
-    return parseDef_parseDef(def.innerType._def, refs);
+const parseReadonlyDef = (def, refs) => {
+    return parseDef(def.innerType._def, refs);
 };
 
 ;// CONCATENATED MODULE: ./node_modules/zod-to-json-schema/dist/esm/selectParser.js
@@ -102832,73 +102832,73 @@ const readonly_parseReadonlyDef = (def, refs) => {
 
 const selectParser = (def, typeName, refs) => {
     switch (typeName) {
-        case types_ZodFirstPartyTypeKind.ZodString:
-            return string_parseStringDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodNumber:
-            return number_parseNumberDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodObject:
-            return object_parseObjectDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodBigInt:
-            return bigint_parseBigintDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodBoolean:
-            return boolean_parseBooleanDef();
-        case types_ZodFirstPartyTypeKind.ZodDate:
-            return date_parseDateDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodUndefined:
-            return undefined_parseUndefinedDef(refs);
-        case types_ZodFirstPartyTypeKind.ZodNull:
-            return null_parseNullDef(refs);
-        case types_ZodFirstPartyTypeKind.ZodArray:
-            return array_parseArrayDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodUnion:
-        case types_ZodFirstPartyTypeKind.ZodDiscriminatedUnion:
-            return union_parseUnionDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodIntersection:
-            return intersection_parseIntersectionDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodTuple:
-            return tuple_parseTupleDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodRecord:
-            return record_parseRecordDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodLiteral:
-            return literal_parseLiteralDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodEnum:
-            return enum_parseEnumDef(def);
-        case types_ZodFirstPartyTypeKind.ZodNativeEnum:
-            return nativeEnum_parseNativeEnumDef(def);
-        case types_ZodFirstPartyTypeKind.ZodNullable:
-            return nullable_parseNullableDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodOptional:
-            return optional_parseOptionalDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodMap:
-            return map_parseMapDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodSet:
-            return set_parseSetDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodLazy:
+        case ZodFirstPartyTypeKind.ZodString:
+            return parseStringDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodNumber:
+            return parseNumberDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodObject:
+            return parseObjectDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodBigInt:
+            return parseBigintDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodBoolean:
+            return parseBooleanDef();
+        case ZodFirstPartyTypeKind.ZodDate:
+            return parseDateDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodUndefined:
+            return parseUndefinedDef(refs);
+        case ZodFirstPartyTypeKind.ZodNull:
+            return parseNullDef(refs);
+        case ZodFirstPartyTypeKind.ZodArray:
+            return parseArrayDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodUnion:
+        case ZodFirstPartyTypeKind.ZodDiscriminatedUnion:
+            return parseUnionDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodIntersection:
+            return parseIntersectionDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodTuple:
+            return parseTupleDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodRecord:
+            return parseRecordDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodLiteral:
+            return parseLiteralDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodEnum:
+            return parseEnumDef(def);
+        case ZodFirstPartyTypeKind.ZodNativeEnum:
+            return parseNativeEnumDef(def);
+        case ZodFirstPartyTypeKind.ZodNullable:
+            return parseNullableDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodOptional:
+            return parseOptionalDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodMap:
+            return parseMapDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodSet:
+            return parseSetDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodLazy:
             return () => def.getter()._def;
-        case types_ZodFirstPartyTypeKind.ZodPromise:
-            return promise_parsePromiseDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodNaN:
-        case types_ZodFirstPartyTypeKind.ZodNever:
-            return never_parseNeverDef(refs);
-        case types_ZodFirstPartyTypeKind.ZodEffects:
-            return effects_parseEffectsDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodAny:
-            return any_parseAnyDef(refs);
-        case types_ZodFirstPartyTypeKind.ZodUnknown:
-            return unknown_parseUnknownDef(refs);
-        case types_ZodFirstPartyTypeKind.ZodDefault:
-            return default_parseDefaultDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodBranded:
-            return branded_parseBrandedDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodReadonly:
-            return readonly_parseReadonlyDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodCatch:
-            return catch_parseCatchDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodPipeline:
-            return pipeline_parsePipelineDef(def, refs);
-        case types_ZodFirstPartyTypeKind.ZodFunction:
-        case types_ZodFirstPartyTypeKind.ZodVoid:
-        case types_ZodFirstPartyTypeKind.ZodSymbol:
+        case ZodFirstPartyTypeKind.ZodPromise:
+            return parsePromiseDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodNaN:
+        case ZodFirstPartyTypeKind.ZodNever:
+            return parseNeverDef(refs);
+        case ZodFirstPartyTypeKind.ZodEffects:
+            return parseEffectsDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodAny:
+            return parseAnyDef(refs);
+        case ZodFirstPartyTypeKind.ZodUnknown:
+            return parseUnknownDef(refs);
+        case ZodFirstPartyTypeKind.ZodDefault:
+            return parseDefaultDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodBranded:
+            return parseBrandedDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodReadonly:
+            return parseReadonlyDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodCatch:
+            return parseCatchDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodPipeline:
+            return parsePipelineDef(def, refs);
+        case ZodFirstPartyTypeKind.ZodFunction:
+        case ZodFirstPartyTypeKind.ZodVoid:
+        case ZodFirstPartyTypeKind.ZodSymbol:
             return undefined;
         default:
             /* c8 ignore next */
@@ -102911,11 +102911,11 @@ const selectParser = (def, typeName, refs) => {
 
 
 
-function parseDef_parseDef(def, refs, forceResolution = false) {
+function parseDef(def, refs, forceResolution = false) {
     const seenItem = refs.seen.get(def);
     if (refs.override) {
         const overrideResult = refs.override?.(def, refs, seenItem, forceResolution);
-        if (overrideResult !== Options_ignoreOverride) {
+        if (overrideResult !== ignoreOverride) {
             return overrideResult;
         }
     }
@@ -102930,7 +102930,7 @@ function parseDef_parseDef(def, refs, forceResolution = false) {
     const jsonSchemaOrGetter = selectParser(def, def.typeName, refs);
     // If the return was a function, then the inner definition needs to be extracted before a call to parseDef (recursive)
     const jsonSchema = typeof jsonSchemaOrGetter === "function"
-        ? parseDef_parseDef(jsonSchemaOrGetter(), refs)
+        ? parseDef(jsonSchemaOrGetter(), refs)
         : jsonSchemaOrGetter;
     if (jsonSchema) {
         addMeta(def, refs, jsonSchema);
@@ -102954,9 +102954,9 @@ const get$ref = (item, refs) => {
             if (item.path.length < refs.currentPath.length &&
                 item.path.every((value, index) => refs.currentPath[index] === value)) {
                 console.warn(`Recursive reference detected at ${refs.currentPath.join("/")}! Defaulting to any`);
-                return any_parseAnyDef(refs);
+                return parseAnyDef(refs);
             }
-            return refs.$refStrategy === "seen" ? any_parseAnyDef(refs) : undefined;
+            return refs.$refStrategy === "seen" ? parseAnyDef(refs) : undefined;
         }
     }
 };
@@ -102975,14 +102975,14 @@ const addMeta = (def, refs, jsonSchema) => {
 
 
 const zodToJsonSchema_zodToJsonSchema = (schema, options) => {
-    const refs = Refs_getRefs(options);
+    const refs = getRefs(options);
     let definitions = typeof options === "object" && options.definitions
         ? Object.entries(options.definitions).reduce((acc, [name, schema]) => ({
             ...acc,
-            [name]: parseDef_parseDef(schema._def, {
+            [name]: parseDef(schema._def, {
                 ...refs,
                 currentPath: [...refs.basePath, refs.definitionPath, name],
-            }, true) ?? any_parseAnyDef(refs),
+            }, true) ?? parseAnyDef(refs),
         }), {})
         : undefined;
     const name = typeof options === "string"
@@ -102990,12 +102990,12 @@ const zodToJsonSchema_zodToJsonSchema = (schema, options) => {
         : options?.nameStrategy === "title"
             ? undefined
             : options?.name;
-    const main = parseDef_parseDef(schema._def, name === undefined
+    const main = parseDef(schema._def, name === undefined
         ? refs
         : {
             ...refs,
             currentPath: [...refs.basePath, refs.definitionPath, name],
-        }, false) ?? any_parseAnyDef(refs);
+        }, false) ?? parseAnyDef(refs);
     const title = typeof options === "object" &&
         options.name !== undefined &&
         options.nameStrategy === "title"
@@ -116406,7 +116406,7 @@ Either provide one via the "apiKey" field in the constructor, or set the "MISTRA
 // EXTERNAL MODULE: ./node_modules/parse-diff/index.js
 var parse_diff = __nccwpck_require__(2673);
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/Options.mjs
-const zod_to_json_schema_Options_ignoreOverride = Symbol('Let zodToJsonSchema decide on which parser to use');
+const Options_ignoreOverride = Symbol('Let zodToJsonSchema decide on which parser to use');
 const zod_to_json_schema_Options_defaultOptions = {
     name: undefined,
     $refStrategy: 'root',
@@ -116427,7 +116427,7 @@ const zod_to_json_schema_Options_defaultOptions = {
     base64Strategy: 'contentEncoding:base64',
     nameStrategy: 'ref',
 };
-const zod_to_json_schema_Options_getDefaultOptions = (options) => {
+const Options_getDefaultOptions = (options) => {
     // We need to add `definitions` here as we may mutate it
     return (typeof options === 'string' ?
         {
@@ -116444,11 +116444,23 @@ const zod_to_json_schema_Options_getDefaultOptions = (options) => {
         });
 };
 //# sourceMappingURL=Options.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/util.mjs
+const zodDef = (zodSchema) => {
+    return '_def' in zodSchema ? zodSchema._def : zodSchema;
+};
+function util_isEmptyObj(obj) {
+    if (!obj)
+        return true;
+    for (const _k in obj)
+        return false;
+    return true;
+}
+//# sourceMappingURL=util.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/Refs.mjs
 
 
-const zod_to_json_schema_Refs_getRefs = (options) => {
-    const _options = getDefaultOptions(options);
+const Refs_getRefs = (options) => {
+    const _options = Options_getDefaultOptions(options);
     const currentPath = _options.name !== undefined ?
         [..._options.basePath, _options.definitionPath, _options.name]
         : _options.basePath;
@@ -116469,60 +116481,195 @@ const zod_to_json_schema_Refs_getRefs = (options) => {
     };
 };
 //# sourceMappingURL=Refs.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/any.mjs
+function any_parseAnyDef() {
+    return {};
+}
+//# sourceMappingURL=any.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/errorMessages.mjs
+function errorMessages_addErrorMessage(res, key, errorMessage, refs) {
+    if (!refs?.errorMessages)
+        return;
+    if (errorMessage) {
+        res.errorMessage = {
+            ...res.errorMessage,
+            [key]: errorMessage,
+        };
+    }
+}
+function errorMessages_setResponseValueAndErrors(res, key, value, errorMessage, refs) {
+    res[key] = value;
+    errorMessages_addErrorMessage(res, key, errorMessage, refs);
+}
+//# sourceMappingURL=errorMessages.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/array.mjs
 
 
 
-function parsers_array_parseArrayDef(def, refs) {
+function array_parseArrayDef(def, refs) {
     const res = {
         type: 'array',
     };
     if (def.type?._def?.typeName !== ZodFirstPartyTypeKind.ZodAny) {
-        res.items = parseDef(def.type._def, {
+        res.items = parseDef_parseDef(def.type._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'items'],
         });
     }
     if (def.minLength) {
-        setResponseValueAndErrors(res, 'minItems', def.minLength.value, def.minLength.message, refs);
+        errorMessages_setResponseValueAndErrors(res, 'minItems', def.minLength.value, def.minLength.message, refs);
     }
     if (def.maxLength) {
-        setResponseValueAndErrors(res, 'maxItems', def.maxLength.value, def.maxLength.message, refs);
+        errorMessages_setResponseValueAndErrors(res, 'maxItems', def.maxLength.value, def.maxLength.message, refs);
     }
     if (def.exactLength) {
-        setResponseValueAndErrors(res, 'minItems', def.exactLength.value, def.exactLength.message, refs);
-        setResponseValueAndErrors(res, 'maxItems', def.exactLength.value, def.exactLength.message, refs);
+        errorMessages_setResponseValueAndErrors(res, 'minItems', def.exactLength.value, def.exactLength.message, refs);
+        errorMessages_setResponseValueAndErrors(res, 'maxItems', def.exactLength.value, def.exactLength.message, refs);
     }
     return res;
 }
 //# sourceMappingURL=array.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/bigint.mjs
+
+function bigint_parseBigintDef(def, refs) {
+    const res = {
+        type: 'integer',
+        format: 'int64',
+    };
+    if (!def.checks)
+        return res;
+    for (const check of def.checks) {
+        switch (check.kind) {
+            case 'min':
+                if (refs.target === 'jsonSchema7') {
+                    if (check.inclusive) {
+                        errorMessages_setResponseValueAndErrors(res, 'minimum', check.value, check.message, refs);
+                    }
+                    else {
+                        errorMessages_setResponseValueAndErrors(res, 'exclusiveMinimum', check.value, check.message, refs);
+                    }
+                }
+                else {
+                    if (!check.inclusive) {
+                        res.exclusiveMinimum = true;
+                    }
+                    errorMessages_setResponseValueAndErrors(res, 'minimum', check.value, check.message, refs);
+                }
+                break;
+            case 'max':
+                if (refs.target === 'jsonSchema7') {
+                    if (check.inclusive) {
+                        errorMessages_setResponseValueAndErrors(res, 'maximum', check.value, check.message, refs);
+                    }
+                    else {
+                        errorMessages_setResponseValueAndErrors(res, 'exclusiveMaximum', check.value, check.message, refs);
+                    }
+                }
+                else {
+                    if (!check.inclusive) {
+                        res.exclusiveMaximum = true;
+                    }
+                    errorMessages_setResponseValueAndErrors(res, 'maximum', check.value, check.message, refs);
+                }
+                break;
+            case 'multipleOf':
+                errorMessages_setResponseValueAndErrors(res, 'multipleOf', check.value, check.message, refs);
+                break;
+        }
+    }
+    return res;
+}
+//# sourceMappingURL=bigint.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/boolean.mjs
+function boolean_parseBooleanDef() {
+    return {
+        type: 'boolean',
+    };
+}
+//# sourceMappingURL=boolean.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/branded.mjs
 
-function parsers_branded_parseBrandedDef(_def, refs) {
-    return parseDef(_def.type._def, refs);
+function branded_parseBrandedDef(_def, refs) {
+    return parseDef_parseDef(_def.type._def, refs);
 }
 //# sourceMappingURL=branded.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/catch.mjs
 
-const parsers_catch_parseCatchDef = (def, refs) => {
-    return parseDef(def.innerType._def, refs);
+const catch_parseCatchDef = (def, refs) => {
+    return parseDef_parseDef(def.innerType._def, refs);
 };
 //# sourceMappingURL=catch.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/date.mjs
+
+function date_parseDateDef(def, refs, overrideDateStrategy) {
+    const strategy = overrideDateStrategy ?? refs.dateStrategy;
+    if (Array.isArray(strategy)) {
+        return {
+            anyOf: strategy.map((item, i) => date_parseDateDef(def, refs, item)),
+        };
+    }
+    switch (strategy) {
+        case 'string':
+        case 'format:date-time':
+            return {
+                type: 'string',
+                format: 'date-time',
+            };
+        case 'format:date':
+            return {
+                type: 'string',
+                format: 'date',
+            };
+        case 'integer':
+            return date_integerDateParser(def, refs);
+    }
+}
+const date_integerDateParser = (def, refs) => {
+    const res = {
+        type: 'integer',
+        format: 'unix-time',
+    };
+    if (refs.target === 'openApi3') {
+        return res;
+    }
+    for (const check of def.checks) {
+        switch (check.kind) {
+            case 'min':
+                errorMessages_setResponseValueAndErrors(res, 'minimum', check.value, // This is in milliseconds
+                check.message, refs);
+                break;
+            case 'max':
+                errorMessages_setResponseValueAndErrors(res, 'maximum', check.value, // This is in milliseconds
+                check.message, refs);
+                break;
+        }
+    }
+    return res;
+};
+//# sourceMappingURL=date.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/default.mjs
 
-function parsers_default_parseDefaultDef(_def, refs) {
+function default_parseDefaultDef(_def, refs) {
     return {
-        ...parseDef(_def.innerType._def, refs),
+        ...parseDef_parseDef(_def.innerType._def, refs),
         default: _def.defaultValue(),
     };
 }
 //# sourceMappingURL=default.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/effects.mjs
 
-function parsers_effects_parseEffectsDef(_def, refs, forceResolution) {
-    return refs.effectStrategy === 'input' ? parseDef(_def.schema._def, refs, forceResolution) : {};
+function effects_parseEffectsDef(_def, refs, forceResolution) {
+    return refs.effectStrategy === 'input' ? parseDef_parseDef(_def.schema._def, refs, forceResolution) : {};
 }
 //# sourceMappingURL=effects.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/enum.mjs
+function enum_parseEnumDef(def) {
+    return {
+        type: 'string',
+        enum: [...def.values],
+    };
+}
+//# sourceMappingURL=enum.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/intersection.mjs
 
 const intersection_isJsonSchema7AllOfType = (type) => {
@@ -116530,13 +116677,13 @@ const intersection_isJsonSchema7AllOfType = (type) => {
         return false;
     return 'allOf' in type;
 };
-function parsers_intersection_parseIntersectionDef(def, refs) {
+function intersection_parseIntersectionDef(def, refs) {
     const allOf = [
-        parseDef(def.left._def, {
+        parseDef_parseDef(def.left._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'allOf', '0'],
         }),
-        parseDef(def.right._def, {
+        parseDef_parseDef(def.right._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'allOf', '1'],
         }),
@@ -116574,6 +116721,29 @@ function parsers_intersection_parseIntersectionDef(def, refs) {
         : undefined;
 }
 //# sourceMappingURL=intersection.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/literal.mjs
+function literal_parseLiteralDef(def, refs) {
+    const parsedType = typeof def.value;
+    if (parsedType !== 'bigint' &&
+        parsedType !== 'number' &&
+        parsedType !== 'boolean' &&
+        parsedType !== 'string') {
+        return {
+            type: Array.isArray(def.value) ? 'array' : 'object',
+        };
+    }
+    if (refs.target === 'openApi3') {
+        return {
+            type: parsedType === 'bigint' ? 'integer' : parsedType,
+            enum: [def.value],
+        };
+    }
+    return {
+        type: parsedType === 'bigint' ? 'integer' : parsedType,
+        const: def.value,
+    };
+}
+//# sourceMappingURL=literal.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/string.mjs
 
 let parsers_string_emojiRegex;
@@ -116626,7 +116796,7 @@ const string_zodPatterns = {
     base64: /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/,
     nanoid: /^[a-zA-Z0-9_-]{21}$/,
 };
-function parsers_string_parseStringDef(def, refs) {
+function string_parseStringDef(def, refs) {
     const res = {
         type: 'string',
     };
@@ -116637,10 +116807,10 @@ function parsers_string_parseStringDef(def, refs) {
         for (const check of def.checks) {
             switch (check.kind) {
                 case 'min':
-                    setResponseValueAndErrors(res, 'minLength', typeof res.minLength === 'number' ? Math.max(res.minLength, check.value) : check.value, check.message, refs);
+                    errorMessages_setResponseValueAndErrors(res, 'minLength', typeof res.minLength === 'number' ? Math.max(res.minLength, check.value) : check.value, check.message, refs);
                     break;
                 case 'max':
-                    setResponseValueAndErrors(res, 'maxLength', typeof res.maxLength === 'number' ? Math.min(res.maxLength, check.value) : check.value, check.message, refs);
+                    errorMessages_setResponseValueAndErrors(res, 'maxLength', typeof res.maxLength === 'number' ? Math.min(res.maxLength, check.value) : check.value, check.message, refs);
                     break;
                 case 'email':
                     switch (refs.emailStrategy) {
@@ -116689,8 +116859,8 @@ function parsers_string_parseStringDef(def, refs) {
                     string_addFormat(res, 'duration', check.message, refs);
                     break;
                 case 'length':
-                    setResponseValueAndErrors(res, 'minLength', typeof res.minLength === 'number' ? Math.max(res.minLength, check.value) : check.value, check.message, refs);
-                    setResponseValueAndErrors(res, 'maxLength', typeof res.maxLength === 'number' ? Math.min(res.maxLength, check.value) : check.value, check.message, refs);
+                    errorMessages_setResponseValueAndErrors(res, 'minLength', typeof res.minLength === 'number' ? Math.max(res.minLength, check.value) : check.value, check.message, refs);
+                    errorMessages_setResponseValueAndErrors(res, 'maxLength', typeof res.maxLength === 'number' ? Math.min(res.maxLength, check.value) : check.value, check.message, refs);
                     break;
                 case 'includes': {
                     string_addPattern(res, RegExp(processPattern(check.value)), check.message, refs);
@@ -116719,7 +116889,7 @@ function parsers_string_parseStringDef(def, refs) {
                             break;
                         }
                         case 'contentEncoding:base64': {
-                            setResponseValueAndErrors(res, 'contentEncoding', 'base64', check.message, refs);
+                            errorMessages_setResponseValueAndErrors(res, 'contentEncoding', 'base64', check.message, refs);
                             break;
                         }
                         case 'pattern:zod': {
@@ -116773,7 +116943,7 @@ const string_addFormat = (schema, value, message, refs) => {
         });
     }
     else {
-        setResponseValueAndErrors(schema, 'format', value, message, refs);
+        errorMessages_setResponseValueAndErrors(schema, 'format', value, message, refs);
     }
 };
 const string_addPattern = (schema, regex, message, refs) => {
@@ -116803,7 +116973,7 @@ const string_addPattern = (schema, regex, message, refs) => {
         });
     }
     else {
-        setResponseValueAndErrors(schema, 'pattern', processRegExp(regex, refs), message, refs);
+        errorMessages_setResponseValueAndErrors(schema, 'pattern', processRegExp(regex, refs), message, refs);
     }
 };
 // Mutate z.string.regex() in a best attempt to accommodate for regex flags when applyRegexFlags is true
@@ -116891,14 +117061,14 @@ const processRegExp = (regexOrFunction, refs) => {
 
 
 
-function parsers_record_parseRecordDef(def, refs) {
+function record_parseRecordDef(def, refs) {
     if (refs.target === 'openApi3' && def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodEnum) {
         return {
             type: 'object',
             required: def.keyType._def.values,
             properties: def.keyType._def.values.reduce((acc, key) => ({
                 ...acc,
-                [key]: parseDef(def.valueType._def, {
+                [key]: parseDef_parseDef(def.valueType._def, {
                     ...refs,
                     currentPath: [...refs.currentPath, 'properties', key],
                 }) ?? {},
@@ -116908,7 +117078,7 @@ function parsers_record_parseRecordDef(def, refs) {
     }
     const schema = {
         type: 'object',
-        additionalProperties: parseDef(def.valueType._def, {
+        additionalProperties: parseDef_parseDef(def.valueType._def, {
             ...refs,
             currentPath: [...refs.currentPath, 'additionalProperties'],
         }) ?? {},
@@ -116917,7 +117087,7 @@ function parsers_record_parseRecordDef(def, refs) {
         return schema;
     }
     if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodString && def.keyType._def.checks?.length) {
-        const keyType = Object.entries(parseStringDef(def.keyType._def, refs)).reduce((acc, [key, value]) => (key === 'type' ? acc : { ...acc, [key]: value }), {});
+        const keyType = Object.entries(string_parseStringDef(def.keyType._def, refs)).reduce((acc, [key, value]) => (key === 'type' ? acc : { ...acc, [key]: value }), {});
         return {
             ...schema,
             propertyNames: keyType,
@@ -116937,15 +117107,15 @@ function parsers_record_parseRecordDef(def, refs) {
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/map.mjs
 
 
-function parsers_map_parseMapDef(def, refs) {
+function map_parseMapDef(def, refs) {
     if (refs.mapStrategy === 'record') {
-        return parseRecordDef(def, refs);
+        return record_parseRecordDef(def, refs);
     }
-    const keys = parseDef(def.keyType._def, {
+    const keys = parseDef_parseDef(def.keyType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'items', 'items', '0'],
     }) || {};
-    const values = parseDef(def.valueType._def, {
+    const values = parseDef_parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'items', 'items', '1'],
     }) || {};
@@ -116961,24 +117131,61 @@ function parsers_map_parseMapDef(def, refs) {
     };
 }
 //# sourceMappingURL=map.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/nativeEnum.mjs
+function nativeEnum_parseNativeEnumDef(def) {
+    const object = def.values;
+    const actualKeys = Object.keys(def.values).filter((key) => {
+        return typeof object[object[key]] !== 'number';
+    });
+    const actualValues = actualKeys.map((key) => object[key]);
+    const parsedTypes = Array.from(new Set(actualValues.map((values) => typeof values)));
+    return {
+        type: parsedTypes.length === 1 ?
+            parsedTypes[0] === 'string' ?
+                'string'
+                : 'number'
+            : ['string', 'number'],
+        enum: actualValues,
+    };
+}
+//# sourceMappingURL=nativeEnum.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/never.mjs
+function never_parseNeverDef() {
+    return {
+        not: {},
+    };
+}
+//# sourceMappingURL=never.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/null.mjs
+function null_parseNullDef(refs) {
+    return refs.target === 'openApi3' ?
+        {
+            enum: ['null'],
+            nullable: true,
+        }
+        : {
+            type: 'null',
+        };
+}
+//# sourceMappingURL=null.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/union.mjs
 
-const parsers_union_primitiveMappings = {
+const union_primitiveMappings = {
     ZodString: 'string',
     ZodNumber: 'number',
     ZodBigInt: 'integer',
     ZodBoolean: 'boolean',
     ZodNull: 'null',
 };
-function parsers_union_parseUnionDef(def, refs) {
+function union_parseUnionDef(def, refs) {
     if (refs.target === 'openApi3')
         return union_asAnyOf(def, refs);
     const options = def.options instanceof Map ? Array.from(def.options.values()) : def.options;
     // This blocks tries to look ahead a bit to produce nicer looking schemas with type array instead of anyOf.
-    if (options.every((x) => x._def.typeName in parsers_union_primitiveMappings && (!x._def.checks || !x._def.checks.length))) {
+    if (options.every((x) => x._def.typeName in union_primitiveMappings && (!x._def.checks || !x._def.checks.length))) {
         // all types in union are primitive and lack checks, so might as well squash into {type: [...]}
         const types = options.reduce((types, x) => {
-            const type = parsers_union_primitiveMappings[x._def.typeName]; //Can be safely casted due to row 43
+            const type = union_primitiveMappings[x._def.typeName]; //Can be safely casted due to row 43
             return type && !types.includes(type) ? [...types, type] : types;
         }, []);
         return {
@@ -117027,7 +117234,7 @@ function parsers_union_parseUnionDef(def, refs) {
 }
 const union_asAnyOf = (def, refs) => {
     const anyOf = (def.options instanceof Map ? Array.from(def.options.values()) : def.options)
-        .map((x, i) => parseDef(x._def, {
+        .map((x, i) => parseDef_parseDef(x._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'anyOf', `${i}`],
     }))
@@ -117038,21 +117245,21 @@ const union_asAnyOf = (def, refs) => {
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/nullable.mjs
 
 
-function parsers_nullable_parseNullableDef(def, refs) {
+function nullable_parseNullableDef(def, refs) {
     if (['ZodString', 'ZodNumber', 'ZodBigInt', 'ZodBoolean', 'ZodNull'].includes(def.innerType._def.typeName) &&
         (!def.innerType._def.checks || !def.innerType._def.checks.length)) {
         if (refs.target === 'openApi3' || refs.nullableStrategy === 'property') {
             return {
-                type: primitiveMappings[def.innerType._def.typeName],
+                type: union_primitiveMappings[def.innerType._def.typeName],
                 nullable: true,
             };
         }
         return {
-            type: [primitiveMappings[def.innerType._def.typeName], 'null'],
+            type: [union_primitiveMappings[def.innerType._def.typeName], 'null'],
         };
     }
     if (refs.target === 'openApi3') {
-        const base = parseDef(def.innerType._def, {
+        const base = parseDef_parseDef(def.innerType._def, {
             ...refs,
             currentPath: [...refs.currentPath],
         });
@@ -117060,20 +117267,74 @@ function parsers_nullable_parseNullableDef(def, refs) {
             return { allOf: [base], nullable: true };
         return base && { ...base, nullable: true };
     }
-    const base = parseDef(def.innerType._def, {
+    const base = parseDef_parseDef(def.innerType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'anyOf', '0'],
     });
     return base && { anyOf: [base, { type: 'null' }] };
 }
 //# sourceMappingURL=nullable.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/number.mjs
+
+function number_parseNumberDef(def, refs) {
+    const res = {
+        type: 'number',
+    };
+    if (!def.checks)
+        return res;
+    for (const check of def.checks) {
+        switch (check.kind) {
+            case 'int':
+                res.type = 'integer';
+                errorMessages_addErrorMessage(res, 'type', check.message, refs);
+                break;
+            case 'min':
+                if (refs.target === 'jsonSchema7') {
+                    if (check.inclusive) {
+                        errorMessages_setResponseValueAndErrors(res, 'minimum', check.value, check.message, refs);
+                    }
+                    else {
+                        errorMessages_setResponseValueAndErrors(res, 'exclusiveMinimum', check.value, check.message, refs);
+                    }
+                }
+                else {
+                    if (!check.inclusive) {
+                        res.exclusiveMinimum = true;
+                    }
+                    errorMessages_setResponseValueAndErrors(res, 'minimum', check.value, check.message, refs);
+                }
+                break;
+            case 'max':
+                if (refs.target === 'jsonSchema7') {
+                    if (check.inclusive) {
+                        errorMessages_setResponseValueAndErrors(res, 'maximum', check.value, check.message, refs);
+                    }
+                    else {
+                        errorMessages_setResponseValueAndErrors(res, 'exclusiveMaximum', check.value, check.message, refs);
+                    }
+                }
+                else {
+                    if (!check.inclusive) {
+                        res.exclusiveMaximum = true;
+                    }
+                    errorMessages_setResponseValueAndErrors(res, 'maximum', check.value, check.message, refs);
+                }
+                break;
+            case 'multipleOf':
+                errorMessages_setResponseValueAndErrors(res, 'multipleOf', check.value, check.message, refs);
+                break;
+        }
+    }
+    return res;
+}
+//# sourceMappingURL=number.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/object.mjs
 
 function object_decideAdditionalProperties(def, refs) {
     if (refs.removeAdditionalStrategy === 'strict') {
         return def.catchall._def.typeName === 'ZodNever' ?
             def.unknownKeys !== 'strict'
-            : parseDef(def.catchall._def, {
+            : parseDef_parseDef(def.catchall._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'additionalProperties'],
             }) ?? true;
@@ -117081,20 +117342,20 @@ function object_decideAdditionalProperties(def, refs) {
     else {
         return def.catchall._def.typeName === 'ZodNever' ?
             def.unknownKeys === 'passthrough'
-            : parseDef(def.catchall._def, {
+            : parseDef_parseDef(def.catchall._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'additionalProperties'],
             }) ?? true;
     }
 }
-function parsers_object_parseObjectDef(def, refs) {
+function object_parseObjectDef(def, refs) {
     const result = {
         type: 'object',
         ...Object.entries(def.shape()).reduce((acc, [propName, propDef]) => {
             if (propDef === undefined || propDef._def === undefined)
                 return acc;
             const propertyPath = [...refs.currentPath, 'properties', propName];
-            const parsedDef = parseDef(propDef._def, {
+            const parsedDef = parseDef_parseDef(propDef._def, {
                 ...refs,
                 currentPath: propertyPath,
                 propertyPath,
@@ -117124,12 +117385,12 @@ function parsers_object_parseObjectDef(def, refs) {
 //# sourceMappingURL=object.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/optional.mjs
 
-const parsers_optional_parseOptionalDef = (def, refs) => {
+const optional_parseOptionalDef = (def, refs) => {
     if (refs.propertyPath &&
         refs.currentPath.slice(0, refs.propertyPath.length).toString() === refs.propertyPath.toString()) {
-        return parseDef(def.innerType._def, { ...refs, currentPath: refs.currentPath });
+        return parseDef_parseDef(def.innerType._def, { ...refs, currentPath: refs.currentPath });
     }
-    const innerSchema = parseDef(def.innerType._def, {
+    const innerSchema = parseDef_parseDef(def.innerType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'anyOf', '1'],
     });
@@ -117147,18 +117408,18 @@ const parsers_optional_parseOptionalDef = (def, refs) => {
 //# sourceMappingURL=optional.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/pipeline.mjs
 
-const parsers_pipeline_parsePipelineDef = (def, refs) => {
+const pipeline_parsePipelineDef = (def, refs) => {
     if (refs.pipeStrategy === 'input') {
-        return parseDef(def.in._def, refs);
+        return parseDef_parseDef(def.in._def, refs);
     }
     else if (refs.pipeStrategy === 'output') {
-        return parseDef(def.out._def, refs);
+        return parseDef_parseDef(def.out._def, refs);
     }
-    const a = parseDef(def.in._def, {
+    const a = parseDef_parseDef(def.in._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'allOf', '0'],
     });
-    const b = parseDef(def.out._def, {
+    const b = parseDef_parseDef(def.out._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'allOf', a ? '1' : '0'],
     });
@@ -117169,15 +117430,15 @@ const parsers_pipeline_parsePipelineDef = (def, refs) => {
 //# sourceMappingURL=pipeline.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/promise.mjs
 
-function parsers_promise_parsePromiseDef(def, refs) {
-    return parseDef(def.type._def, refs);
+function promise_parsePromiseDef(def, refs) {
+    return parseDef_parseDef(def.type._def, refs);
 }
 //# sourceMappingURL=promise.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/set.mjs
 
 
-function parsers_set_parseSetDef(def, refs) {
-    const items = parseDef(def.valueType._def, {
+function set_parseSetDef(def, refs) {
+    const items = parseDef_parseDef(def.valueType._def, {
         ...refs,
         currentPath: [...refs.currentPath, 'items'],
     });
@@ -117187,28 +117448,28 @@ function parsers_set_parseSetDef(def, refs) {
         items,
     };
     if (def.minSize) {
-        setResponseValueAndErrors(schema, 'minItems', def.minSize.value, def.minSize.message, refs);
+        errorMessages_setResponseValueAndErrors(schema, 'minItems', def.minSize.value, def.minSize.message, refs);
     }
     if (def.maxSize) {
-        setResponseValueAndErrors(schema, 'maxItems', def.maxSize.value, def.maxSize.message, refs);
+        errorMessages_setResponseValueAndErrors(schema, 'maxItems', def.maxSize.value, def.maxSize.message, refs);
     }
     return schema;
 }
 //# sourceMappingURL=set.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/tuple.mjs
 
-function parsers_tuple_parseTupleDef(def, refs) {
+function tuple_parseTupleDef(def, refs) {
     if (def.rest) {
         return {
             type: 'array',
             minItems: def.items.length,
             items: def.items
-                .map((x, i) => parseDef(x._def, {
+                .map((x, i) => parseDef_parseDef(x._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'items', `${i}`],
             }))
                 .reduce((acc, x) => (x === undefined ? acc : [...acc, x]), []),
-            additionalItems: parseDef(def.rest._def, {
+            additionalItems: parseDef_parseDef(def.rest._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'additionalItems'],
             }),
@@ -117220,7 +117481,7 @@ function parsers_tuple_parseTupleDef(def, refs) {
             minItems: def.items.length,
             maxItems: def.items.length,
             items: def.items
-                .map((x, i) => parseDef(x._def, {
+                .map((x, i) => parseDef_parseDef(x._def, {
                 ...refs,
                 currentPath: [...refs.currentPath, 'items', `${i}`],
             }))
@@ -117229,10 +117490,22 @@ function parsers_tuple_parseTupleDef(def, refs) {
     }
 }
 //# sourceMappingURL=tuple.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/undefined.mjs
+function undefined_parseUndefinedDef() {
+    return {
+        not: {},
+    };
+}
+//# sourceMappingURL=undefined.mjs.map
+;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/unknown.mjs
+function unknown_parseUnknownDef() {
+    return {};
+}
+//# sourceMappingURL=unknown.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parsers/readonly.mjs
 
-const parsers_readonly_parseReadonlyDef = (def, refs) => {
-    return parseDef(def.innerType._def, refs);
+const readonly_parseReadonlyDef = (def, refs) => {
+    return parseDef_parseDef(def.innerType._def, refs);
 };
 //# sourceMappingURL=readonly.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/openai/_vendor/zod-to-json-schema/parseDef.mjs
@@ -117268,11 +117541,11 @@ const parsers_readonly_parseReadonlyDef = (def, refs) => {
 
 
 
-function zod_to_json_schema_parseDef_parseDef(def, refs, forceResolution = false) {
+function parseDef_parseDef(def, refs, forceResolution = false) {
     const seenItem = refs.seen.get(def);
     if (refs.override) {
         const overrideResult = refs.override?.(def, refs, seenItem, forceResolution);
-        if (overrideResult !== ignoreOverride) {
+        if (overrideResult !== Options_ignoreOverride) {
             return overrideResult;
         }
     }
@@ -117338,69 +117611,69 @@ const parseDef_getRelativePath = (pathA, pathB) => {
 const parseDef_selectParser = (def, typeName, refs, forceResolution) => {
     switch (typeName) {
         case ZodFirstPartyTypeKind.ZodString:
-            return parseStringDef(def, refs);
+            return string_parseStringDef(def, refs);
         case ZodFirstPartyTypeKind.ZodNumber:
-            return parseNumberDef(def, refs);
+            return number_parseNumberDef(def, refs);
         case ZodFirstPartyTypeKind.ZodObject:
-            return parseObjectDef(def, refs);
+            return object_parseObjectDef(def, refs);
         case ZodFirstPartyTypeKind.ZodBigInt:
-            return parseBigintDef(def, refs);
+            return bigint_parseBigintDef(def, refs);
         case ZodFirstPartyTypeKind.ZodBoolean:
-            return parseBooleanDef();
+            return boolean_parseBooleanDef();
         case ZodFirstPartyTypeKind.ZodDate:
-            return parseDateDef(def, refs);
+            return date_parseDateDef(def, refs);
         case ZodFirstPartyTypeKind.ZodUndefined:
-            return parseUndefinedDef();
+            return undefined_parseUndefinedDef();
         case ZodFirstPartyTypeKind.ZodNull:
-            return parseNullDef(refs);
+            return null_parseNullDef(refs);
         case ZodFirstPartyTypeKind.ZodArray:
-            return parseArrayDef(def, refs);
+            return array_parseArrayDef(def, refs);
         case ZodFirstPartyTypeKind.ZodUnion:
         case ZodFirstPartyTypeKind.ZodDiscriminatedUnion:
-            return parseUnionDef(def, refs);
+            return union_parseUnionDef(def, refs);
         case ZodFirstPartyTypeKind.ZodIntersection:
-            return parseIntersectionDef(def, refs);
+            return intersection_parseIntersectionDef(def, refs);
         case ZodFirstPartyTypeKind.ZodTuple:
-            return parseTupleDef(def, refs);
+            return tuple_parseTupleDef(def, refs);
         case ZodFirstPartyTypeKind.ZodRecord:
-            return parseRecordDef(def, refs);
+            return record_parseRecordDef(def, refs);
         case ZodFirstPartyTypeKind.ZodLiteral:
-            return parseLiteralDef(def, refs);
+            return literal_parseLiteralDef(def, refs);
         case ZodFirstPartyTypeKind.ZodEnum:
-            return parseEnumDef(def);
+            return enum_parseEnumDef(def);
         case ZodFirstPartyTypeKind.ZodNativeEnum:
-            return parseNativeEnumDef(def);
+            return nativeEnum_parseNativeEnumDef(def);
         case ZodFirstPartyTypeKind.ZodNullable:
-            return parseNullableDef(def, refs);
+            return nullable_parseNullableDef(def, refs);
         case ZodFirstPartyTypeKind.ZodOptional:
-            return parseOptionalDef(def, refs);
+            return optional_parseOptionalDef(def, refs);
         case ZodFirstPartyTypeKind.ZodMap:
-            return parseMapDef(def, refs);
+            return map_parseMapDef(def, refs);
         case ZodFirstPartyTypeKind.ZodSet:
-            return parseSetDef(def, refs);
+            return set_parseSetDef(def, refs);
         case ZodFirstPartyTypeKind.ZodLazy:
-            return zod_to_json_schema_parseDef_parseDef(def.getter()._def, refs);
+            return parseDef_parseDef(def.getter()._def, refs);
         case ZodFirstPartyTypeKind.ZodPromise:
-            return parsePromiseDef(def, refs);
+            return promise_parsePromiseDef(def, refs);
         case ZodFirstPartyTypeKind.ZodNaN:
         case ZodFirstPartyTypeKind.ZodNever:
-            return parseNeverDef();
+            return never_parseNeverDef();
         case ZodFirstPartyTypeKind.ZodEffects:
-            return parseEffectsDef(def, refs, forceResolution);
+            return effects_parseEffectsDef(def, refs, forceResolution);
         case ZodFirstPartyTypeKind.ZodAny:
-            return parseAnyDef();
+            return any_parseAnyDef();
         case ZodFirstPartyTypeKind.ZodUnknown:
-            return parseUnknownDef();
+            return unknown_parseUnknownDef();
         case ZodFirstPartyTypeKind.ZodDefault:
-            return parseDefaultDef(def, refs);
+            return default_parseDefaultDef(def, refs);
         case ZodFirstPartyTypeKind.ZodBranded:
-            return parseBrandedDef(def, refs);
+            return branded_parseBrandedDef(def, refs);
         case ZodFirstPartyTypeKind.ZodReadonly:
-            return parseReadonlyDef(def, refs);
+            return readonly_parseReadonlyDef(def, refs);
         case ZodFirstPartyTypeKind.ZodCatch:
-            return parseCatchDef(def, refs);
+            return catch_parseCatchDef(def, refs);
         case ZodFirstPartyTypeKind.ZodPipeline:
-            return parsePipelineDef(def, refs);
+            return pipeline_parsePipelineDef(def, refs);
         case ZodFirstPartyTypeKind.ZodFunction:
         case ZodFirstPartyTypeKind.ZodVoid:
         case ZodFirstPartyTypeKind.ZodSymbol:
@@ -117424,11 +117697,11 @@ const parseDef_addMeta = (def, refs, jsonSchema) => {
 
 
 const zod_to_json_schema_zodToJsonSchema_zodToJsonSchema = (schema, options) => {
-    const refs = getRefs(options);
+    const refs = Refs_getRefs(options);
     const name = typeof options === 'string' ? options
         : options?.nameStrategy === 'title' ? undefined
             : options?.name;
-    const main = parseDef(schema._def, name === undefined ? refs : ({
+    const main = parseDef_parseDef(schema._def, name === undefined ? refs : ({
         ...refs,
         currentPath: [...refs.basePath, refs.definitionPath, name],
     }), false) ?? {};
@@ -117439,7 +117712,7 @@ const zod_to_json_schema_zodToJsonSchema_zodToJsonSchema = (schema, options) => 
         main.title = title;
     }
     const definitions = (() => {
-        if (isEmptyObj(refs.definitions)) {
+        if (util_isEmptyObj(refs.definitions)) {
             return undefined;
         }
         const definitions = {};
@@ -117455,7 +117728,7 @@ const zod_to_json_schema_zodToJsonSchema_zodToJsonSchema = (schema, options) => 
                 break;
             for (const [key, schema] of newDefinitions) {
                 definitions[key] =
-                    parseDef(zodDef(schema), { ...refs, currentPath: [...refs.basePath, refs.definitionPath, key] }, true) ?? {};
+                    parseDef_parseDef(zodDef(schema), { ...refs, currentPath: [...refs.basePath, refs.definitionPath, key] }, true) ?? {};
                 processedDefinitions.add(key);
             }
         }
@@ -117543,7 +117816,7 @@ const zod_to_json_schema_zodToJsonSchema_zodToJsonSchema = (schema, options) => 
 
 
 function zod_zodToJsonSchema(schema, options) {
-    return _zodToJsonSchema(schema, {
+    return zod_to_json_schema_zodToJsonSchema_zodToJsonSchema(schema, {
         openaiStrictMode: true,
         name: options.name,
         nameStrategy: 'duplicate-ref',
@@ -117910,36 +118183,36 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
     const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
     const result = !modelDeepseek
         ? await openAI.responses.create({
-            model: getModelName(modelName, platform),
-            input: [
-                {
-                    role: "system",
-                    content: COMMON_SYSTEM_PROMPT,
-                },
-                {
-                    role: "user",
-                    content: getUserPrompt(rules, rawComments, pullRequestContext),
-                },
-            ],
-            text: {
-                format: {
-                    type: "json_schema",
-                    name: "json_diff_response",
-                    schema: diffPayloadSchema,
-                },
-            },
-            //   response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
-        })
+              model: getModelName(modelName, platform),
+              input: [
+                  {
+                      role: "system",
+                      content: COMMON_SYSTEM_PROMPT,
+                  },
+                  {
+                      role: "user",
+                      content: getUserPrompt(rules, rawComments, pullRequestContext),
+                  },
+              ],
+              text: {
+                  format: {
+                      type: "json_schema",
+                      name: "json_diff_response",
+                      schema: zodResponseFormat(diffPayloadSchema, "json_diff_response").json_schema,
+                  },
+              },
+              //   response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
+          })
         : await openAI.chat.completions.create({
-            model: getModelName(modelName, platform),
-            messages: [
-                {
-                    role: "system",
-                    content: COMMON_SYSTEM_PROMPT,
-                },
-                {
-                    role: "user",
-                    content: `${getUserPrompt(rules, rawComments, pullRequestContext)} - IMP: give the output in a valid JSON string (it should be not be wrapped in markdown, just plain json object) and stick to the schema mentioned here: 
+              model: getModelName(modelName, platform),
+              messages: [
+                  {
+                      role: "system",
+                      content: COMMON_SYSTEM_PROMPT,
+                  },
+                  {
+                      role: "user",
+                      content: `${getUserPrompt(rules, rawComments, pullRequestContext)} - IMP: give the output in a valid JSON string (it should be not be wrapped in markdown, just plain json object) and stick to the schema mentioned here: 
                       {
                         commentsToAdd: {
                             path: string;
@@ -117956,12 +118229,12 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                             suggestions?: string | undefined;
                         }[];
                       }.`,
-                },
-            ],
-            response_format: {
-                type: "json_object",
-            },
-        });
+                  },
+              ],
+              response_format: {
+                  type: "json_object",
+              },
+          });
 
     console.log("AI model raw response:", JSON.stringify(result, null, 2));
     const { message } = result.choices[0];
