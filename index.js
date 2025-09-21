@@ -230,13 +230,13 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
           });
 
     console.log("AI model raw response:", JSON.stringify(result, null, 2));
-    const { message } = result.choices[0];
+    // const { message } = result.choices[0];
 
-    if (message.refusal) {
-        throw new Error(`the model refused to generate suggestions - ${message.refusal}`);
+    if (result.error) {
+        throw new Error(`the model refused to generate suggestions - ${result.error}`);
     }
 
-    return modelDeepseek ? JSON.parse(message.content) : message.parsed;
+    return modelDeepseek ? JSON.parse(result.choices[0].message.content) : JSON.parse(result.output_text);
 }
 
 /**
