@@ -176,7 +176,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
     const result = !modelDeepseek
         ? await openAI.responses.create({
               model: getModelName(modelName, platform),
-              messages: [
+              input: [
                   {
                       role: "system",
                       content: COMMON_SYSTEM_PROMPT,
@@ -197,7 +197,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
           })
         : await openAI.chat.completions.create({
               model: getModelName(modelName, platform),
-              input: [
+              messages: [
                   {
                       role: "system",
                       content: COMMON_SYSTEM_PROMPT,
