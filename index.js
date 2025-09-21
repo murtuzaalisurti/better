@@ -197,7 +197,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
           })
         : await openAI.chat.completions.create({
               model: getModelName(modelName, platform),
-              messages: [
+              input: [
                   {
                       role: "system",
                       content: COMMON_SYSTEM_PROMPT,
