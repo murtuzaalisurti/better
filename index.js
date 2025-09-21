@@ -225,7 +225,9 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
               ],
               text: {
                   format: {
-                      type: "json_object",
+                      type: "json_schema",
+                      name: "json_diff_response",
+                      schema: zodResponseFormat(diffPayloadSchema, "json_diff_response").json_schema.schema,
                   },
               },
           });
@@ -235,7 +237,8 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
         throw new Error(`the model refused to generate suggestions - ${result.error}`);
     }
 
-    return modelDeepseek ? JSON.parse(result.choices[0].message.content) : JSON.parse(result.output_text);
+    // return modelDeepseek ? JSON.parse(result.choices[0].message.content) : JSON.parse(result.output_text);
+    return JSON.parse(result.output_text);
 }
 
 /**
