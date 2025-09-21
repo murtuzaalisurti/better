@@ -196,7 +196,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                       },
                   },
               })
-            : await openAI.chat.completions.create({
+            : await openAI.chat.completions.parse({
                   model: getModelName(modelName, platform),
                   messages: [
                       {
