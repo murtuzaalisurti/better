@@ -118232,12 +118232,13 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   },
               ],
               text: {
-                format: {
-                    type: "json_object"
-                }
-              }
+                  format: {
+                      type: "json_object",
+                  },
+              },
           });
 
+    console.log(JSON.stringify(result));
     if (result.error) {
         throw new Error(`the model refused to generate suggestions - ${result.error}`);
     }
