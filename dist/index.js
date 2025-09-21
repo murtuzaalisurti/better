@@ -118202,7 +118202,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   },
               },
           })
-        : await openAI.responses.create({
+        : await openAI.chat.completions.create({
               model: getModelName(modelName, platform),
               input: [
                   {
@@ -118230,20 +118230,16 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                       }.`,
                   },
               ],
-              text: {
-                  format: {
-                      type: "json_schema",
-                      name: "json_diff_response",
-                      schema: zodResponseFormat(diffPayloadSchema, "json_diff_response").json_schema.schema,
-                  },
-              },
+              response_format: {
+                type: "json_object",
+              }
           });
 
     if (result.error) {
         throw new Error(`the model refused to generate suggestions - ${result.error}`);
     }
 
-    return JSON.parse(result.output_text);
+    return modelDeepseek ? JSON.parse(result.choices[0].message.content) : JSON.parse(result.output_text);
 }
 
 /**
