@@ -173,27 +173,43 @@ function getUserPrompt(rules, rawComments, pullRequestContext) {
  */
 async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestContext, platform }) {
     const modelDeepseek = /deepseek/i.test(getModelName(modelName, platform));
+    const openrouter = /openrouter/i.test(platform);
     const result = !modelDeepseek
-        ? await openAI.responses.create({
-              model: getModelName(modelName, platform),
-              input: [
-                  {
-                      role: "developer",
-                      content: COMMON_SYSTEM_PROMPT,
+        ? !openrouter
+            ? await openAI.responses.create({
+                  model: getModelName(modelName, platform),
+                  input: [
+                      {
+                          role: "developer",
+                          content: COMMON_SYSTEM_PROMPT,
+                      },
+                      {
+                          role: "user",
+                          content: getUserPrompt(rules, rawComments, pullRequestContext),
+                      },
+                  ],
+                  text: {
+                      format: {
+                          type: "json_schema",
+                          name: "json_diff_response",
+                          schema: zodResponseFormat(diffPayloadSchema, "json_diff_response").json_schema.schema,
+                      },
                   },
-                  {
-                      role: "user",
-                      content: getUserPrompt(rules, rawComments, pullRequestContext),
-                  },
-              ],
-              text: {
-                  format: {
-                      type: "json_schema",
-                      name: "json_diff_response",
-                      schema: zodResponseFormat(diffPayloadSchema, "json_diff_response").json_schema.schema,
-                  },
-              },
-          })
+              })
+            : await openAI.chat.completions.create({
+                  model: getModelName(modelName, platform),
+                  messages: [
+                      {
+                          role: "system",
+                          content: COMMON_SYSTEM_PROMPT,
+                      },
+                      {
+                          role: "user",
+                          content: getUserPrompt(rules, rawComments, pullRequestContext),
+                      },
+                  ],
+                  response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
+              })
         : await openAI.chat.completions.create({
               model: getModelName(modelName, platform),
               messages: [
@@ -227,11 +243,19 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
               },
           });
 
-    if (result.error) {
+    if (!modelDeepseek && !openrouter && result.error) {
         throw new Error(`the model refused to generate suggestions - ${result.error}`);
     }
 
-    return modelDeepseek ? JSON.parse(result.choices[0].message.content) : JSON.parse(result.output_text);
+    if ((modelDeepseek || openrouter) && result.choices[0].message.refusal) {
+        throw new Error(`the model refused to generate suggestions - ${result.choices[0].message.refusal}`);
+    }
+
+    return modelDeepseek
+        ? JSON.parse(result.choices[0].message.content)
+        : openrouter
+          ? result.choices[0].message.parsed
+          : JSON.parse(result.output_text);
 }
 
 /**
