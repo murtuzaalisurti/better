@@ -179,7 +179,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
               model: getModelName(modelName, platform),
               input: [
                   {
-                      role: "system",
+                      role: "developer",
                       content: COMMON_SYSTEM_PROMPT,
                   },
                   {
@@ -194,11 +194,10 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                       schema: zodResponseFormat(diffPayloadSchema, "json_diff_response").json_schema.schema,
                   },
               },
-              //   response_format: zodResponseFormat(diffPayloadSchema, "json_diff_response"),
           })
-        : await openAI.chat.completions.create({
+        : await openAI.responses.create({
               model: getModelName(modelName, platform),
-              messages: [
+              input: [
                   {
                       role: "system",
                       content: COMMON_SYSTEM_PROMPT,
@@ -228,9 +227,6 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                   type: "json_object",
               },
           });
-
-    console.log("AI model raw response:", JSON.stringify(result, null, 2));
-    // const { message } = result.choices[0];
 
     if (result.error) {
         throw new Error(`the model refused to generate suggestions - ${result.error}`);
