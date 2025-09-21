@@ -118231,9 +118231,11 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
                       }.`,
                   },
               ],
-              response_format: {
-                  type: "json_object",
-              },
+              text: {
+                format: {
+                    type: "json_object"
+                }
+              }
           });
 
     if (result.error) {
