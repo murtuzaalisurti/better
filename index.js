@@ -251,6 +251,7 @@ async function useOpenAI({ rawComments, openAI, rules, modelName, pullRequestCon
         throw new Error(`the model refused to generate suggestions - ${result.choices[0].message.refusal}`);
     }
 
+    console.log("AI raw response:", JSON.stringify(result, null, 2));
     return modelDeepseek
         ? JSON.parse(result.choices[0].message.content)
         : openrouter
